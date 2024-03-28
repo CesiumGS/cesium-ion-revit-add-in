@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+ <AddIn Type="Command">
+       <Name>Lab1PlaceGroup</Name>
+	 <FullClassName>HelloRevitCpp.Command</FullClassName>
+	 <Text>Cesium C++ Revit Add-In</Text>
+	 <Description> Test</Description>
+	 <VisibilityMode>AlwaysVisible</VisibilityMode>
+	 <Assembly>C:\Users\CBarr\source\repos\HelloRevitCpp\x64\Debug\HelloRevitCpp.dll</Assembly>
+	 <AddInId>502fe383-2648-4e98-adf8-5e6047f9dc35</AddInId>
+    <VendorId>CES</VendorId>
+    <VendorDescription>Test Comp, Inc, www.testcomp.com</VendorDescription>
+ </AddIn>
+</RevitAddIns>
