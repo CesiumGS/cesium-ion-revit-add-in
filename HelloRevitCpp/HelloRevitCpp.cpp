@@ -10,11 +10,21 @@ using namespace Autodesk::Revit::UI;
 
 using namespace HelloRevitCpp;
 
-Result Command::Execute(
-	ExternalCommandData^ commandData,
-	String^% message,
-	ElementSet^ elements)
+//Result Command::Execute(
+//	ExternalCommandData^ commandData,
+//	String^% message,
+//	ElementSet^ elements)
+//{
+//	TaskDialog::Show("Revit", "Using C++/CLI doesn't seem too bad");
+//	return Autodesk::Revit::UI::Result::Succeeded;
+//}
+
+Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UIControlledApplication^ application)
 {
-	TaskDialog::Show("Revit", "Using C++/CLI doesn't seem too bad");
+	return Autodesk::Revit::UI::Result::Succeeded;
+}
+
+Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnShutdown(UIControlledApplication^ application)
+{
 	return Autodesk::Revit::UI::Result::Succeeded;
 }
