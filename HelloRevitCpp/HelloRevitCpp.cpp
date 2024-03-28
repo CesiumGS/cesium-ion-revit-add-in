@@ -7,6 +7,7 @@ using namespace Autodesk::Revit::ApplicationServices;
 using namespace Autodesk::Revit::Attributes;
 using namespace Autodesk::Revit::DB;
 using namespace Autodesk::Revit::UI;
+using namespace Autodesk::Windows;
 
 using namespace HelloRevitCpp;
 
@@ -21,6 +22,15 @@ using namespace HelloRevitCpp;
 
 Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UIControlledApplication^ application)
 {
+    RibbonControl^ ribbon = Autodesk::Windows::ComponentManager::Ribbon;
+    // RibbonTab tab = ribbon.FindTab(ribbonTabName);
+    RibbonTab^ tab = ribbon->FindTab("Cesium GC CPP");
+
+    if (tab == nullptr)
+    {
+        application->CreateRibbonTab("Cesium GC CPP");
+    }
+
 	return Autodesk::Revit::UI::Result::Succeeded;
 }
 

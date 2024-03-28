@@ -16,6 +16,6 @@ namespace HelloRevitCpp {
 
         virtual Autodesk::Revit::UI::Result OnStartup(Autodesk::Revit::UI::UIControlledApplication^ application);
         virtual Autodesk::Revit::UI::Result OnShutdown(Autodesk::Revit::UI::UIControlledApplication^ application);
+    };
 
-        };
 }
