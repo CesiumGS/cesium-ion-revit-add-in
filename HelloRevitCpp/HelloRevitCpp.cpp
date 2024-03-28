@@ -47,7 +47,7 @@ Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UICont
     ContextualHelp^ contexHelp = 
         gcnew Autodesk::Revit::UI::ContextualHelp(Autodesk::Revit::UI::ContextualHelpType::Url, "www.cesium.com");
     PushButtonData^ pushButtonData = 
-        gcnew Autodesk::Revit::UI::PushButtonData("push Button Name", "Export to Cesium 3D Tiles", addInPath, "HelloRevitCpp.ExternalCommand");
+        gcnew Autodesk::Revit::UI::PushButtonData("push Button Name", "Export to Cesium 3D Tiles", addInPath, "HelloRevitCpp.ExportCommand");
     // pushDataButton.LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute));
     pushButtonData->LargeImage = gcnew BitmapImage(gcnew Uri(Path::Combine(buttonIconsFolder, "logo.png"), UriKind::Absolute));
     pushButtonData->SetContextualHelp(contexHelp);
@@ -97,4 +97,119 @@ void HelloRevitCpp::ExternalApplication::CreateRibbonTab(Autodesk::Revit::UI::UI
     {
         application->CreateRibbonTab(ribbonTabName);
     }
+}
+
+void HelloRevitCpp::ExternalApplication::ExportView()
+{
+
+}
+
+Autodesk::Revit::UI::Result HelloRevitCpp::ExportCommand::Execute(Autodesk::Revit::UI::ExternalCommandData^ commandData, System::String^% message, Autodesk::Revit::DB::ElementSet^ elements)
+{
+    // Autodesk::Revit::UI::TaskDialog::Show("Exporting", "Exporting to 3D Tiles...");
+
+    //try
+    //{
+    //    UIApplication^ uiapp = commandData->Application;
+    //    UIDocument^ uidoc = uiapp->ActiveUIDocument;
+    //    Application^ app = uiapp->Application;
+    //    Document^ doc = uidoc->Document;
+
+    //    View^ view = doc->ActiveView;
+
+    //    if (view->GetType()->Name != "View3D")
+    //    {
+    //        MessageWindow->Show("Wrong View", "You must be in a 3D view to export");
+    //        return Result.Succeeded;
+    //    }
+
+    //    MainWindow mainWindow = new MainWindow(doc, view);
+    //    mainWindow.ShowDialog();
+
+    //    return Result.Succeeded;
+    //}
+    //catch (Exception ex)
+    //{
+    //    MessageWindow.Show("Error", ex.Message);
+    //    return Result.Failed;
+    //}
+
+
+    // Autodesk::Revit::DB::View3D^ exportView = safe_cast<Autodesk::Revit::DB::View3D^>(this->View);
+    Autodesk::Revit::DB::Document^ doc = commandData->Application->ActiveUIDocument->Document; 
+    // Autodesk::Revit::DB::View^ activeView = doc->ActiveView;
+
+    // string format = System::String::Concat(".", SettingsConfig.GetValue("format"));
+    System::String^ format = "gltf";
+    // string fileName = SettingsConfig.GetValue("fileName");
+    System::String^ fileName = "outputFileName";
+    //bool dialogResult = FilesHelper.AskToSave(ref fileName, string.Empty, format);
+    //if (dialogResult != true)
+    //{
+    //    return;
+    //}
+
+    auto directory = fileName->Replace(format, System::String::Empty);
+    auto nameOnly = System::IO::Path::GetFileNameWithoutExtension(fileName);
+
+    //SettingsConfig.SetValue("path", directory);
+    //SettingsConfig.SetValue("fileName", nameOnly);
+
+    // Document doc = exportView.Document;
+    System::Collections::Generic::List<Autodesk::Revit::DB::Element^> ^elementsInView = GetAllVisibleElementsByView(doc, doc->ActiveView);
+
+    if (elementsInView->Count == 0)
+    {
+        // MessageWindow.Show("No Valid Elements", "There are no valid elements to export in this view");
+        return Autodesk::Revit::UI::Result::Failed;
+    }
+
+    //int numberRuns = int.Parse(SettingsConfig.GetValue("runs"));
+    //int incrementRun = numberRuns + 1;
+    //SettingsConfig.SetValue("runs", incrementRun.ToString());
+
+    //ProgressBarWindow progressBar =
+    //    ProgressBarWindow.Create(elementsInView.Count + 1, 0, "Converting elements...", this);
+
+    // Use our custom implementation of IExportContext as the exporter context.
+//    GLTFExportContext ctx = new GLTFExportContext(doc);
+//
+//    // Create a new custom exporter with the context.
+//    CustomExporter^ exporter = gcnew Autodesk::Revit::DB::CustomExporter(doc, ctx);
+//    exporter->ShouldStopOnError = false;
+//
+//#if REVIT2019
+//    exporter.Export(exportView);
+//#else
+//    exporter->Export(exportView as View);
+//#endif
+//
+//    Thread.Sleep(500);
+//    ProgressBarWindow.ViewModel.ProgressBarValue = elementsInView.Count + 1;
+//    ProgressBarWindow.ViewModel.ProgressBarPercentage = 100;
+//    ProgressBarWindow.ViewModel.Message = "Export completed!";
+//    ProgressBarWindow.ViewModel.Action = "Accept";
+
+
+    return Autodesk::Revit::UI::Result::Succeeded;
+}
+
+System::Collections::Generic::List<Autodesk::Revit::DB::Element^>^ HelloRevitCpp::ExportCommand::GetAllVisibleElementsByView(Autodesk::Revit::DB::Document^ doc, Autodesk::Revit::DB::View^ view)
+{
+    Autodesk::Revit::DB::FilteredElementCollector^ collector = gcnew Autodesk::Revit::DB::FilteredElementCollector(doc, view->Id);
+    System::Collections::Generic::List<Autodesk::Revit::DB::Element^>^ result = gcnew System::Collections::Generic::List<Autodesk::Revit::DB::Element^>();
+
+    // Use WherePasses to filter elements
+    collector->WhereElementIsNotElementType();
+
+    // Manual filtering equivalent to the LINQ query in C#
+    for each (Autodesk::Revit::DB::Element ^ e in collector->ToElements())
+    {
+        if (e->CanBeHidden(view) && e->Category != nullptr)
+        {
+            result->Add(e);
+        }
+    }
+
+    return result;
 }
