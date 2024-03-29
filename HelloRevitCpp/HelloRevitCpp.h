@@ -1,4 +1,11 @@
 #pragma once
+
+#using "C:\\Program Files\\Autodesk\\Revit 2024\\RevitAPI.dll"
+#using "C:\\Program Files\\Autodesk\\Revit 2024\\RevitAPIUI.dll"
+#using "C:\\Program Files\\Autodesk\\Revit 2024\\AdWindows.dll"
+#using "C:\\Program Files (x86)\\Reference Assemblies\\Microsoft\\Framework\\.NETFramework\\v4.8\\PresentationCore.dll"
+#using <System.dll>
+
 using namespace Autodesk::Revit::Attributes;
 
 namespace HelloRevitCpp {
