@@ -27,6 +27,22 @@ set(ALL_FILES
 ################################################################################
 add_library(${PROJECT_NAME} SHARED ${ALL_FILES})
 
+target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE
+        CesiumGltf
+        CesiumUtility
+)
+
+set_target_properties(
+    ${PROJECT_NAME}
+    PROPERTIES
+        COMMON_LANGUAGE_RUNTIME ""
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+)
+
 target_precompile_headers(${PROJECT_NAME} PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/pch.h>"
 )
