@@ -86,12 +86,9 @@ include(CMake/GlobalSettingsInclude.cmake OPTIONAL)
 ################################################################################
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-################################################################################
-# Sub-projects
-################################################################################
+add_subdirectory(extern/cesium-native EXCLUDE_FROM_ALL)
 add_subdirectory(HelloRevitCpp)
 
-# Example of setting .NET framework version, adjust based on your project's requirement.
 set_property(TARGET HelloRevitCpp PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8")
 LIST(APPEND VS_DOTNET_REFERENCES "Microsoft.CSharp")
 LIST(APPEND VS_DOTNET_REFERENCES "PresentationCore")

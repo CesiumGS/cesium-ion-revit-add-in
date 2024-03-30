@@ -2,6 +2,9 @@
 #include "pch.h"
 #include "HelloRevitCpp.h"
 
+#include <CesiumGltf/AccessorUtility.h>
+#include <CesiumGltf/MeshPrimitive.h>
+
 using namespace System;
 using namespace System::IO;
 using namespace Autodesk::Revit::ApplicationServices;
