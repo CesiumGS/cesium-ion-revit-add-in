@@ -22,6 +22,8 @@ set(ALL_FILES
     ${Source_Files}
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /clr")
+
 ################################################################################
 # Target
 ################################################################################
@@ -38,7 +40,7 @@ set_target_properties(
     ${PROJECT_NAME}
     PROPERTIES
         COMMON_LANGUAGE_RUNTIME ""
-        CXX_STANDARD 17
+        CXX_STANDARD 20
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
 )
@@ -117,3 +119,16 @@ if(MSVC)
         )
     endif()
 endif()
+
+set_property(TARGET HelloRevitCpp PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8")
+LIST(APPEND VS_DOTNET_REFERENCES "Microsoft.CSharp")
+LIST(APPEND VS_DOTNET_REFERENCES "PresentationCore")
+LIST(APPEND VS_DOTNET_REFERENCES "PresentationFramework")
+LIST(APPEND VS_DOTNET_REFERENCES "System")
+LIST(APPEND VS_DOTNET_REFERENCES "System.Xaml")
+LIST(APPEND VS_DOTNET_REFERENCES "System.Xml")
+LIST(APPEND VS_DOTNET_REFERENCES "System.Xml.Linq")
+LIST(APPEND VS_DOTNET_REFERENCES "WindowsBase")
+set_target_properties(HelloRevitCpp PROPERTIES
+    VS_DOTNET_REFERENCES "${VS_DOTNET_REFERENCES}"
+)
