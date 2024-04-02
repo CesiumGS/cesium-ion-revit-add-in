@@ -1,21 +1,14 @@
-set(PROJECT_NAME HelloRevitCpp)
-
-################################################################################
-# Source groups
-################################################################################
 set(Header_Files
     "HelloRevitCpp.h"
     "pch.h"
     "Resource.h"
 )
-source_group("Header Files" FILES ${Header_Files})
 
 set(Source_Files
     "AssemblyInfo.cpp"
     "HelloRevitCpp.cpp"
     "pch.cpp"
 )
-source_group("Source Files" FILES ${Source_Files})
 
 set(ALL_FILES
     ${Header_Files}
@@ -49,21 +42,20 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/pch.h>"
 )
 
-use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
-set(ROOT_NAMESPACE HelloRevitCpp)
+# set(ROOT_NAMESPACE HelloRevitCpp)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    VS_GLOBAL_KEYWORD "ManagedCProj"
-)
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        COMMON_LANGUAGE_RUNTIME         ""
-    )
-elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        COMMON_LANGUAGE_RUNTIME         ""
-    )
-endif()
+# set_target_properties(${PROJECT_NAME} PROPERTIES
+#     VS_GLOBAL_KEYWORD "ManagedCProj"
+# )
+# if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#     set_target_properties(${PROJECT_NAME} PROPERTIES
+#         COMMON_LANGUAGE_RUNTIME         ""
+#     )
+# elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
+#     set_target_properties(${PROJECT_NAME} PROPERTIES
+#         COMMON_LANGUAGE_RUNTIME         ""
+#     )
+# endif()
 ################################################################################
 # Compile definitions
 ################################################################################
@@ -95,29 +87,17 @@ endif()
 ################################################################################
 # Compile and link options
 ################################################################################
+
 if(MSVC)
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            /W3;
-            ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
-            ${DEFAULT_CXX_EXCEPTION_HANDLING}
-        )
-    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            /W3;
-            ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
-            ${DEFAULT_CXX_EXCEPTION_HANDLING}
-        )
-    endif()
-    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-        target_link_options(${PROJECT_NAME} PRIVATE
-            /DEBUG:FULL
-        )
-    elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-        target_link_options(${PROJECT_NAME} PRIVATE
-            /DEBUG:FULL
-        )
-    endif()
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        /W3  # Warning level 3
+        /EHsc  # Exception handling model: standard C++ catch semantics, assume extern C functions never throw C++ exceptions
+        /Zi  # Debug information format: Produces a program database (PDB) that contains type information and symbolic debugging information for use with the debugger.
+    )
+
+    target_link_options(${PROJECT_NAME} PRIVATE
+        /DEBUG:FULL  # Generate full debug information
+    )
 endif()
 
 set_property(TARGET HelloRevitCpp PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8")
