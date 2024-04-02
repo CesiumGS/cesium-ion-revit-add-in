@@ -14,9 +14,6 @@ if(NOT WIN32)
     message(FATAL_ERROR "This project is only supported on Windows.")
 endif()
 
-################################################################################
-# Set target arch type if empty. Visual studio solution generator provides it.
-################################################################################
 if(NOT CMAKE_VS_PLATFORM_NAME)
     set(CMAKE_VS_PLATFORM_NAME "x64")
 endif()

@@ -17,9 +17,6 @@ set(ALL_FILES
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /clr")
 
-################################################################################
-# Target
-################################################################################
 add_library(${PROJECT_NAME} SHARED ${ALL_FILES})
 
 target_link_libraries(
@@ -42,23 +39,6 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/pch.h>"
 )
 
-# set(ROOT_NAMESPACE HelloRevitCpp)
-
-# set_target_properties(${PROJECT_NAME} PROPERTIES
-#     VS_GLOBAL_KEYWORD "ManagedCProj"
-# )
-# if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-#     set_target_properties(${PROJECT_NAME} PROPERTIES
-#         COMMON_LANGUAGE_RUNTIME         ""
-#     )
-# elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
-#     set_target_properties(${PROJECT_NAME} PROPERTIES
-#         COMMON_LANGUAGE_RUNTIME         ""
-#     )
-# endif()
-################################################################################
-# Compile definitions
-################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Debug>:"
@@ -84,19 +64,15 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
     )
 endif()
 
-################################################################################
-# Compile and link options
-################################################################################
-
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE
-        /W3  # Warning level 3
-        /EHsc  # Exception handling model: standard C++ catch semantics, assume extern C functions never throw C++ exceptions
-        /Zi  # Debug information format: Produces a program database (PDB) that contains type information and symbolic debugging information for use with the debugger.
+        /W3
+        /EHsc
+        /Zi
     )
 
     target_link_options(${PROJECT_NAME} PRIVATE
-        /DEBUG:FULL  # Generate full debug information
+        /DEBUG:FULL
     )
 endif()
 
