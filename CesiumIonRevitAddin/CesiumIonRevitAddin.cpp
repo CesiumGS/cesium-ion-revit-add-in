@@ -109,7 +109,14 @@ void CesiumIonRevitAddin::ExternalApplication::ExportView()
 
 Autodesk::Revit::UI::Result CesiumIonRevitAddin::ExportCommand::Execute(Autodesk::Revit::UI::ExternalCommandData^ commandData, System::String^% message, Autodesk::Revit::DB::ElementSet^ elements)
 {
-    // Autodesk::Revit::UI::TaskDialog::Show("Exporting", "Exporting to 3D Tiles...");
+    CesiumGltf::Model model;
+    model.asset.version = "2.0";
+    auto& scene = model.scenes.emplace_back();
+    model.scene = 0;
+    if (model.scene == 0) {
+       Autodesk::Revit::UI::TaskDialog::Show("Cesium GS", "Cesium Native is integrated...");
+    }
+
 
     //try
     //{
