@@ -8,7 +8,7 @@
 
 using namespace Autodesk::Revit::Attributes;
 
-namespace HelloRevitCpp {
+namespace CesiumIonRevitAddin {
 
     [Transaction(TransactionMode::Manual)]
     [Regeneration(RegenerationOption::Manual)]
@@ -30,7 +30,7 @@ namespace HelloRevitCpp {
         static System::String^ addInPath = ExternalApplication::typeid->Assembly->Location;
         static System::String^ buttonIconsFolder = System::IO::Path::GetDirectoryName(addInPath) + "\\Images\\";
         literal System::String^ RIBBONPANEL = "Cesium Export Panel";
-        literal System::String^ RIBBONTAB = "Cesium GS C++";
+        literal System::String^ RIBBONTAB = "Cesium GS";
 
 
     };

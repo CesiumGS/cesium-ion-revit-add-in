@@ -1,6 +1,6 @@
 // #include "stdafx.h"
 #include "pch.h"
-#include "HelloRevitCpp.h"
+#include "CesiumIonRevitAddin.h"
 
 #include <CesiumGltf/AccessorUtility.h>
 #include <CesiumGltf/MeshPrimitive.h>
@@ -15,7 +15,7 @@ using namespace Autodesk::Windows;
 using namespace System::Windows::Media::Imaging;
 
 
-using namespace HelloRevitCpp;
+using namespace CesiumIonRevitAddin;
 
 //Result Command::Execute(
 //	ExternalCommandData^ commandData,
@@ -26,7 +26,7 @@ using namespace HelloRevitCpp;
 //	return Autodesk::Revit::UI::Result::Succeeded;
 //}
 
-Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UIControlledApplication^ application)
+Autodesk::Revit::UI::Result CesiumIonRevitAddin::ExternalApplication::OnStartup(UIControlledApplication^ application)
 {
     CreateRibbonTab(application, RIBBONTAB);
  
@@ -50,7 +50,7 @@ Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UICont
     ContextualHelp^ contexHelp = 
         gcnew Autodesk::Revit::UI::ContextualHelp(Autodesk::Revit::UI::ContextualHelpType::Url, "www.cesium.com");
     PushButtonData^ pushButtonData = 
-        gcnew Autodesk::Revit::UI::PushButtonData("push Button Name", "Export to Cesium 3D Tiles", addInPath, "HelloRevitCpp.ExportCommand");
+        gcnew Autodesk::Revit::UI::PushButtonData("push Button Name", "Export to Cesium 3D Tiles", addInPath, "CesiumIonRevitAddin.ExportCommand");
     // pushDataButton.LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute));
     pushButtonData->LargeImage = gcnew BitmapImage(gcnew Uri(Path::Combine(buttonIconsFolder, "logo.png"), UriKind::Absolute));
     pushButtonData->SetContextualHelp(contexHelp);
@@ -76,7 +76,7 @@ Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UICont
     }
 
 
-    auto pushDataButtonAbout = gcnew PushButtonData("About us", "About us", addInPath, "HelloRevitCpp.AboutUs");
+    auto pushDataButtonAbout = gcnew PushButtonData("About us", "About us", addInPath, "CesiumIonRevitAddin.AboutUs");
     pushDataButtonAbout->LargeImage = gcnew BitmapImage(gcnew Uri(System::IO::Path::Combine(buttonIconsFolder, "logo.png"), UriKind::Absolute));
     pushDataButtonAbout->ToolTip = "About Cesium 3D Tiles";
     pushDataButtonAbout->SetContextualHelp(contexHelp);
@@ -86,12 +86,12 @@ Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnStartup(UICont
 	return Autodesk::Revit::UI::Result::Succeeded;
 }
 
-Autodesk::Revit::UI::Result HelloRevitCpp::ExternalApplication::OnShutdown(UIControlledApplication^ application)
+Autodesk::Revit::UI::Result CesiumIonRevitAddin::ExternalApplication::OnShutdown(UIControlledApplication^ application)
 {
 	return Autodesk::Revit::UI::Result::Succeeded;
 }
 
-void HelloRevitCpp::ExternalApplication::CreateRibbonTab(Autodesk::Revit::UI::UIControlledApplication^ application, System::String^ ribbonTabName)
+void CesiumIonRevitAddin::ExternalApplication::CreateRibbonTab(Autodesk::Revit::UI::UIControlledApplication^ application, System::String^ ribbonTabName)
 {
     Autodesk::Windows::RibbonControl^ ribbon = Autodesk::Windows::ComponentManager::Ribbon;
     auto tab = ribbon->FindTab(ribbonTabName);
@@ -102,12 +102,12 @@ void HelloRevitCpp::ExternalApplication::CreateRibbonTab(Autodesk::Revit::UI::UI
     }
 }
 
-void HelloRevitCpp::ExternalApplication::ExportView()
+void CesiumIonRevitAddin::ExternalApplication::ExportView()
 {
 
 }
 
-Autodesk::Revit::UI::Result HelloRevitCpp::ExportCommand::Execute(Autodesk::Revit::UI::ExternalCommandData^ commandData, System::String^% message, Autodesk::Revit::DB::ElementSet^ elements)
+Autodesk::Revit::UI::Result CesiumIonRevitAddin::ExportCommand::Execute(Autodesk::Revit::UI::ExternalCommandData^ commandData, System::String^% message, Autodesk::Revit::DB::ElementSet^ elements)
 {
     // Autodesk::Revit::UI::TaskDialog::Show("Exporting", "Exporting to 3D Tiles...");
 
@@ -197,7 +197,7 @@ Autodesk::Revit::UI::Result HelloRevitCpp::ExportCommand::Execute(Autodesk::Revi
     return Autodesk::Revit::UI::Result::Succeeded;
 }
 
-System::Collections::Generic::List<Autodesk::Revit::DB::Element^>^ HelloRevitCpp::ExportCommand::GetAllVisibleElementsByView(Autodesk::Revit::DB::Document^ doc, Autodesk::Revit::DB::View^ view)
+System::Collections::Generic::List<Autodesk::Revit::DB::Element^>^ CesiumIonRevitAddin::ExportCommand::GetAllVisibleElementsByView(Autodesk::Revit::DB::Document^ doc, Autodesk::Revit::DB::View^ view)
 {
     Autodesk::Revit::DB::FilteredElementCollector^ collector = gcnew Autodesk::Revit::DB::FilteredElementCollector(doc, view->Id);
     System::Collections::Generic::List<Autodesk::Revit::DB::Element^>^ result = gcnew System::Collections::Generic::List<Autodesk::Revit::DB::Element^>();

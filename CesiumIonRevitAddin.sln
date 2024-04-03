@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HelloRevitCpp", "HelloRevitCpp\HelloRevitCpp.vcxproj", "{35FDB17F-B8DB-439B-8D4E-594101362AFF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CesiumIonRevitAddin", "CesiumIonRevitAddin\CesiumIonRevitAddin.vcxproj", "{35FDB17F-B8DB-439B-8D4E-594101362AFF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4E711D10-1047-49B0-823B-1B13FC5C643C}"
 	ProjectSection(SolutionItems) = preProject
-		HelloRevitCpp\HelloRevitCpp.addin = HelloRevitCpp\HelloRevitCpp.addin
+		CesiumIonRevitAddin\CesiumIonRevitAddin.addin = CesiumIonRevitAddin\CesiumIonRevitAddin.addin
 	EndProjectSection
 EndProject
 Global

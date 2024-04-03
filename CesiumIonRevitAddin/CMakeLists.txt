@@ -1,12 +1,12 @@
 set(Header_Files
-    "HelloRevitCpp.h"
+    "CesiumIonRevitAddin.h"
     "pch.h"
     "Resource.h"
 )
 
 set(Source_Files
     "AssemblyInfo.cpp"
-    "HelloRevitCpp.cpp"
+    "CesiumIonRevitAddin.cpp"
     "pch.cpp"
 )
 
@@ -76,7 +76,7 @@ if(MSVC)
     )
 endif()
 
-set_property(TARGET HelloRevitCpp PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8")
+set_property(TARGET CesiumIonRevitAddin PROPERTY VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8")
 LIST(APPEND VS_DOTNET_REFERENCES "Microsoft.CSharp")
 LIST(APPEND VS_DOTNET_REFERENCES "PresentationCore")
 LIST(APPEND VS_DOTNET_REFERENCES "PresentationFramework")
@@ -85,11 +85,11 @@ LIST(APPEND VS_DOTNET_REFERENCES "System.Xaml")
 LIST(APPEND VS_DOTNET_REFERENCES "System.Xml")
 LIST(APPEND VS_DOTNET_REFERENCES "System.Xml.Linq")
 LIST(APPEND VS_DOTNET_REFERENCES "WindowsBase")
-set_target_properties(HelloRevitCpp PROPERTIES
+set_target_properties(CesiumIonRevitAddin PROPERTIES
     VS_DOTNET_REFERENCES "${VS_DOTNET_REFERENCES}"
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "C:/p/cesium-ion-revit-add-in/HelloRevitCpp/Images"
+            "C:/p/cesium-ion-revit-add-in/CesiumIonRevitAddin/Images"
             "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/$<CONFIG>/Images")

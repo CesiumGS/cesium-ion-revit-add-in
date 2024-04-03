@@ -6,8 +6,8 @@ endif()
 
 set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "" FORCE)
 
-project(HelloRevitCpp VERSION 0.1
-                  DESCRIPTION "Cesium Revit Add-In"
+project(CesiumIonRevitAddin VERSION 0.1
+                  DESCRIPTION "Cesium ion Revit Add-In"
                   LANGUAGES CXX)
 
 if(NOT WIN32)
@@ -33,4 +33,4 @@ set(CMAKE_CONFIGURATION_TYPES
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 add_subdirectory(extern/cesium-native EXCLUDE_FROM_ALL)
-add_subdirectory(HelloRevitCpp)
+add_subdirectory(CesiumIonRevitAddin)
