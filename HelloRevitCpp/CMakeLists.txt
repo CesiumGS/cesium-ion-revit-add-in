@@ -88,3 +88,8 @@ LIST(APPEND VS_DOTNET_REFERENCES "WindowsBase")
 set_target_properties(HelloRevitCpp PROPERTIES
     VS_DOTNET_REFERENCES "${VS_DOTNET_REFERENCES}"
 )
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "C:/p/cesium-ion-revit-add-in/HelloRevitCpp/Images"
+            "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/$<CONFIG>/Images")
