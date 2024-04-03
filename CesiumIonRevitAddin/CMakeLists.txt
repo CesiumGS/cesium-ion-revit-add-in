@@ -91,5 +91,5 @@ set_target_properties(CesiumIonRevitAddin PROPERTIES
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "C:/p/cesium-ion-revit-add-in/CesiumIonRevitAddin/Images"
+            "${CMAKE_SOURCE_DIR}/CesiumIonRevitAddin/Images"
             "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/$<CONFIG>/Images")
