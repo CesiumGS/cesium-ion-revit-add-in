@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34701.34
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CesiumIonRevitAddin", "CesiumIonRevitAddin\CesiumIonRevitAddin.vcxproj", "{35FDB17F-B8DB-439B-8D4E-594101362AFF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4E711D10-1047-49B0-823B-1B13FC5C643C}"
+	ProjectSection(SolutionItems) = preProject
+		CesiumIonRevitAddin\CesiumIonRevitAddin.addin = CesiumIonRevitAddin\CesiumIonRevitAddin.addin
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Debug|x64.ActiveCfg = Debug|x64
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Debug|x64.Build.0 = Debug|x64
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Debug|x86.ActiveCfg = Debug|Win32
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Debug|x86.Build.0 = Debug|Win32
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Release|x64.ActiveCfg = Release|x64
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Release|x64.Build.0 = Release|x64
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Release|x86.ActiveCfg = Release|Win32
+		{35FDB17F-B8DB-439B-8D4E-594101362AFF}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {875CE16E-E0C0-4DE8-A2C5-F30F2A6A283B}
+	EndGlobalSection
+EndGlobal
