@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using System.Windows.Media.Imaging;
 using System.IO;
 using System.Reflection;
+using System.Xml.Linq;
+using CesiumIonRevitAddin.gltf;
 
 namespace CesiumIonRevitAddin
 {
-    [TransactionAttribute(TransactionMode.Manual)]
+    [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public class ExternalApplication : IExternalApplication
     {
@@ -102,6 +104,39 @@ namespace CesiumIonRevitAddin
             {
                 application.CreateRibbonTab(ribbonTabName);
             }
+        }
+    }
+
+
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public class ExportCommand : Autodesk.Revit.UI.IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            var view = commandData.Application.ActiveUIDocument.Document.ActiveView;
+            if (view.GetType().Name != "View3D")
+            {
+                Autodesk.Revit.UI.TaskDialog.Show("Wrong View", "You must be in a 3D view to export");
+                return Result.Succeeded;
+            }
+            View3D exportView = (View3D) view;
+
+            var ctx = new GltfExportContext(exportView.Document);
+            CustomExporter exporter = new Autodesk.Revit.DB.CustomExporter(exportView.Document, ctx);
+
+            if (ctx == null || exporter == null)
+            {
+                Autodesk.Revit.UI.TaskDialog.Show("Error", "Failed to initialize export context or exporter.");
+                return Result.Failed;
+            }
+
+            exporter.ShouldStopOnError = false;
+            exporter.IncludeGeometricObjects = false;
+            exporter.Export(exportView);
+            Autodesk.Revit.UI.TaskDialog.Show("Cesium GS", "View exported to glTF");
+
+            return Result.Succeeded;
         }
     }
 }
