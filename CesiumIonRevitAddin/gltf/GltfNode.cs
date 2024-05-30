@@ -1,16 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.gltf
 {
     internal class GltfNode
     {
-        public string name;
-        public int? mesh;
-        public List<double> rotation;
-        public List<double> scale;
-        public List<float> translation;
-        public List<int> children;
-        public GltfExtras extras;
+        [JsonProperty("name")]
+        public string Name { get; set; }
+        [JsonProperty("mesh")]
+        public int? Mesh { get; set; } = null;
+        [JsonProperty("rotation")]
+        public List<double> Rotation { get; set; }
+        [JsonProperty("scale")]
+        public List<double> Scale { get; set; }
+        [JsonProperty("translation")]
+        public List<float> Translation { get; set; }
+        [JsonProperty("children")]
+        public List<int> Children { get; set; }
+        [JsonProperty("extras")]
+        public GltfExtras Extras { get; set; }
+        // TODO: property
         public GltfExtensions extensions = new GltfExtensions();
     }
 }

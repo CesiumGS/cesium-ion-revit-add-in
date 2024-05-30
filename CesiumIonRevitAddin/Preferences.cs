@@ -12,9 +12,8 @@ namespace CesiumIonRevitAddin
         public bool materials = true;
         // public FormatEnum format = FormatEnum::gltf;
         // TODO: use user-defined vals
-        public bool normals = false;
+        public bool Normals { get; set; }
         public bool levels;
-        public bool batchId;
         public bool properties;
         public bool relocateTo0;
         public bool flipAxis = true;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Autodesk.Revit.DB;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,39 @@ namespace CesiumIonRevitAddin.Utils
                 }
             }
             return sb.ToString();
+        }
+        public static bool CanBeLockOrHidden(Element element, View view)
+        {
+            if (element.Category.CanAddSubcategory)
+            {
+                return true;
+            }
+            if (element.CanBeHidden(view))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static string CreateClassName(string categoryName, string familyName)
+        {
+            return categoryName + ": " + familyName;
+        }
+
+        public static float[] GetVec3MinMax(IEnumerable<float> vec3)
+        {
+            var xvalues = vec3.Where((val, idx) => idx % 3 == 0);
+            var yvalues = vec3.Where((val, idx) => idx % 3 == 1);
+            var zvalues = vec3.Where((val, idx) => idx % 3 == 2);
+
+            return new float[] { xvalues.Min(), xvalues.Max(), yvalues.Min(), yvalues.Max(), zvalues.Min(), zvalues.Max() };
+        }
+
+        public static int[] GetScalarMinMax(List<int> scalars)
+        {
+            if (scalars == null || scalars.Count == 0) return null;
+            return new int[] { scalars.Min(), scalars.Max() };
         }
     }
 }
