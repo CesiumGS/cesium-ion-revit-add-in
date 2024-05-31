@@ -54,10 +54,12 @@ namespace CesiumIonRevitAddin.Gltf
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
 
             var preferences = new Preferences(); // TODO: user user-defined preferences
-            rootNode = new GltfNode();
-            rootNode.Name = "rootNode";
-            rootNode.Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.flipAxis);
-            rootNode.Scale = new List<double> { 1.0, 1.0, 1.0 };
+            rootNode = new GltfNode
+            {
+                Name = "rootNode",
+                Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.flipAxis),
+                Scale = new List<double> { 1.0, 1.0, 1.0 }
+            };
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
 

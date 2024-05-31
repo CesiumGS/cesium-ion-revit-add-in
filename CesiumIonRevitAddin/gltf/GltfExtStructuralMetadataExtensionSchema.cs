@@ -14,6 +14,29 @@ namespace CesiumIonRevitAddin.Gltf
     {
         public SchemaType schema = new SchemaType();
 
+        public GltfExtStructuralMetadataExtensionSchema()
+        {
+            schema.Add("id", "customFromRevitDocument");
+            schema.Add("classes", new ClassesType()); // ignore IntelliSense
+
+            var elementClass = new ClassType();
+
+            var uniqueIdProperty = new PropertyType();
+            uniqueIdProperty.Add("name", "UniqueId");
+            uniqueIdProperty.Add("type", "STRING");
+            uniqueIdProperty.Add("required", false);
+            elementClass.Add("uniqueId", uniqueIdProperty);
+
+            var levelIdProperty = new PropertyType();
+            levelIdProperty.Add("name", "LevelId");
+            levelIdProperty.Add("type", "STRING");
+            levelIdProperty.Add("required", false);
+            elementClass.Add("levelId", levelIdProperty);
+
+            var classes = GetClasses();
+            classes.Add("element", elementClass);
+        }
+
         public void AddCategory(string categoryName)
         {
             var addedClass = AddClass(categoryName);
