@@ -139,4 +139,19 @@ namespace CesiumIonRevitAddin
             return Result.Succeeded;
         }
     }
+
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public class ConnectToIon : Autodesk.Revit.UI.IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            // var ionConnectionForm = new IonConnectionForm();
+            // ionConnectionForm.ShowDialog();
+            Autodesk.Revit.UI.TaskDialog.Show("xxxx", "Connecting to Cesium ion");
+            // CesiumNativeIonWrapper::Uploader::initializeAndAuthenticate();
+
+            return Result.Succeeded;
+        }
+    }
 }

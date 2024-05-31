@@ -110,4 +110,9 @@
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /Y /I "$(SolutionDir)\..\cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\$(Configuration)\*.dll" "$(TargetDir)"
+xcopy /Y /I "$(SolutionDir)\..\cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\$(Configuration)\*.pdb" "$(TargetDir)"
+</PostBuildEvent>
+  </PropertyGroup>
 </Project>
