@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using CesiumIonRevitAddin.Utils;
 
@@ -11,7 +10,7 @@ namespace CesiumIonRevitAddin.Gltf
     using PropertyType = Dictionary<string, object>;
     using PropertiesType = Dictionary<string, object>;
 
-    internal class GltfExtStructuralMetadataExtensionSchema
+    internal class GltfExtStructuralMetadataExtensionSchema : GltfExtensionSchema
     {
         public SchemaType schema = new SchemaType();
 
@@ -49,8 +48,10 @@ namespace CesiumIonRevitAddin.Gltf
             var gltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(className);
             if (!classes.ContainsKey(gltfName))
             {
-                gltfClass = new Dictionary<string, object>();
-                gltfClass.Add("name", className);
+                gltfClass = new Dictionary<string, object>
+                {
+                    { "name", className }
+                };
                 // TODO
                 //gltfClass->Add("properties", gcnew PropertiesType());
                 //PropertiesType^ properties = safe_cast<PropertiesType^>(gltfClass["properties"]);
@@ -64,9 +65,9 @@ namespace CesiumIonRevitAddin.Gltf
         public ClassType AddFamily(string categoryName, string familyName)
         {
             var className = Util.CreateClassName(categoryName, familyName);
-            var class_ = AddClass(className);
-            class_.Add("parent", Util.GetGltfName(categoryName));
-            return class_;
+            var addedClass = AddClass(className);
+            addedClass.Add("parent", Util.GetGltfName(categoryName));
+            return addedClass;
         }
 
         // see https://github.com/CesiumGS/glTF/blob/0dc2f8e299a26f3544d26d8aefbc893b08fc5037/extensions/2.0/Vendor/EXT_structural_metadata/schema/class.property.schema.json

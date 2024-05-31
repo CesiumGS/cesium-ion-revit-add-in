@@ -5,7 +5,6 @@ using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Export
 {
-
     public class MaterialCacheDTO
     {
         public MaterialCacheDTO(string materialName, string uniqueId)

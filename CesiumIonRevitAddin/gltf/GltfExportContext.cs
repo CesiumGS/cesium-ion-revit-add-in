@@ -1,13 +1,9 @@
 ﻿using Autodesk.Revit.DB;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Media.Media3D;
 using CesiumIonRevitAddin.Utils;
 using CesiumIonRevitAddin.Model;
+using System.Windows.Controls;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -28,8 +24,8 @@ namespace CesiumIonRevitAddin.Gltf
         bool cancelation;
         Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
         GltfNode rootNode;
-        GltfVersion gltfVersion = new GltfVersion();
-        GltfExtStructuralMetadataExtensionSchema extStructuralMetadata = new GltfExtStructuralMetadataExtensionSchema();
+        readonly GltfVersion gltfVersion = new GltfVersion();
+        // TODO: readonly?
         List<GltfAccessor> accessors = new List<GltfAccessor>();
         List<GltfBufferView> bufferViews = new List<GltfBufferView>();
         List<GltfBuffer> buffers = new List<GltfBuffer>();
@@ -40,8 +36,9 @@ namespace CesiumIonRevitAddin.Gltf
         IndexedDictionary<GltfMaterial> materials = new IndexedDictionary<GltfMaterial>();
         List<string> extensionsUsed = new List<string>();
         Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
+        GltfExtStructuralMetadataExtensionSchema extStructuralMetadata = new GltfExtStructuralMetadataExtensionSchema();
 
-        Document doc
+        Document Doc
         {
             get
             {
@@ -62,7 +59,7 @@ namespace CesiumIonRevitAddin.Gltf
             rootNode.Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.flipAxis);
             rootNode.Scale = new List<double> { 1.0, 1.0, 1.0 };
 
-            ProjectInfo projectInfo = doc.ProjectInformation;
+            ProjectInfo projectInfo = Doc.ProjectInformation;
 
             gltfVersion.extras.Add("Project Name", projectInfo.Name);
             gltfVersion.extras.Add("Project Number", projectInfo.Number);
@@ -75,14 +72,13 @@ namespace CesiumIonRevitAddin.Gltf
             gltfVersion.extras.Add("Issue Date", projectInfo.IssueDate);
             gltfVersion.extras.Add("Project Status", projectInfo.Status);
 
-            BindingMap bindingMap = doc.ParameterBindings;
+            BindingMap bindingMap = Doc.ParameterBindings;
             var iterator = bindingMap.ForwardIterator();
             while (iterator.MoveNext())
             {
                 var definition = iterator.Key;
                 // InstanceBinding and TypeBinding don't seem to have any additional members vs ELementBinding base class
                 var elementBinding = (ElementBinding)iterator.Current;
-
 
                 // Get parameter definition information
                 string paramDefinitionName = definition.Name;
@@ -124,8 +120,6 @@ namespace CesiumIonRevitAddin.Gltf
                     }
 
                     var categories = elementBinding.Categories;
-                    // String^ categoryNames = "";
-                    var categoryGltfNames = new List<string>();
                     foreach (var obj in categories)
                     {
                         var category = (Category)obj;
@@ -167,6 +161,17 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
+            rootNode.Translation = new List<float> { 0, 0, 0 };
+            rootNode.Children = new List<int>();
+            nodes.AddOrUpdateCurrent("rootNode", rootNode);
+
+            var defaultScene = new GltfScene();
+            defaultScene.Nodes.Add(0);
+            scenes.Add(defaultScene);
+
+            extensionsUsed.Add("EXT_structural_metadata");
+            extensions.Add("EXT_structural_metadata", extStructuralMetadata);
+
             return true;
         }
 
@@ -183,7 +188,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public bool IsCanceled()
         {
-            return cancelation; ;
+            return cancelation;
         }
 
         //public RenderNodeAction OnViewBegin(ViewNode node)
@@ -198,7 +203,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
-            element = doc.GetElement(elementId);
+            element = Doc.GetElement(elementId);
 
             // TODO: add actual user preferences
             var preferences = new Preferences();
@@ -239,7 +244,7 @@ namespace CesiumIonRevitAddin.Gltf
             var categoryName = element.Category != null ? element.Category.Name : "Undefined";
             var familyName = GetFamilyName(element);
             newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
-            newNode.extensions.EXT_structural_metadata.Class = Util.GetGltfName(
+            newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(
                 Util.CreateClassName(categoryName, familyName)
                 );
 
@@ -253,9 +258,9 @@ namespace CesiumIonRevitAddin.Gltf
             //newNode->extensions->EXT_structural_metadata->Properties->Add("testBuiltInCategory", element->Category->BuiltInCategory);
             //newNode->extensions->EXT_structural_metadata->Properties->Add("testSubElementCount", element->GetSubelements()->Count);
 
-            newNode.extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
-            newNode.extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
-            newNode.extensions.EXT_structural_metadata.Properties.Add("categoryName", Util.GetGltfName(categoryName));
+            newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
+            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
+            newNode.Extensions.EXT_structural_metadata.Properties.Add("categoryName", Util.GetGltfName(categoryName));
 
 
             // create a glTF property from any remaining Revit parameter not explicitly added above
@@ -264,9 +269,9 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 string propertyName = Util.GetGltfName(parameter.Definition.Name);
                 object paramValue = GetParameterValue(parameter);
-                if (paramValue != null && !newNode.extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                if (paramValue != null && !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
                 {
-                    newNode.extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                    newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
                 }
             }
 
@@ -356,7 +361,7 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences(); // TODO: use user-set preferences
             foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
             {
-                GltfBinaryData elementBinaryData = GLTFExportUtils.AddGeometryMeta(
+                GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
                     buffers,
                     accessors,
                     bufferViews,
@@ -388,7 +393,6 @@ namespace CesiumIonRevitAddin.Gltf
                 }
 
                 meshes.CurrentItem.Primitives.Add(meshPrimitive);
-
                 meshes.CurrentItem.Name = element.Name;
             }
         }
@@ -443,7 +447,63 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnRPC(RPCNode node)
         {
-            throw new NotImplementedException();
+            // TODO: use user-defined prefs
+            var preferences = new Preferences();
+
+            List<Autodesk.Revit.DB.Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
+
+            if (meshes.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var mesh in meshes)
+            {
+                int triangles = mesh.NumTriangles;
+                if (triangles == 0)
+                {
+                    continue;
+                }
+
+                MaterialUtils.SetMaterial(Doc, preferences, mesh, materials, true);
+
+                GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
+
+                for (int i = 0; i < triangles; i++)
+                {
+                    MeshTriangle triangle = mesh.get_Triangle(i);
+                    if (triangle == null)
+                    {
+                        continue;
+                    }
+
+                    var pts = new List<XYZ>(); // ignore IntelliSense
+                    pts.Add(triangle.get_Vertex(0));
+                    pts.Add(triangle.get_Vertex(1));
+                    pts.Add(triangle.get_Vertex(2));
+
+                    List<XYZ> ptsTransformed = new List<XYZ>(); // ignore IntelliSense
+                    if (isLink)
+                    {
+                        ptsTransformed = new List<XYZ>();
+                        foreach (XYZ p in pts)
+                        {
+                            ptsTransformed.Add(LinkOriginalTranformation.OfPoint(p));
+                        }
+                    }
+                    else
+                    {
+                        ptsTransformed = new List<XYZ>(pts);
+                    }
+
+                    GltfExportUtils.AddVerticesAndFaces(currentVertices.CurrentItem, currentGeometry.CurrentItem, ptsTransformed);
+
+                    if (preferences.Normals)
+                    {
+                        GltfExportUtils.AddRPCNormals(preferences, triangle, currentGeometry.CurrentItem);
+                    }
+                }
+            }
         }
 
         public void OnLight(LightNode node)
@@ -457,29 +517,26 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
             if (preferences.Materials)
             {
-                CesiumIonRevitAddin.Export.RevitMaterials.Export(node, doc, materials);
+                Export.RevitMaterials.Export(node, Doc, materials);
             }
         }
 
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
-
-            GLTFExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
+            GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             // populate current vertices vertex data and current geometry faces data
             var pts = polymeshTopology.GetPoints();
-            var transformedPoints = new List <XYZ>();
+            var transformedPoints = new List<XYZ>();
             foreach (XYZ p in pts)
             {
                 transformedPoints.Add(CurrentTransform.OfPoint(p));
             }
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
-    
-        {
-                foreach (var vertIndex in facet.GetVertices())
-    
             {
+                foreach (var vertIndex in facet.GetVertices())
+                {
                     XYZ transformedPoint = transformedPoints[vertIndex];
                     int vertexIndex = currentVertices.CurrentItem.AddVertex(new PointIntObject(transformedPoint));
                     currentGeometry.CurrentItem.Faces.Add(vertexIndex);
@@ -490,7 +547,7 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
             if (preferences.Normals)
             {
-                GLTFExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
         }
 
@@ -506,10 +563,8 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         bool skipElementFlag;
-
         bool isLink;
         Autodesk.Revit.DB.Transform LinkOriginalTranformation { get; set; }
-
         Autodesk.Revit.DB.Transform linkTransformation;
         IndexedDictionary<GeometryDataObject> currentGeometry;
         IndexedDictionary<VertexLookupIntObject> currentVertices;
@@ -542,10 +597,10 @@ namespace CesiumIonRevitAddin.Gltf
 
         string GetTypeNameIfApplicable(ElementId elementId)
         {
-            var element = doc.GetElement(elementId);
+            var element = Doc.GetElement(elementId);
             if (element == null) return "Element not found";
 
-            if (doc.GetElement(element.GetTypeId()) is ElementType elementType)
+            if (Doc.GetElement(element.GetTypeId()) is ElementType elementType)
             {
                 return elementType.Name;
             }

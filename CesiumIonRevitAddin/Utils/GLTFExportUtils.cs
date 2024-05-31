@@ -1,27 +1,33 @@
 ﻿using Autodesk.Revit.DB;
 using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Model;
-using Microsoft.SqlServer.Server;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media.Media3D;
-using System.Xml.Linq;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    internal class GLTFExportUtils
+    internal class GltfExportUtils
     {
+        const int DEF_COLOR = 250;
+        const string DEF_MATERIAL_NAME = "default";
+        public static GltfMaterial GetGLTFMaterial(List<GltfMaterial> gltfMaterials, Material material, bool doubleSided)
+        {
+            // search for an already existing material
+            var m = gltfMaterials.FirstOrDefault(x =>
+            x.PbrMetallicRoughness.BaseColorFactor[0] == material.Color.Red &&
+            x.PbrMetallicRoughness.BaseColorFactor[1] == material.Color.Green &&
+            x.PbrMetallicRoughness.BaseColorFactor[2] == material.Color.Blue && x.DoubleSided == doubleSided);
+
+            return m != null ? m : GltfExportUtils.CreateGltfMaterial(DEF_MATERIAL_NAME, 0, new Color(DEF_COLOR, DEF_COLOR, DEF_COLOR), doubleSided);
+        }
         public static GltfBinaryData AddGeometryMeta(
-    List<GltfBuffer> buffers,
-    List<GltfAccessor> accessors,
-    List<GltfBufferView> bufferViews,
-    GeometryDataObject geomData,
-    string name,
-    int elementId,
-    bool exportNormals)
+            List<GltfBuffer> buffers,
+            List<GltfAccessor> accessors,
+            List<GltfBufferView> bufferViews,
+            GeometryDataObject geomData,
+            string name,
+            int elementId,
+            bool exportNormals)
         {
             int byteOffset = 0;
 
@@ -124,5 +130,47 @@ namespace CesiumIonRevitAddin.Utils
             geomDataObj.AddOrUpdateCurrent(vertex_key, new GeometryDataObject());
             vertexIntObj.AddOrUpdateCurrent(vertex_key, new VertexLookupIntObject());
         }
+
+        public static void AddRPCNormals(Preferences preferences, MeshTriangle triangle, GeometryDataObject geomDataObj)
+        {
+            XYZ normal = GeometryUtils.GetNormal(triangle);
+
+            for (int j = 0; j < 3; j++)
+            {
+                geomDataObj.Normals.Add(normal.X);
+                geomDataObj.Normals.Add(normal.Y);
+                geomDataObj.Normals.Add(normal.Z);
+            }
+        }
+
+        public static void AddVerticesAndFaces(VertexLookupIntObject vertex, GeometryDataObject geometryDataObject, List<XYZ> pts)
+        {
+            var idx = vertex.AddVertex(new PointIntObject(pts[0]));
+            geometryDataObject.Faces.Add(idx);
+
+            var idx1 = vertex.AddVertex(new PointIntObject(pts[1]));
+            geometryDataObject.Faces.Add(idx1);
+
+            var idx2 = vertex.AddVertex(new PointIntObject(pts[2]));
+            geometryDataObject.Faces.Add(idx2);
+        }
+
+        public static GltfMaterial CreateGltfMaterial(string materialName, int materialOpacity, Color color, bool doubleSided)
+        {
+            var gltfMaterial = new GltfMaterial();
+            gltfMaterial.DoubleSided = doubleSided;
+            float opacity = 1 - (float)materialOpacity;
+            gltfMaterial.Name = materialName;
+            var pbr = new GltfPbr
+            {
+                BaseColorFactor = new List<float>(4) { color.Red / 255f, color.Green / 255f, color.Blue / 255f, opacity },
+                MetallicFactor = 0f,
+                RoughnessFactor = 1f
+            };
+            gltfMaterial.PbrMetallicRoughness = pbr;
+
+            return gltfMaterial;
+        }
+
     }
 }
