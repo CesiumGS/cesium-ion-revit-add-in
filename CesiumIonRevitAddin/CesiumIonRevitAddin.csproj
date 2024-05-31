@@ -59,13 +59,41 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Export\BinFile.cs" />
+    <Compile Include="Export\BufferConfig.cs" />
+    <Compile Include="Export\GltfJson.cs" />
+    <Compile Include="Export\RevitMaterials.cs" />
     <Compile Include="ExternalApplication.cs" />
-    <Compile Include="gltf\ExtStructuralMetadata.cs" />
-    <Compile Include="gltf\GltfExportContext.cs" />
-    <Compile Include="gltf\GltfExtensions.cs" />
-    <Compile Include="gltf\GltfExtras.cs" />
-    <Compile Include="gltf\GltfNode.cs" />
+    <Compile Include="Gltf\ExtStructuralMetadata.cs" />
+    <Compile Include="Export\FileExport.cs" />
+    <Compile Include="Gltf\Gltf.cs" />
+    <Compile Include="Gltf\GltfAccessor.cs" />
+    <Compile Include="Gltf\GltfAttribute.cs" />
+    <Compile Include="Gltf\GltfBinaryData.cs" />
+    <Compile Include="Gltf\GltfBuffer.cs" />
+    <Compile Include="Gltf\GltfBufferView.cs" />
+    <Compile Include="Gltf\GltfExportContext.cs" />
+    <Compile Include="Gltf\GltfExtensions.cs" />
+    <Compile Include="Gltf\GltfExtensionSchema.cs" />
+    <Compile Include="Gltf\GltfExtras.cs" />
+    <Compile Include="Gltf\GltfExtStructuralMetadataExtensionSchema.cs" />
+    <Compile Include="Gltf\GltfMaterial.cs" />
+    <Compile Include="Gltf\GltfMesh.cs" />
+    <Compile Include="Gltf\GltfMeshPrimitive.cs" />
+    <Compile Include="Gltf\GltfNode.cs" />
+    <Compile Include="Gltf\GltfPbr.cs" />
+    <Compile Include="Gltf\GltfScene.cs" />
+    <Compile Include="Gltf\GltfVersion.cs" />
+    <Compile Include="IndexedDictionary.cs" />
+    <Compile Include="Model\GeometryDataObject.cs" />
+    <Compile Include="Model\PointIntObject.cs" />
+    <Compile Include="Model\VertexLookupIntObject.cs" />
+    <Compile Include="Preferences.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Transform\ModelRotation.cs" />
+    <Compile Include="Utils\GltfBinaryDataUtils.cs" />
+    <Compile Include="Utils\GLTFExportUtils.cs" />
+    <Compile Include="Utils\Util.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CesiumIonRevit.addin" />

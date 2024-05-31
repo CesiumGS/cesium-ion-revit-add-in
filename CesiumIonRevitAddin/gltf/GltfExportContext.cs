@@ -9,7 +9,7 @@ using System.Windows.Media.Media3D;
 using CesiumIonRevitAddin.Utils;
 using CesiumIonRevitAddin.Model;
 
-namespace CesiumIonRevitAddin.gltf
+namespace CesiumIonRevitAddin.Gltf
 {
     internal class GltfExportContext : IPhotoRenderContext
     {
@@ -379,7 +379,7 @@ namespace CesiumIonRevitAddin.gltf
 
                 meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
 
-                if (preferences.materials)
+                if (preferences.Materials)
                 {
                     if (materials.Contains(materialKey))
                     {
@@ -393,34 +393,52 @@ namespace CesiumIonRevitAddin.gltf
             }
         }
 
-        public RenderNodeAction OnInstanceBegin(InstanceNode node)
+        public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
-            throw new NotImplementedException();
+            var transform = instanceNode.GetTransform();
+            var transformationMultiply = CurrentTransform.Multiply(transform);
+            transformStack.Push(transformationMultiply);
+
+            return RenderNodeAction.Proceed;
         }
 
         public void OnInstanceEnd(InstanceNode node)
         {
-            throw new NotImplementedException();
+            // Note: This method is invoked even for instances that were skipped.
+            transformStack.Pop();
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
         {
-            throw new NotImplementedException();
+            isLink = true;
+
+            documents.Add(node.GetDocument());
+
+            transformStack.Push(CurrentTransform.Multiply(linkTransformation));
+            LinkOriginalTranformation = new Autodesk.Revit.DB.Transform(CurrentTransform);
+
+            // We can either skip this instance or proceed with rendering it.
+            return RenderNodeAction.Proceed;
         }
 
         public void OnLinkEnd(LinkNode node)
         {
-            throw new NotImplementedException();
+            isLink = false;
+            // Note: This method is invoked even for instances that were skipped.
+            transformStack.Pop();
+
+            documents.RemoveAt(1); // remove the item added in OnLinkBegin
         }
 
         public RenderNodeAction OnFaceBegin(FaceNode node)
         {
-            throw new NotImplementedException();
+            // do nothing: This custom exporter is not set to export faces.
+            return RenderNodeAction.Proceed;
         }
 
         public void OnFaceEnd(FaceNode node)
         {
-            throw new NotImplementedException();
+            // no-op: This custom exporter is not set to export faces.
         }
 
         public void OnRPC(RPCNode node)
@@ -430,20 +448,68 @@ namespace CesiumIonRevitAddin.gltf
 
         public void OnLight(LightNode node)
         {
-            throw new NotImplementedException();
+            // this custom exporter is currently not exporting lights
         }
 
         public void OnMaterial(MaterialNode node)
         {
-            throw new NotImplementedException();
+            // TODO: user-defined parameters
+            var preferences = new Preferences();
+            if (preferences.Materials)
+            {
+                CesiumIonRevitAddin.Export.RevitMaterials.Export(node, doc, materials);
+            }
         }
 
-        public void OnPolymesh(PolymeshTopology node)
+        public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
-            throw new NotImplementedException();
+
+            GLTFExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
+
+            // populate current vertices vertex data and current geometry faces data
+            var pts = polymeshTopology.GetPoints();
+            var transformedPoints = new List <XYZ>();
+            foreach (XYZ p in pts)
+            {
+                transformedPoints.Add(CurrentTransform.OfPoint(p));
+            }
+
+            foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
+    
+        {
+                foreach (var vertIndex in facet.GetVertices())
+    
+            {
+                    XYZ transformedPoint = transformedPoints[vertIndex];
+                    int vertexIndex = currentVertices.CurrentItem.AddVertex(new PointIntObject(transformedPoint));
+                    currentGeometry.CurrentItem.Faces.Add(vertexIndex);
+                }
+            }
+
+            // TODO: use user-defined preferences
+            var preferences = new Preferences();
+            if (preferences.Normals)
+            {
+                GLTFExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
+            }
         }
 
-        bool skipElementFlag = false;
+        RenderNodeAction IExportContext.OnViewBegin(ViewNode node)
+        {
+            // do nothing
+            return RenderNodeAction.Proceed;
+        }
+
+        void IExportContext.OnViewEnd(ElementId elementId)
+        {
+            // do nothing
+        }
+
+        bool skipElementFlag;
+
+        bool isLink;
+        Autodesk.Revit.DB.Transform LinkOriginalTranformation { get; set; }
+
         Autodesk.Revit.DB.Transform linkTransformation;
         IndexedDictionary<GeometryDataObject> currentGeometry;
         IndexedDictionary<VertexLookupIntObject> currentVertices;
@@ -505,14 +571,13 @@ namespace CesiumIonRevitAddin.gltf
                     return null;
             }
         }
-        RenderNodeAction IExportContext.OnViewBegin(ViewNode node)
-        {
-            throw new NotImplementedException();
-        }
 
-        void IExportContext.OnViewEnd(ElementId elementId)
+        private Autodesk.Revit.DB.Transform CurrentTransform
         {
-            throw new NotImplementedException();
+            get
+            {
+                return transformStack.Peek();
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace CesiumIonRevitAddin.gltf
+namespace CesiumIonRevitAddin.Gltf
 {
     internal class GltfExtras
     {

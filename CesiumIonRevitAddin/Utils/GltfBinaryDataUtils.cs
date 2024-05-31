@@ -1,4 +1,4 @@
-﻿using CesiumIonRevitAddin.gltf;
+﻿using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Model;
 using System;
 using System.Collections.Generic;

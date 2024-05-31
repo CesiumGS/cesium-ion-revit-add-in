@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CesiumIonRevitAddin.gltf
+namespace CesiumIonRevitAddin.Gltf
 {
 
     /// <summary>
@@ -33,5 +33,20 @@ namespace CesiumIonRevitAddin.gltf
 
     internal struct Gltf
     {
+        public List<string> extensionsUsed;
+		public GltfVersion asset;
+		public List<GltfScene> scenes;
+		public List<GltfNode> nodes;
+		public List<GltfMesh> meshes;
+		public List<GltfBuffer> buffers;
+		public List<GltfBufferView> bufferViews;
+		public List<GltfAccessor> accessors;
+		public List<GltfMaterial> materials;
+		public Dictionary<string, GltfExtensionSchema> extensions;
+
+        public Gltf(Dictionary<string, GltfExtensionSchema> extensions) : this()
+        {
+            this.extensions = extensions;
+        }
     }
 }

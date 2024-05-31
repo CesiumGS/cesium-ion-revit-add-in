@@ -1,4 +1,4 @@
-﻿namespace CesiumIonRevitAddin.gltf
+﻿namespace CesiumIonRevitAddin.Gltf
 {
     internal class GltfExtensions
     {

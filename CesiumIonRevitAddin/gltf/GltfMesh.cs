@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using CesiumIonRevitAddin.gltf;
+using CesiumIonRevitAddin.Gltf;
 
-namespace CesiumIonRevitAddin.gltf
+namespace CesiumIonRevitAddin.Gltf
 {
     internal class GltfMesh
     {

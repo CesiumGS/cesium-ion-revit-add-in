@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CesiumIonRevitAddin.gltf
+namespace CesiumIonRevitAddin.Gltf
 {
     internal class IndexedDictionary<T>
     {
@@ -82,6 +82,26 @@ namespace CesiumIonRevitAddin.gltf
             {
                 throw new Exception($"Error getting the specified item {ex.Message}");
             }
+        }
+
+        public bool AddOrUpdateCurrentMaterial(string uuid, T elem, bool doubleSided)
+        {
+            if (!dict.ContainsKey(uuid))
+            {
+                List.Add(elem);
+                dict.Add(uuid, List.Count - 1);
+                CurrentKey = uuid;
+                return true;
+            }
+
+            CurrentKey = uuid;
+
+            if (GetElement(uuid) is GltfMaterial mat)
+            {
+                mat.DoubleSided = doubleSided;
+            }
+
+            return false;
         }
 
         readonly Dictionary<string, int> dict = new Dictionary<string, int>();

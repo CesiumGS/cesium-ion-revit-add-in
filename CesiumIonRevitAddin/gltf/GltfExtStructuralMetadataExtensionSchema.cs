@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using CesiumIonRevitAddin.Utils;
 
-namespace CesiumIonRevitAddin.gltf
+namespace CesiumIonRevitAddin.Gltf
 {
     using ClassesType = Dictionary<string, object>;
     using ClassType = Dictionary<string, object>;

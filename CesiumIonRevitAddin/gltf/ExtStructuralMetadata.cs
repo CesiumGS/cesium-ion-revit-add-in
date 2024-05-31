@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-
-namespace CesiumIonRevitAddin.gltf
+    
+namespace CesiumIonRevitAddin.Gltf
 {
     internal class ExtStructuralMetadata
     {

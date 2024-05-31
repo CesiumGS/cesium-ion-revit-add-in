@@ -7,7 +7,7 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using System.Reflection;
 using System.Xml.Linq;
-using CesiumIonRevitAddin.gltf;
+using CesiumIonRevitAddin.Gltf;
 
 namespace CesiumIonRevitAddin
 {

@@ -9,7 +9,7 @@ namespace CesiumIonRevitAddin
     internal class Preferences
     {
         // TODO: use user-defined vals
-        public bool materials = true;
+        public bool Materials { get; set; } = true;
         // public FormatEnum format = FormatEnum::gltf;
         // TODO: use user-defined vals
         public bool Normals { get; set; }
@@ -28,7 +28,7 @@ namespace CesiumIonRevitAddin
         //#endif
 
         // TODO: use user-defined vals
-        string path = "C:\\Scratch\\CesiumIonRevitAddin\\outfile";
-        string fileName = "outfile";
+        public string path = "C:\\Scratch\\CesiumIonRevitAddin\\outfile";
+        public string FileName { get; set; } = "outfile";
     }
 }
