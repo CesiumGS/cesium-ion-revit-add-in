@@ -57,7 +57,7 @@ namespace CesiumIonRevitAddin.Gltf
             rootNode = new GltfNode
             {
                 Name = "rootNode",
-                Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.flipAxis),
+                Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis),
                 Scale = new List<double> { 1.0, 1.0, 1.0 }
             };
 
@@ -209,8 +209,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             // TODO: add actual user preferences
             var preferences = new Preferences();
-            if (!CesiumIonRevitAddin.Utils.Util.CanBeLockOrHidden(element, view) ||
-                ((Level)element != null && !preferences.levels))
+            if (!Util.CanBeLockOrHidden(element, view) ||
+                (element is Level && !preferences.Levels))
             {
                 // Autodesk::Revit::UI::TaskDialog::Show("GLTFExportContext::OnElementBegin", "skipping element");
                 return RenderNodeAction.Skip;

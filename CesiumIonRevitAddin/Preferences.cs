@@ -13,11 +13,10 @@ namespace CesiumIonRevitAddin
         // public FormatEnum format = FormatEnum::gltf;
         // TODO: use user-defined vals
         public bool Normals { get; set; }
-        public bool levels;
-        public bool properties;
-        public bool relocateTo0;
-        public bool flipAxis = true;
-        public bool cesiumNativeExport = false;
+        public bool Levels { get; set; }
+        public bool Properties { get; set; }
+        public bool RelocateTo0 { get; set; }
+        public bool FlipAxis { get; set; } = true;
 
         // TODO: needed?
         //#if REVIT2019 || REVIT2020\
