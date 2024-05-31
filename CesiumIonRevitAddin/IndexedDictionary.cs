@@ -56,7 +56,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public bool AddOrUpdateCurrent(string uuid, T elem)
         {
-            if (dict.ContainsKey(uuid))
+            if (!dict.ContainsKey(uuid))
             {
                 this.List.Add(elem);
                 dict.Add(uuid, this.List.Count - 1);
