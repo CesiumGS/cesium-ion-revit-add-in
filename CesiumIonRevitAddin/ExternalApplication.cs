@@ -9,6 +9,8 @@ using System.Reflection;
 using System.Xml.Linq;
 using CesiumIonRevitAddin.Gltf;
 
+using System.Runtime.InteropServices;
+
 namespace CesiumIonRevitAddin
 {
     [Transaction(TransactionMode.Manual)]
@@ -144,14 +146,34 @@ namespace CesiumIonRevitAddin
     [Regeneration(RegenerationOption.Manual)]
     public class ConnectToIon : Autodesk.Revit.UI.IExternalCommand
     {
+        [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void printLog();
+        [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void initializeAndAuthenticate();
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             // var ionConnectionForm = new IonConnectionForm();
             // ionConnectionForm.ShowDialog();
-            Autodesk.Revit.UI.TaskDialog.Show("xxxx", "Connecting to Cesium ion");
-            // CesiumNativeIonWrapper::Uploader::initializeAndAuthenticate();
+            // Autodesk.Revit.UI.TaskDialog.Show("xxxx", "Connecting to Cesium ion");
+            initializeAndAuthenticate();
+            // printLog();
 
             return Result.Succeeded;
         }
     }
+
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public class UploadFile : Autodesk.Revit.UI.IExternalCommand
+    {
+        [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void upload();
+        
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            upload();
+            return Result.Succeeded;
+        }
+    };
 }
