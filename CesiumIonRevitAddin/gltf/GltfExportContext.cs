@@ -19,7 +19,7 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         View view;
-        Element element;
+        Autodesk.Revit.DB.Element element;
         List<Document> documents = new List<Document>();
         bool cancelation;
         Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
@@ -57,8 +57,7 @@ namespace CesiumIonRevitAddin.Gltf
             rootNode = new GltfNode
             {
                 Name = "rootNode",
-                Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis),
-                Scale = new List<double> { 1.0, 1.0, 1.0 }
+                Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis)
             };
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
@@ -163,7 +162,7 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            rootNode.Translation = new List<float> { 0, 0, 0 };
+            // rootNode.Translation = new List<float> { 0, 0, 0 };
             rootNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
 
@@ -193,26 +192,16 @@ namespace CesiumIonRevitAddin.Gltf
             return cancelation;
         }
 
-        //public RenderNodeAction OnViewBegin(ViewNode node)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public void OnViewEnd(ElementId elementId)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             element = Doc.GetElement(elementId);
 
             // TODO: add actual user preferences
             var preferences = new Preferences();
+
             if (!Util.CanBeLockOrHidden(element, view) ||
                 (element is Level && !preferences.Levels))
             {
-                // Autodesk::Revit::UI::TaskDialog::Show("GLTFExportContext::OnElementBegin", "skipping element");
                 return RenderNodeAction.Skip;
             }
 
@@ -320,7 +309,6 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnElementEnd(ElementId elementId)
         {
-            // Autodesk::Revit::UI::TaskDialog::Show("Cesium GS", "GLTFExportContext::OnElementEnd");
             if (currentVertices == null || currentVertices.List.Count == 0)
             {
                 return;
@@ -343,6 +331,7 @@ namespace CesiumIonRevitAddin.Gltf
                 Name = element.Name,
                 Primitives = new List<GltfMeshPrimitive>()
             };
+
             meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
 
             nodes.CurrentItem.Mesh = meshes.CurrentIndex;
@@ -411,7 +400,19 @@ namespace CesiumIonRevitAddin.Gltf
         public void OnInstanceEnd(InstanceNode node)
         {
             // Note: This method is invoked even for instances that were skipped.
-            transformStack.Pop();
+
+            var transform = transformStack.Pop();
+            if (!transform.IsIdentity)
+            {
+                var currentNode = nodes.CurrentItem;
+                currentNode.Matrix = new List<double>
+                {
+                    transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0.0,
+                    transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0.0,
+                    transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0.0,
+                    transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
+                };
+            }
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
@@ -527,20 +528,13 @@ namespace CesiumIonRevitAddin.Gltf
         {
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
-            // populate current vertices vertex data and current geometry faces data
             var pts = polymeshTopology.GetPoints();
-            var transformedPoints = new List<XYZ>();
-            foreach (XYZ p in pts)
-            {
-                transformedPoints.Add(CurrentTransform.OfPoint(p));
-            }
-
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
                 foreach (var vertIndex in facet.GetVertices())
                 {
-                    XYZ transformedPoint = transformedPoints[vertIndex];
-                    int vertexIndex = currentVertices.CurrentItem.AddVertex(new PointIntObject(transformedPoint));
+                    XYZ p = pts[vertIndex];
+                    int vertexIndex = currentVertices.CurrentItem.AddVertex(new PointIntObject(p));
                     currentGeometry.CurrentItem.Faces.Add(vertexIndex);
                 }
             }
