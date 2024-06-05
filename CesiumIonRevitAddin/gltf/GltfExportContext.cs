@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using CesiumIonRevitAddin.Utils;
 using CesiumIonRevitAddin.Model;
 using System.Windows.Controls;
+using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -200,8 +203,9 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
 
             if (!Util.CanBeLockOrHidden(element, view) ||
-                (element is Level && !preferences.Levels))
+                (element is Level))
             {
+                skipElementFlag = true;
                 return RenderNodeAction.Skip;
             }
 
@@ -311,6 +315,7 @@ namespace CesiumIonRevitAddin.Gltf
         {
             if (currentVertices == null || currentVertices.List.Count == 0)
             {
+                skipElementFlag = false;
                 return;
             }
 
@@ -322,6 +327,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (!Util.CanBeLockOrHidden(element, view))
             {
+                skipElementFlag = false;
                 return;
             }
 
@@ -332,59 +338,68 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-            meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
-
-            nodes.CurrentItem.Mesh = meshes.CurrentIndex;
-
-            // Add vertex data to currentGeometry for each geometry/material pairing
-            foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
+            //var hash = ComputeHash(newMesh);
+            //if (false && meshHashIndices.TryGetValue(hash, out var index))
+            //{
+            //    nodes.CurrentItem.Mesh = index;
+            //}
+            //else
             {
-                var vertices = currentGeometry.GetElement(kvp.Key).Vertices;
-                foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
+                meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
+
+                nodes.CurrentItem.Mesh = meshes.CurrentIndex;
+                // meshHashIndices.Add(hash, meshes.CurrentIndex);
+
+                // Add vertex data to currentGeometry for each geometry/material pairing
+                foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
                 {
-                    vertices.Add(p.Key.X);
-                    vertices.Add(p.Key.Y);
-                    vertices.Add(p.Key.Z);
-                }
-            }
-
-            // Convert currentGeometry objects into glTFMeshPrimitives
-            var preferences = new Preferences(); // TODO: use user-set preferences
-            foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
-            {
-                GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
-                    buffers,
-                    accessors,
-                    bufferViews,
-                    kvp.Value,
-                    kvp.Key,
-                    elementId.IntegerValue,
-                    preferences.Normals);
-
-                binaryFileData.Add(elementBinaryData);
-
-                var materialKey = kvp.Key.Split(UNDERSCORE)[1];
-                var meshPrimitive = new GltfMeshPrimitive();
-
-                meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
-
-                if (preferences.Normals)
-                {
-                    meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
-                }
-
-                meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
-
-                if (preferences.Materials)
-                {
-                    if (materials.Contains(materialKey))
+                    var vertices = currentGeometry.GetElement(kvp.Key).Vertices;
+                    foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
                     {
-                        meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
+                        vertices.Add(p.Key.X);
+                        vertices.Add(p.Key.Y);
+                        vertices.Add(p.Key.Z);
                     }
                 }
 
-                meshes.CurrentItem.Primitives.Add(meshPrimitive);
-                meshes.CurrentItem.Name = element.Name;
+                // Convert currentGeometry objects into glTFMeshPrimitives
+                var preferences = new Preferences(); // TODO: use user-set preferences
+                foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
+                {
+                    GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
+                        buffers,
+                        accessors,
+                        bufferViews,
+                        kvp.Value,
+                        kvp.Key,
+                        elementId.IntegerValue,
+                        preferences.Normals);
+
+                    binaryFileData.Add(elementBinaryData);
+
+                    var materialKey = kvp.Key.Split(UNDERSCORE)[1];
+                    var meshPrimitive = new GltfMeshPrimitive();
+
+                    meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
+
+                    if (preferences.Normals)
+                    {
+                        meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
+                    }
+
+                    meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
+
+                    if (preferences.Materials)
+                    {
+                        if (materials.Contains(materialKey))
+                        {
+                            meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
+                        }
+                    }
+
+                    meshes.CurrentItem.Primitives.Add(meshPrimitive);
+                    meshes.CurrentItem.Name = element.Name;
+                }
             }
         }
 
@@ -564,6 +579,7 @@ namespace CesiumIonRevitAddin.Gltf
         Autodesk.Revit.DB.Transform linkTransformation;
         IndexedDictionary<GeometryDataObject> currentGeometry;
         IndexedDictionary<VertexLookupIntObject> currentVertices;
+        Dictionary<string, int> meshHashIndices = new Dictionary<string, int>();
 
         string GetFamilyName(Element element)
         {
@@ -623,11 +639,32 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        private Autodesk.Revit.DB.Transform CurrentTransform
+        Autodesk.Revit.DB.Transform CurrentTransform
         {
             get
             {
                 return transformStack.Peek();
+            }
+        }
+
+        string ComputeHash(GltfMesh mesh)
+        {
+            var meshJson = JsonConvert.SerializeObject(mesh, Formatting.None, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+            using (var sha256 = SHA256.Create())
+            {
+                var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(meshJson));
+
+                // Convert byte array to a hex string
+                var hash = new StringBuilder();
+                foreach (var b in hashBytes)
+                {
+                    hash.Append(b.ToString("x2"));
+                }
+                return hash.ToString();
             }
         }
     }
