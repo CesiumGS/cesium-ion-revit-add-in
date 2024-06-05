@@ -12,9 +12,10 @@ namespace CesiumIonRevitAddin.Utils
     {
         const string VEC3_STR = "VEC3";
         const string POSITION_STR = "POSITION";
+        const string NORMAL_STR = "NORMALS";
         const string SCALAR_STR = "SCALAR";
         const string FACE_STR = "FACE";
-        const string BATCH_ID_STR = "BATCH_ID";
+        // const string BATCH_ID_STR = "BATCH_ID";
 
         public static int ExportVertices(int bufferIdx, int byteOffset, GeometryDataObject geomData,
             GltfBinaryData bufferData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors,
@@ -79,6 +80,38 @@ namespace CesiumIonRevitAddin.Utils
             accessors.Add(faceAccessor);
             binaryData.IndexAccessorIndex = accessors.Count - 1;
             return byteOffset + facesView.ByteLength;
+        }
+
+        public static int ExportNormals(int bufferIdx, int byteOffset, GeometryDataObject geomData, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
+        {
+            for (int i = 0; i < geomData.Normals.Count; i++)
+            {
+                binaryData.NormalBuffer.Add(Convert.ToSingle(geomData.Normals[i]));
+            }
+
+            // Get max and min for normal data
+            float[] normalMinMax = Util.GetVec3MinMax(binaryData.NormalBuffer);
+
+            // Add a normals (vec3) buffer view
+            int elementsPerNormal = 3;
+            int bytesPerNormalElement = 4;
+            int bytesPerNormal = elementsPerNormal * bytesPerNormalElement;
+            var normalsCount = geomData.Normals.Count;
+            int numVec3Normals = normalsCount / elementsPerNormal;
+            int sizeOfVec3ViewNormals = numVec3Normals * bytesPerNormal;
+            GltfBufferView vec3ViewNormals = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3ViewNormals, Targets.ARRAY_BUFFER, string.Empty);
+            bufferViews.Add(vec3ViewNormals);
+            int vec3ViewNormalsIdx = bufferViews.Count - 1;
+
+            // add a normals accessor
+            var count = normalsCount / elementsPerNormal;
+            var max = new List<float>(3) { normalMinMax[1], normalMinMax[3], normalMinMax[5] };
+            var min = new List<float>(3) { normalMinMax[0], normalMinMax[2], normalMinMax[4] };
+
+            var normalsAccessor = new GltfAccessor(vec3ViewNormalsIdx, 0, ComponentType.FLOAT, count, VEC3_STR, max, min, NORMAL_STR);
+            accessors.Add(normalsAccessor);
+            binaryData.NormalsAccessorIndex = accessors.Count - 1;
+            return byteOffset + vec3ViewNormals.ByteLength;
         }
     }
 }

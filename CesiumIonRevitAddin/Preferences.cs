@@ -12,7 +12,7 @@ namespace CesiumIonRevitAddin
         public bool Materials { get; set; } = true;
         // public FormatEnum format = FormatEnum::gltf;
         // TODO: use user-defined vals
-        public bool Normals { get; set; }
+        public bool Normals { get; set; } = true;
         public bool Levels { get; set; }
         public bool Properties { get; set; }
         public bool RelocateTo0 { get; set; }

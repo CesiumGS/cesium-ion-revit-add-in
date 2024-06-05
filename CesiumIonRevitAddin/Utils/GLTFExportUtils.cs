@@ -31,10 +31,9 @@ namespace CesiumIonRevitAddin.Utils
         {
             int byteOffset = 0;
 
-            // add a buffer
-            GltfBuffer buffer = new GltfBuffer
+            var buffer = new GltfBuffer
             {
-                Uri = name + BIN // Ignore IntelliSense
+                Uri = name + BIN
             };
             buffers.Add(buffer);
             int bufferIdx = buffers.Count - 1;
@@ -47,8 +46,7 @@ namespace CesiumIonRevitAddin.Utils
 
             if (exportNormals)
             {
-                // TODO
-                // byteOffset = GltfBinaryDataUtils.ExportNormals(bufferIdx, byteOffset, geomData, bufferData, bufferViews, accessors);
+                byteOffset = GltfBinaryDataUtils.ExportNormals(bufferIdx, byteOffset, geomData, bufferData, bufferViews, accessors);
             }
 
             byteOffset = GltfBinaryDataUtils.ExportFaces(bufferIdx, byteOffset, geomData, bufferData, bufferViews, accessors);
@@ -58,15 +56,15 @@ namespace CesiumIonRevitAddin.Utils
 
         static readonly string BIN = ".bin";
 
-        public static void AddNormals(Preferences preferences, Autodesk.Revit.DB.Transform transform, PolymeshTopology polymesh, List<double> normals)
+        public static void AddNormals(Preferences preferences, Autodesk.Revit.DB.Transform transform, PolymeshTopology polymeshTopology, List<double> normals)
         {
-            IList<XYZ> polymeshNormals = polymesh.GetNormals();
+            IList<XYZ> polymeshNormals = polymeshTopology.GetNormals();
 
-            switch (polymesh.DistributionOfNormals)
+            switch (polymeshTopology.DistributionOfNormals)
             {
                 case DistributionOfNormals.AtEachPoint:
                     {
-                        foreach (PolymeshFacet facet in polymesh.GetFacets())
+                        foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
                         {
                             var normalPoints = new List<XYZ>
                             {
@@ -77,7 +75,8 @@ namespace CesiumIonRevitAddin.Utils
 
                             foreach (var normalPoint in normalPoints)
                             {
-                                XYZ newNormalPoint = normalPoint;
+                                var newNormalPoint = normalPoint;
+                                newNormalPoint = newNormalPoint.Normalize();
 
                                 normals.Add(newNormalPoint.X);
                                 normals.Add(newNormalPoint.Y);
@@ -89,11 +88,12 @@ namespace CesiumIonRevitAddin.Utils
                     }
                 case DistributionOfNormals.OnePerFace:
                     {
-                        foreach (var facet in polymesh.GetFacets())
+                        foreach (var facet in polymeshTopology.GetFacets())
                         {
-                            foreach (var normal in polymesh.GetNormals())
+                            foreach (var normal in polymeshTopology.GetNormals())
                             {
                                 var newNormal = normal;
+                                newNormal = newNormal.Normalize();
 
                                 for (int j = 0; j < 3; j++)
                                 {
@@ -112,6 +112,7 @@ namespace CesiumIonRevitAddin.Utils
                         foreach (var normal in polymeshNormals)
                         {
                             var newNormal = transform.OfVector(normal);
+                            newNormal = newNormal.Normalize();
                             normals.Add(newNormal.X);
                             normals.Add(newNormal.Y);
                             normals.Add(newNormal.Z);
@@ -171,6 +172,5 @@ namespace CesiumIonRevitAddin.Utils
 
             return gltfMaterial;
         }
-
     }
 }
