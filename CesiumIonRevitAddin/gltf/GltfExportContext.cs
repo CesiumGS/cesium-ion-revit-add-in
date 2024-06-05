@@ -313,19 +313,10 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnElementEnd(ElementId elementId)
         {
-            if (currentVertices == null || currentVertices.List.Count == 0)
-            {
-                skipElementFlag = false;
-                return;
-            }
-
-            if (skipElementFlag)
-            {
-                skipElementFlag = false;
-                return;
-            }
-
-            if (!Util.CanBeLockOrHidden(element, view))
+            if (skipElementFlag || 
+                currentVertices == null || 
+                currentVertices.List.Count == 0 ||
+                !Util.CanBeLockOrHidden(element, view))
             {
                 skipElementFlag = false;
                 return;
@@ -338,17 +329,17 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-            //var hash = ComputeHash(newMesh);
-            //if (false && meshHashIndices.TryGetValue(hash, out var index))
-            //{
-            //    nodes.CurrentItem.Mesh = index;
-            //}
-            //else
+            var hash = ComputeHash(newMesh);
+            if (meshHashIndices.TryGetValue(hash, out var index))
+            {
+                nodes.CurrentItem.Mesh = index;
+            }
+            else
             {
                 meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
 
                 nodes.CurrentItem.Mesh = meshes.CurrentIndex;
-                // meshHashIndices.Add(hash, meshes.CurrentIndex);
+                meshHashIndices.Add(hash, meshes.CurrentIndex);
 
                 // Add vertex data to currentGeometry for each geometry/material pairing
                 foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
