@@ -4,6 +4,7 @@ using Newtonsoft.Json;
     
 namespace CesiumIonRevitAddin.Gltf
 {
+    // appended to nodes
     internal class ExtStructuralMetadata
     {
         [JsonProperty("class")]

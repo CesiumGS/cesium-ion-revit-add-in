@@ -63,6 +63,11 @@ namespace CesiumIonRevitAddin.Gltf
             return (PropertiesType) class_["properties"];
         }
 
+        public bool HasProperties(ClassType class_)
+        {
+            return class_.ContainsKey("properties");
+        }
+
         private ClassType AddClass(string className)
         {
             ClassesType classes = GetClasses();
@@ -149,6 +154,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         bool ClassHasProperty(ClassType class_, string propertyGltfName)
         {
+            if (!HasProperties(class_)) return false; // TODO: empty "properties" should be handled better
+
             var schemaProperties = GetProperties(class_);
             return schemaProperties.ContainsKey(propertyGltfName);
         }
