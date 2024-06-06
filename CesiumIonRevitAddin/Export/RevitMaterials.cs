@@ -128,18 +128,17 @@ namespace CesiumIonRevitAddin.Export
             var materialGltfName = Utils.Util.GetGltfName(material.Name);
             var classes = extStructuralMetadataSchema.GetClasses();
             Dictionary<string, object> classSchema;
-            Dictionary<string, object> classSchemaProperties;
+            Dictionary<string, object> classPropertiesSchema;
             if (classes.ContainsKey(materialGltfName))
             {
                 classSchema = extStructuralMetadataSchema.GetClass(materialGltfName);
-                classSchemaProperties = (Dictionary<string, object>)classSchema["properties"];
+                classPropertiesSchema = (Dictionary<string, object>)classSchema["properties"];
             }
             else
             {
-                classSchema = extStructuralMetadataSchema.AddClass(materialGltfName);
-                classSchemaProperties = new Dictionary<string, object>();
-                classSchema["properties"] = classSchemaProperties;
-                classSchema["class"] = materialGltfName;
+                classSchema = extStructuralMetadataSchema.AddClass(material.Name);
+                classPropertiesSchema = new Dictionary<string, object>();
+                classSchema["properties"] = classPropertiesSchema;
             }
 
             for (int i = 0; i < renderingAsset.Size; i++)
@@ -149,41 +148,30 @@ namespace CesiumIonRevitAddin.Export
                 {
                     string gltfPropertyName = Util.GetGltfName(propertyString.Name);
 
-                    // DEBUG
+                    // TODO: DEBUG
                     if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName)) {
                         gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyString.Value);
                     } else
                     {
+                        // TODO: why does this fire?
                         System.Diagnostics.Debug.WriteLine("Error: should not happen");
                     }
 
                     // add to schema
-                    if (extStructuralMetadataSchema.ClassHasProperty(classSchema, gltfPropertyName)) continue;
-
-                    if (!classSchemaProperties.ContainsKey(gltfPropertyName))
+                    if (!classPropertiesSchema.ContainsKey(gltfPropertyName))
                     {
-                        classSchemaProperties.Add(gltfPropertyName, new Dictionary<string, object>());
-                        var schemaProperty = (Dictionary<string, object>) classSchemaProperties[gltfPropertyName];
+                        classPropertiesSchema.Add(gltfPropertyName, new Dictionary<string, object>());
+                        var schemaProperty = (Dictionary<string, object>) classPropertiesSchema[gltfPropertyName];
 
-                        // name
                         if (!schemaProperty.ContainsKey("name"))
                         {
                             schemaProperty.Add("name", propertyString.Name);
-                        } else
-                        {
-                            System.Diagnostics.Debug.WriteLine("Error: should not happen");
                         }
 
-                        // type
+                        // TODO: more deeply investigate this way of handling the type
                         AssetPropertyType assetPropertyType = property.Type;
                         switch (assetPropertyType)
                         {
-                            //case AssetPropertyType.None:
-                            //    {
-                            //        // TODO
-                            //        schemaProperty.Add("type", "None");
-                            //        break;
-                            //    }
                             case AssetPropertyType.String:
                                 schemaProperty.Add("type", "STRING");
                                 break;
