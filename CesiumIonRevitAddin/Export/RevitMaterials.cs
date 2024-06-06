@@ -1,6 +1,7 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Visual;
 using CesiumIonRevitAddin.Gltf;
+using CesiumIonRevitAddin.Utils;
 using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Export
@@ -28,7 +29,10 @@ namespace CesiumIonRevitAddin.Export
         /// </summary>
         static Dictionary<ElementId, MaterialCacheDTO> MaterialNameContainer = new Dictionary<ElementId, MaterialCacheDTO>();
 
-        public static void Export(MaterialNode materialNode, Document doc, IndexedDictionary<GltfMaterial> materials)
+        public static void Export(MaterialNode materialNode, 
+            Document doc, 
+            IndexedDictionary<GltfMaterial> materials,
+            GltfExtStructuralMetadataExtensionSchema extStructuralMetadata)
         {
             ElementId id = materialNode.MaterialId;
             var gltfMaterial = new GltfMaterial();
@@ -41,16 +45,20 @@ namespace CesiumIonRevitAddin.Export
                 var material = doc.GetElement(materialNode.MaterialId) as Material;
                 if (material != null)
                 {
+                    var materialGltfName = Utils.Util.GetGltfName(material.Name);
+                    gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
+
                     ParameterSetIterator paramIterator = material.Parameters.ForwardIterator();
                     while (paramIterator.MoveNext())
                     {
                         var parameter = (Parameter) paramIterator.Current;
-                        string paramName = parameter.Definition.Name;
-                        string paramValue = GetParameterValueAsString(parameter);
+                        var paramName = parameter.Definition.Name;
+                        var paramValue = GetParameterValueAsString(parameter);
+                        var paramGltfName = Utils.Util.GetGltfName(paramName);
 
-                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramName))
+                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
                         {
-                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramName, paramValue);
+                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
                         }
                     }
                 }
@@ -59,7 +67,7 @@ namespace CesiumIonRevitAddin.Export
                 // note on getting textures: https://thebuildingcoder.typepad.com/blog/2017/10/material-texture-path.html
                 // ExtractAppearancePropertiesFromMaterial(material, doc, gltfMaterial);
 
-                ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial);
+                ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial, extStructuralMetadata);
 
                 string uniqueId;
                 if (!MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDTO materialElement))
@@ -101,7 +109,8 @@ namespace CesiumIonRevitAddin.Export
             }
         }
 
-        static void ExtractPropertyStringsFromMaterial(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial)
+        static void ExtractPropertyStringsFromMaterial(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial,
+            GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema)
         {
             if (!(doc.GetElement(material.AppearanceAssetId) is AppearanceAssetElement assetElement))
             {
@@ -116,14 +125,87 @@ namespace CesiumIonRevitAddin.Export
                 return;
             }
 
+            var materialGltfName = Utils.Util.GetGltfName(material.Name);
+            var classes = extStructuralMetadataSchema.GetClasses();
+            Dictionary<string, object> classSchema;
+            Dictionary<string, object> classSchemaProperties;
+            if (classes.ContainsKey(materialGltfName))
+            {
+                classSchema = extStructuralMetadataSchema.GetClass(materialGltfName);
+                classSchemaProperties = (Dictionary<string, object>)classSchema["properties"];
+            }
+            else
+            {
+                classSchema = extStructuralMetadataSchema.AddClass(materialGltfName);
+                classSchemaProperties = new Dictionary<string, object>();
+                classSchema["properties"] = classSchemaProperties;
+                classSchema["class"] = materialGltfName;
+            }
+
             for (int i = 0; i < renderingAsset.Size; i++)
             {
                 AssetProperty property = renderingAsset.Get(i);
                 if (property is AssetPropertyString propertyString)
                 {
-                    gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(propertyString.Name, propertyString.Value);
+                    string gltfPropertyName = Util.GetGltfName(propertyString.Name);
+
+                    // DEBUG
+                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName)) {
+                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyString.Value);
+                    } else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Error: should not happen");
+                    }
+
+                    // add to schema
+                    if (extStructuralMetadataSchema.ClassHasProperty(classSchema, gltfPropertyName)) continue;
+
+                    if (!classSchemaProperties.ContainsKey(gltfPropertyName))
+                    {
+                        classSchemaProperties.Add(gltfPropertyName, new Dictionary<string, object>());
+                        var schemaProperty = (Dictionary<string, object>) classSchemaProperties[gltfPropertyName];
+
+                        // name
+                        if (!schemaProperty.ContainsKey("name"))
+                        {
+                            schemaProperty.Add("name", propertyString.Name);
+                        } else
+                        {
+                            System.Diagnostics.Debug.WriteLine("Error: should not happen");
+                        }
+
+                        // type
+                        AssetPropertyType assetPropertyType = property.Type;
+                        switch (assetPropertyType)
+                        {
+                            //case AssetPropertyType.None:
+                            //    {
+                            //        // TODO
+                            //        schemaProperty.Add("type", "None");
+                            //        break;
+                            //    }
+                            case AssetPropertyType.String:
+                                schemaProperty.Add("type", "STRING");
+                                break;
+                            case AssetPropertyType.Integer:
+                                schemaProperty.Add("type", "SCALAR");
+                                schemaProperty.Add("componentType", "INT32");
+                                break;
+                            case AssetPropertyType.Float:
+                            case AssetPropertyType.Double1:
+                                schemaProperty.Add("type", "SCALAR");
+                                schemaProperty.Add("componentType", "FLOAT32");
+                                break;
+                            default:
+                                schemaProperty.Add("type", "TODO: OTHER");
+                                break;
+                        }
+
+                        schemaProperty.Add("required", GltfExtStructuralMetadataExtensionSchema.IsRequired(propertyString.Name));
+                    }
                 }
             }
+            System.Diagnostics.Debug.WriteLine("Finished adding properties");
         }
 
         static void SetMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)

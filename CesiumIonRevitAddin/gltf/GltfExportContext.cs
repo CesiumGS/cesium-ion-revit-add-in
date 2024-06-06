@@ -526,7 +526,9 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(node, Doc, materials);
+                System.Diagnostics.Debug.WriteLine("Starting material export");
+                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadata);
+                System.Diagnostics.Debug.WriteLine("Finishing material export");
             }
         }
 

@@ -68,7 +68,7 @@ namespace CesiumIonRevitAddin.Gltf
             return class_.ContainsKey("properties");
         }
 
-        private ClassType AddClass(string className)
+        public ClassType AddClass(string className)
         {
             ClassesType classes = GetClasses();
             var gltfClass = new Dictionary<string, object>();
@@ -152,7 +152,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        bool ClassHasProperty(ClassType class_, string propertyGltfName)
+        public bool ClassHasProperty(ClassType class_, string propertyGltfName)
         {
             if (!HasProperties(class_)) return false; // TODO: empty "properties" should be handled better
 
@@ -161,7 +161,7 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         static HashSet<string> requiredParameters;
-        static bool IsRequired(string categoryName)
+        public static bool IsRequired(string categoryName)
         {
             if (requiredParameters == null)
             {
