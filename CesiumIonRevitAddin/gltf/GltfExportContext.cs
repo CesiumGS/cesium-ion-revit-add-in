@@ -34,9 +34,14 @@ namespace CesiumIonRevitAddin.Gltf
         List<GltfBuffer> buffers = new List<GltfBuffer>();
         List<GltfBinaryData> binaryFileData = new List<GltfBinaryData>();
         List<GltfScene> scenes = new List<GltfScene>();
+
         IndexedDictionary<GltfNode> nodes = new IndexedDictionary<GltfNode>();
         IndexedDictionary<GltfMesh> meshes = new IndexedDictionary<GltfMesh>();
         IndexedDictionary<GltfMaterial> materials = new IndexedDictionary<GltfMaterial>();
+        IndexedDictionary<GltfImage> images = new IndexedDictionary<GltfImage>();
+        IndexedDictionary<GltfSampler> samplers = new IndexedDictionary<GltfSampler>();
+        IndexedDictionary<GltfTexture> textures = new IndexedDictionary<GltfTexture>();
+
         List<string> extensionsUsed = new List<string>();
         Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
         GltfExtStructuralMetadataExtensionSchema extStructuralMetadata = new GltfExtStructuralMetadataExtensionSchema();
@@ -187,7 +192,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             FileExport.Run(bufferViews, buffers, binaryFileData,
-                scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, gltfVersion);
+                scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, gltfVersion, images, textures, samplers);
         }
 
         public bool IsCanceled()
@@ -361,27 +366,27 @@ namespace CesiumIonRevitAddin.Gltf
                         buffers,
                         accessors,
                         bufferViews,
-                        kvp.Value,
+                        kvp.Value, // GeometryData
                         kvp.Key,
                         elementId.IntegerValue,
                         preferences.Normals);
 
                     binaryFileData.Add(elementBinaryData);
 
-                    var materialKey = kvp.Key.Split(UNDERSCORE)[1];
                     var meshPrimitive = new GltfMeshPrimitive();
-
                     meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
-
                     if (preferences.Normals)
                     {
                         meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
                     }
-
+                    if (currentGeometry.CurrentItem.TexCoords.Count > 0)
+                    {
+                        meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
+                    }
                     meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
-
                     if (preferences.Materials)
                     {
+                        var materialKey = kvp.Key.Split(UNDERSCORE)[1];
                         if (materials.Contains(materialKey))
                         {
                             meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
@@ -527,7 +532,7 @@ namespace CesiumIonRevitAddin.Gltf
             if (preferences.Materials)
             {
                 System.Diagnostics.Debug.WriteLine("Starting material export");
-                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadata);
+                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadata, samplers, images, textures);
                 System.Diagnostics.Debug.WriteLine("Finishing material export");
             }
         }
@@ -553,6 +558,8 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 GltfExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
+
+            GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
         }
 
         RenderNodeAction IExportContext.OnViewBegin(ViewNode node)

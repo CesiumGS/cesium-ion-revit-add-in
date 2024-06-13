@@ -10,9 +10,11 @@ namespace CesiumIonRevitAddin.Utils
 {
     internal class GltfBinaryDataUtils
     {
+        const string VEC2_STR = "VEC2";
         const string VEC3_STR = "VEC3";
         const string POSITION_STR = "POSITION";
         const string NORMAL_STR = "NORMALS";
+        const string TEXCOORD_STR = "TEXCOORD_0";
         const string SCALAR_STR = "SCALAR";
         const string FACE_STR = "FACE";
         // const string BATCH_ID_STR = "BATCH_ID";
@@ -36,7 +38,7 @@ namespace CesiumIonRevitAddin.Utils
             int numVec3 = geomData.Vertices.Count / elementsPerVertex;
             sizeOfVec3View = numVec3 * bytesPerVertex;
 
-            var vec3View = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3View, Targets.ARRAY_BUFFER, string.Empty);
+            var vec3View = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3View, Targets.ARRAY_BUFFER, "verts");
             bufferViews.Add(vec3View);
             int vec3ViewIdx = bufferViews.Count - 1;
 
@@ -68,7 +70,7 @@ namespace CesiumIonRevitAddin.Utils
             var bytesPerIndex = elementsPerIndex * bytesPerIndexElement;
             var numIndexes = geometryData.Faces.Count;
             var sizeOfIndexView = numIndexes * bytesPerIndex;
-            var facesView = new GltfBufferView(bufferIdx, byteOffset, sizeOfIndexView, Targets.ELEMENT_ARRAY_BUFFER, string.Empty);
+            var facesView = new GltfBufferView(bufferIdx, byteOffset, sizeOfIndexView, Targets.ELEMENT_ARRAY_BUFFER, "faces");
             bufferViews.Add(facesView);
             var facesViewIdx = bufferViews.Count - 1;
 
@@ -99,7 +101,7 @@ namespace CesiumIonRevitAddin.Utils
             var normalsCount = geomData.Normals.Count;
             int numVec3Normals = normalsCount / elementsPerNormal;
             int sizeOfVec3ViewNormals = numVec3Normals * bytesPerNormal;
-            GltfBufferView vec3ViewNormals = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3ViewNormals, Targets.ARRAY_BUFFER, string.Empty);
+            GltfBufferView vec3ViewNormals = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3ViewNormals, Targets.ARRAY_BUFFER, "normals");
             bufferViews.Add(vec3ViewNormals);
             int vec3ViewNormalsIdx = bufferViews.Count - 1;
 
@@ -112,6 +114,34 @@ namespace CesiumIonRevitAddin.Utils
             accessors.Add(normalsAccessor);
             binaryData.NormalsAccessorIndex = accessors.Count - 1;
             return byteOffset + vec3ViewNormals.ByteLength;
+        }
+        public static int ExportTexCoords(int bufferIdx, int byteOffset, GeometryDataObject geometryDataObject, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
+        {
+            int texCoordsCount = geometryDataObject.TexCoords.Count;
+            if (texCoordsCount == 0) return byteOffset;
+
+            for (int i = 0; i < texCoordsCount; i++) binaryData.TexCoordBuffer.Add(Convert.ToSingle(geometryDataObject.TexCoords[i]));
+
+            float[] maxMin = Util.GetVec2MinMax(binaryData.TexCoordBuffer);
+
+            // add a vec2 buffer view
+            int elementsPerTexcoord = 2;
+            int bytesPerElement = 4;
+            int bytesPerTexcoord = elementsPerTexcoord * bytesPerElement;
+            int numVec2TexCoords = texCoordsCount / elementsPerTexcoord;
+            int sizeOfVec2ViewTexCoords = numVec2TexCoords * bytesPerTexcoord;
+            GltfBufferView vec2ViewTexCoords = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec2ViewTexCoords, Targets.ARRAY_BUFFER, "texcoords_0");
+            bufferViews.Add(vec2ViewTexCoords);
+            int vec2ViewTexCoordsIdx = bufferViews.Count - 1;
+
+            // add the accessor
+            var count = texCoordsCount / elementsPerTexcoord;
+            var max = new List<float>(2) { maxMin[1], maxMin[3] };
+            var min = new List<float>(2) { maxMin[0], maxMin[2] };
+            var accessor = new GltfAccessor(vec2ViewTexCoordsIdx, 0, ComponentType.FLOAT, count, VEC2_STR, max, min, TEXCOORD_STR);
+            accessors.Add(accessor);
+            binaryData.TexCoordAccessorIndex = accessors.Count - 1;
+            return byteOffset + vec2ViewTexCoords.ByteLength;
         }
     }
 }

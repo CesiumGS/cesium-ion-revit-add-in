@@ -17,7 +17,10 @@ namespace CesiumIonRevitAddin.Export
             List<string> extensionsUsed,
             Dictionary<string, GltfExtensionSchema> extensions,
             Preferences preferences,
-            GltfVersion asset)
+            GltfVersion asset,
+            List<GltfImage> images,
+            List<GltfTexture> textures,
+            List<GltfSampler> samplers)
         {
             // Package the properties into a serializable container
             var model = new CesiumIonRevitAddin.Gltf.Gltf
@@ -29,7 +32,10 @@ namespace CesiumIonRevitAddin.Export
                 meshes = meshes,
                 buffers = buffers,
                 bufferViews = bufferViews,
-                accessors = accessors
+                accessors = accessors,
+                images = images,
+                textures = textures,
+                samplers = samplers
             };
 
             if (materials.Count > 0)

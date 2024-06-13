@@ -53,6 +53,14 @@ namespace CesiumIonRevitAddin.Utils
             return new float[] { xvalues.Min(), xvalues.Max(), yvalues.Min(), yvalues.Max(), zvalues.Min(), zvalues.Max() };
         }
 
+        public static float[] GetVec2MinMax(IEnumerable<float> vec2)
+        {
+            var xvalues = vec2.Where((val, idx) => idx % 2 == 0);
+            var yvalues = vec2.Where((val, idx) => idx % 2 == 1);
+
+            return new float[] { xvalues.Min(), xvalues.Max(), yvalues.Min(), yvalues.Max() };
+        }
+
         public static int[] GetScalarMinMax(List<int> scalars)
         {
             if (scalars == null || scalars.Count == 0) return null;

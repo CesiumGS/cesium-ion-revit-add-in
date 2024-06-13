@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Gltf
 {
+    // TODO: JsonProperty probably not needed
     internal class GltfBinaryData
     {
         [JsonProperty("name")]
@@ -17,6 +18,9 @@ namespace CesiumIonRevitAddin.Gltf
         [JsonProperty("normalBuffer")]
         public List<float> NormalBuffer { get; set; } = new List<float>();
 
+        [JsonProperty("texcoordsBuffer")]
+        public List<float> TexCoordBuffer { get; set; } = new List<float>();
+
         [JsonProperty("vertexAccessorIndex")]
         public int VertexAccessorIndex { get; set; }
 
@@ -25,5 +29,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         [JsonProperty("normalsAccessorIndex")]
         public int NormalsAccessorIndex { get; set; }
+
+        [JsonProperty("texcoordsAccessorIndex")]
+        public int TexCoordAccessorIndex { get; set; }
     }
 }

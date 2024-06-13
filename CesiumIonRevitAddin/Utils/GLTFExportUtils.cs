@@ -24,7 +24,7 @@ namespace CesiumIonRevitAddin.Utils
             List<GltfBuffer> buffers,
             List<GltfAccessor> accessors,
             List<GltfBufferView> bufferViews,
-            GeometryDataObject geomData,
+            GeometryDataObject geometryDataObject,
             string name,
             int elementId,
             bool exportNormals)
@@ -42,14 +42,17 @@ namespace CesiumIonRevitAddin.Utils
                 Name = buffer.Uri
             };
 
-            byteOffset = GltfBinaryDataUtils.ExportVertices(bufferIdx, byteOffset, geomData, bufferData, bufferViews, accessors, out int sizeOfVec3View, out int elementsPerVertex);
+            byteOffset = GltfBinaryDataUtils.ExportVertices(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors, out int sizeOfVec3View, out int elementsPerVertex);
 
             if (exportNormals)
             {
-                byteOffset = GltfBinaryDataUtils.ExportNormals(bufferIdx, byteOffset, geomData, bufferData, bufferViews, accessors);
+                byteOffset = GltfBinaryDataUtils.ExportNormals(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
             }
 
-            byteOffset = GltfBinaryDataUtils.ExportFaces(bufferIdx, byteOffset, geomData, bufferData, bufferViews, accessors);
+            byteOffset = GltfBinaryDataUtils.ExportTexCoords(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
+
+            byteOffset = GltfBinaryDataUtils.ExportFaces(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
+
 
             return bufferData;
         }
@@ -120,6 +123,32 @@ namespace CesiumIonRevitAddin.Utils
 
                         break;
                     }
+            }
+        }
+
+        public static void AddTexCoords(Preferences preferences, PolymeshTopology polymeshTopology, List<double> uvs)
+        {
+            IList<UV> polyMeshUvs = polymeshTopology.GetUVs();
+            //foreach (var uv in polyMeshUvs)
+            //{
+            //    uvs.Add(uv.U);
+            //    uvs.Add(uv.V);
+            //}
+
+
+            foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
+            {
+                var facetVertIndex = facet.V1;
+                uvs.Add(polyMeshUvs[facetVertIndex].U);
+                uvs.Add(polyMeshUvs[facetVertIndex].V);
+
+                facetVertIndex = facet.V2;
+                uvs.Add(polyMeshUvs[facetVertIndex].U);
+                uvs.Add(polyMeshUvs[facetVertIndex].V);
+
+                facetVertIndex = facet.V3;
+                uvs.Add(polyMeshUvs[facetVertIndex].U);
+                uvs.Add(polyMeshUvs[facetVertIndex].V);
             }
         }
 

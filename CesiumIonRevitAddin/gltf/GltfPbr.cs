@@ -13,5 +13,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         [JsonProperty("roughnessFactor")]
         public float RoughnessFactor { get; set; }
+
+        [JsonProperty("baseColorTexture")]
+        public GltfTextureInfo BaseColorTexture { get; set; }
     }
 }

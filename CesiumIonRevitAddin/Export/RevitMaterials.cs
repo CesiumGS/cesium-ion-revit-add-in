@@ -2,7 +2,14 @@
 using Autodesk.Revit.DB.Visual;
 using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Utils;
+using System.IO;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows.Controls;
+using Autodesk.Revit.UI;
+using Newtonsoft.Json.Linq;
+// using System.Windows.Media.Media3D;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -29,10 +36,34 @@ namespace CesiumIonRevitAddin.Export
         /// </summary>
         static Dictionary<ElementId, MaterialCacheDTO> MaterialNameContainer = new Dictionary<ElementId, MaterialCacheDTO>();
 
-        public static void Export(MaterialNode materialNode, 
-            Document doc, 
+        enum GltfBitmapType
+        {
+            baseColorTexture,
+            metallicRoughnessTexture,
+            normalTexture,
+            occlusionTexture,
+            emissiveTexture
+        }
+
+        struct BitmapInfo
+        {
+            readonly public string AbsolutePath;
+            readonly public GltfBitmapType GltfBitmapType;
+
+            public BitmapInfo(string absolutePath, GltfBitmapType gltfBitmapType)
+            {
+                AbsolutePath = absolutePath;
+                GltfBitmapType = gltfBitmapType;
+            }
+        }
+
+        public static void Export(MaterialNode materialNode,
+            Document doc,
             IndexedDictionary<GltfMaterial> materials,
-            GltfExtStructuralMetadataExtensionSchema extStructuralMetadata)
+            GltfExtStructuralMetadataExtensionSchema extStructuralMetadata,
+            IndexedDictionary<GltfSampler> samplers,
+            IndexedDictionary<GltfImage> images,
+            IndexedDictionary<GltfTexture> textures)
         {
             ElementId id = materialNode.MaterialId;
             var gltfMaterial = new GltfMaterial();
@@ -63,9 +94,54 @@ namespace CesiumIonRevitAddin.Export
                     }
                 }
 
-                // TODO: get textures
-                // note on getting textures: https://thebuildingcoder.typepad.com/blog/2017/10/material-texture-path.html
-                // ExtractAppearancePropertiesFromMaterial(material, doc, gltfMaterial);
+                var bitmapInfoCollection = GetBitmapInfo(doc, material);
+                if (bitmapInfoCollection.Any())
+                {
+                    if (!samplers.List.Any())
+                    {
+                        samplers.AddOrUpdateCurrent("defaultSampler", new GltfSampler());
+                    }
+
+                    foreach (BitmapInfo bitmapInfo in bitmapInfoCollection)
+                    {
+                        if (bitmapInfo.GltfBitmapType == GltfBitmapType.baseColorTexture)
+                        {
+
+                            // addOrUpdate to images IndexedDir
+                            // TODO: handle file-name collision
+                            var fileName = Path.GetFileName(bitmapInfo.AbsolutePath);
+                            bool addtexture = false;
+                            if (!images.Contains(fileName))
+                            {
+                                var preferences = new Preferences(); // TODO: preferences
+                                var copiedFilePath = Path.Combine(preferences.OutputDirectory, fileName);
+                                File.Copy(bitmapInfo.AbsolutePath, copiedFilePath, true);
+                                var gltfImage = new GltfImage
+                                {
+                                    Uri = fileName
+                                };
+                                images.AddOrUpdateCurrent(fileName, gltfImage);
+                                addtexture = true;
+                            }
+
+                            // addorUpdateTextures
+                            // TODO: assuming one-to-one mapping between glTF images and texture arrays
+                            if (addtexture)
+                            {
+                                var imageIndex = images.GetIndexFromUuid(fileName);
+                                var gltfTexture = new GltfTexture
+                                {
+                                    Sampler = 0,
+                                    Source = imageIndex
+                                };
+                                textures.AddOrUpdateCurrent(imageIndex.ToString(), gltfTexture);
+                            }
+                        }
+                        // switch {
+                        //    // TODO: add non-baseColor
+                        //}
+                    }
+                }
 
                 ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial, extStructuralMetadata);
 
@@ -90,6 +166,297 @@ namespace CesiumIonRevitAddin.Export
 
                 materials.AddOrUpdateCurrentMaterial(uniqueId, gltfMaterial, false);
             }
+        }
+
+        // see https://thebuildingcoder.typepad.com/blog/2017/10/material-texture-path.html
+        // and https://forums.autodesk.com/t5/revit-api-forum/parsing-assetproperty-to-unifiedbitmap/td-p/10406464
+        //static string GetMaterialBitmapPath(Document doc, Material material)
+        //{
+        //    string result = null;
+
+        //    // Find materials
+        //    FilteredElementCollector fec
+        //      = new FilteredElementCollector(doc);
+
+        //    fec.OfClass(typeof(Material));
+
+        //    IEnumerable<Material> targetMaterials
+        //      = fec.Cast<Material>().Where<Material>(mtl =>
+        //        mtl.Name == material.Name);
+
+        //    var targetMaterial = targetMaterials.FirstOrDefault();
+        //    if (targetMaterial != null)
+        //    {                
+        //        // Get appearance asset for read
+        //        ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
+
+        //        AppearanceAssetElement appearanceAssetElem = doc.GetElement(appearanceAssetId) as AppearanceAssetElement;
+        //        Asset asset = appearanceAssetElem.GetRenderingAsset();
+
+        //        // Walk through all first level assets to find 
+        //        // connected Bitmap properties.  Note: it is 
+        //        // possible to have multilevel connected 
+        //        // properties with Bitmaps in the leaf nodes.  
+        //        // So this would need to be recursive.
+        //        int size = asset.Size;
+        //        for (int assetIdx = 0; assetIdx < size; assetIdx++)
+        //        {
+        //            AssetProperty aProperty = asset[assetIdx];
+
+        //            if (aProperty.NumberOfConnectedProperties < 1)
+        //                continue;
+
+        //            // Find first connected property.  
+        //            // Should work for all current (2018) schemas.  
+        //            // Safer code would loop through all connected
+        //            // properties based on the number provided.
+
+        //            Asset connectedAsset = aProperty
+        //              .GetConnectedProperty(0) as Asset;
+
+        //            // We are only checking for bitmap connected assets. 
+        //            if (connectedAsset.Name == "UnifiedBitmapSchema")
+        //            {
+        //                // This line is 2018.1 & up because of the 
+        //                // property reference to UnifiedBitmap
+        //                // .UnifiedbitmapBitmap.  In earlier versions,
+        //                // you can still reference the string name 
+        //                // instead: "unifiedbitmap_Bitmap"
+
+        //                // AssetPropertyString path = connectedAsset[UnifiedBitmap.UnifiedbitmapBitmap] as AssetPropertyString;
+        //                AssetPropertyString path = connectedAsset.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+
+        //                // This will be a relative path to the built -in materials folder, additional 
+        //                // render appearance folder, or an absolute path.
+
+        //                result = System.String.Format("{0} from {2}: {1}", aProperty.Name, path.Value, connectedAsset.LibraryName);
+        //                result = GetAbsoluteMaterialPath(result);
+        //            }
+        //        }
+        //    }
+
+        //    return result;
+        //}
+
+        static List<BitmapInfo> GetBitmapInfo(Document document, Material material)
+        {
+            var attachedBitmapInfo = new List<BitmapInfo>();
+
+            // Find materials
+            FilteredElementCollector filteredElementCollector
+              = new FilteredElementCollector(document);
+            filteredElementCollector.OfClass(typeof(Material));
+            IEnumerable<Material> targetMaterials
+              = filteredElementCollector.Cast<Material>().Where<Material>(mtl =>
+                mtl.Name == material.Name);
+
+            var targetMaterial = targetMaterials.FirstOrDefault();
+            if (targetMaterial != null)
+            {
+                ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
+
+                AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
+                Asset asset = appearanceAssetElem.GetRenderingAsset();
+
+                // it seems asset.Name is typically a schema
+                var schema = asset.Name;
+
+                // schema list at https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_General_Material_Information_html
+                // apparently not exhaustive: missing "PrismOpaqueSchema"
+                // nevermind. "PrismOpaqueSchema" seems to have become "AdvancedOpaque"
+                switch (schema)
+                {
+                    case "PrismOpaqueSchema":
+                    case "AdvancedOpaque":
+                        attachedBitmapInfo = ParseSchemaPrismOpaqueSchema(asset);
+                        break;
+                    case "HardwoodSchema":
+                        attachedBitmapInfo = ParseSchemaHardwoodSchema(asset);
+                        break;
+                    default:
+                        throw new System.Exception("unknown material schema type: " + schema);
+                }
+            }
+
+            return attachedBitmapInfo;
+        }
+
+        // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
+        // first try via looping
+        //static List<BitmapInfo> ParseSchemaPrismOpaque(Asset renderingAsset)
+        //{
+        //    var bitmapInfoCollection = new List<BitmapInfo>();
+
+        //    // TODO: Walk through all first level assets to find 
+        //    // connected Bitmap properties.  Note: it is 
+        //    // possible to have multilevel connected 
+        //    // properties with Bitmaps in the leaf nodes.  
+        //    // So this would need to be recursive.
+        //    int size = renderingAsset.Size;
+        //    for (int assetIdx = 0; assetIdx < size; assetIdx++)
+        //    {
+        //        AssetProperty aProperty = renderingAsset[assetIdx];
+
+        //        if (aProperty.NumberOfConnectedProperties < 1)
+        //            continue;
+
+        //        // Find first connected property.  
+        //        // Should work for all current (2018) schemas.  
+        //        // Safer code would loop through all connected
+        //        // properties based on the number provided.
+
+        //        Asset connectedAsset = aProperty
+        //          .GetConnectedProperty(0) as Asset;
+
+        //        // We are only checking for bitmap connected assets. 
+        //        // TODO: other connected assets to handle?
+        //        if (connectedAsset.Name == "UnifiedBitmapSchema")
+        //        {
+        //            // This line is 2018.1 & up because of the 
+        //            // property reference to UnifiedBitmap
+        //            // .UnifiedbitmapBitmap.  In earlier versions,
+        //            // you can still reference the string name 
+        //            // instead: "unifiedbitmap_Bitmap"
+
+        //            // AssetPropertyString path = connectedAsset[UnifiedBitmap.UnifiedbitmapBitmap] as AssetPropertyString;
+        //            AssetPropertyString path = connectedAsset.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+
+        //            // This will be a relative path to the built-in materials folder, additional 
+        //            // render appearance folder, or an absolute path.
+
+        //            // TODO: clean up
+        //            var absPath = System.String.Format("{0} from {2}: {1}", aProperty.Name, path.Value, connectedAsset.LibraryName);
+        //            absPath = GetAbsoluteMaterialPath(absPath);
+        //            var gltfBitmapType = GetGltfBitmapType(aProperty);
+        //            if (gltfBitmapType != null)
+        //            {
+        //                var bitMapInfo = new BitmapInfo(absPath, gltfBitmapType.Value);
+        //                bitmapInfoCollection.Add(bitMapInfo);
+        //            }
+        //        }
+        //    }
+
+        //    return bitmapInfoCollection;
+        //}
+
+        // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
+        static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
+        {
+            var bitmapInfoCollection = new List<BitmapInfo>();
+
+            // AssetProperty baseColorProperty = renderingAsset.FindByName("opaque_albedo");
+            AssetProperty baseColorProperty = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
+            if (baseColorProperty.NumberOfConnectedProperties < 1) return bitmapInfoCollection;
+
+            var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
+            AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+            var absolutePath = GetAbsoluteMaterialPath(path.Value);
+            BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
+            bitmapInfoCollection.Add(baseColor);
+
+            // TODO: add normal maps, roughness, etc.
+
+            return bitmapInfoCollection;
+        }
+
+        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Protein_Hardwood_Schema_html
+        static List<BitmapInfo> ParseSchemaHardwoodSchema(Asset renderingAsset)
+        {
+            var bitmapInfoCollection = new List<BitmapInfo>();
+
+            // AssetProperty baseColorProperty = renderingAsset.FindByName("opaque_albedo");
+            AssetProperty baseColorProperty = renderingAsset.FindByName(Hardwood.HardwoodColor);
+            if (baseColorProperty.NumberOfConnectedProperties < 1) return bitmapInfoCollection;
+
+            var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
+            AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+            var absolutePath = GetAbsoluteMaterialPath(path.Value);
+            BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
+            bitmapInfoCollection.Add(baseColor);
+
+            // TODO: add normal maps, roughness, etc.
+
+            return bitmapInfoCollection;
+        }
+
+        static GltfBitmapType? GetGltfBitmapType(AssetProperty assetProperty)
+        {
+            if (assetProperty.Name == "surface_albedo")
+            {
+                return GltfBitmapType.baseColorTexture;
+            }
+
+            if (assetProperty.Name == "surface_roughness")
+            {
+                return GltfBitmapType.metallicRoughnessTexture;
+            }
+
+            return null;
+
+            // TODO: handle opacity
+            //if (assetProperty.Name == "opaque_albedo")
+            //{
+            //    return GltfBitmapType.???;
+            //}
+
+            // TODO: track down other strings for other glTF types:
+            // baseColorTexture
+            // metallicRoughnessTexture
+            // normalTexture
+            // occlusionTexture
+            // emissiveTexture
+
+        }
+
+        static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
+        {
+
+            string[] allPaths = relativeOrAbsolutePath.Split('|');
+            relativeOrAbsolutePath = allPaths[allPaths.Length - 1];
+
+            if (Path.IsPathRooted(relativeOrAbsolutePath) && File.Exists(relativeOrAbsolutePath))
+            {
+                return relativeOrAbsolutePath;
+            }
+
+            string[] possibleBasePaths = {
+                @"C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures",
+                @"C:\Program Files\Common Files\Autodesk Shared\Materials\Textures",
+                GetAdditionalRenderAppearancePath()  // Paths from Revit.ini
+            };
+
+            foreach (var basePath in possibleBasePaths)
+            {
+                if (!string.IsNullOrEmpty(basePath))
+                {
+                    string fullPath = Path.Combine(basePath, relativeOrAbsolutePath);
+                    if (File.Exists(fullPath))
+                    {
+                        return fullPath;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        static string GetAdditionalRenderAppearancePath()
+        {
+            // Path to Revit.ini file - adjust based on actual location and Revit version
+            string revitIniPath = @"C:\Users\[Username]\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2021\Revit.ini";
+            if (System.IO.File.Exists(revitIniPath))
+            {
+                // Read the .ini file and extract the path
+                var lines = System.IO.File.ReadAllLines(revitIniPath);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("AdditionalRenderAppearancePath="))
+                    {
+                        return line.Split('=')[1].Trim();
+                    }
+                }
+            }
+            return null;
         }
 
         static string GetParameterValueAsString(Parameter parameter)

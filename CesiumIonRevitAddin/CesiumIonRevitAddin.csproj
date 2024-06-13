@@ -77,12 +77,16 @@
     <Compile Include="Gltf\GltfExtensionSchema.cs" />
     <Compile Include="Gltf\GltfExtras.cs" />
     <Compile Include="Gltf\GltfExtStructuralMetadataExtensionSchema.cs" />
+    <Compile Include="Gltf\GltfImage.cs" />
     <Compile Include="Gltf\GltfMaterial.cs" />
     <Compile Include="Gltf\GltfMesh.cs" />
     <Compile Include="Gltf\GltfMeshPrimitive.cs" />
     <Compile Include="Gltf\GltfNode.cs" />
     <Compile Include="Gltf\GltfPbr.cs" />
+    <Compile Include="Gltf\GltfSampler.cs" />
     <Compile Include="Gltf\GltfScene.cs" />
+    <Compile Include="Gltf\GltfTexture.cs" />
+    <Compile Include="Gltf\GltfTextureInfo.cs" />
     <Compile Include="Gltf\GltfVersion.cs" />
     <Compile Include="IndexedDictionary.cs" />
     <Compile Include="Model\GeometryDataObject.cs" />

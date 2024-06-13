@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,14 @@ namespace CesiumIonRevitAddin
 
         // TODO: use user-defined vals
         public string path = "C:\\Scratch\\CesiumIonRevitAddin\\outfile";
+        public string OutputDirectory
+        {
+            get
+            {
+                return Path.GetDirectoryName(path);
+            }
+        }
+
         public string FileName { get; set; } = "outfile";
     }
 }

@@ -26,6 +26,11 @@ namespace CesiumIonRevitAddin.Export
                         }
                     }
 
+                    for (int i = 0; i < binaryData.TexCoordBuffer.Count; i++)
+                    {
+                        writer.Write((float)binaryData.TexCoordBuffer[i]);
+                    }
+
                     for (int i = 0; i < binaryData.IndexBuffer.Count; i++)
                     {
                         writer.Write((int)binaryData.IndexBuffer[i]);
