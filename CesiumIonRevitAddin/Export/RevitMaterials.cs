@@ -63,7 +63,8 @@ namespace CesiumIonRevitAddin.Export
             GltfExtStructuralMetadataExtensionSchema extStructuralMetadata,
             IndexedDictionary<GltfSampler> samplers,
             IndexedDictionary<GltfImage> images,
-            IndexedDictionary<GltfTexture> textures)
+            IndexedDictionary<GltfTexture> textures,
+            ref bool materialHasTexture)
         {
             ElementId id = materialNode.MaterialId;
             var gltfMaterial = new GltfMaterial();
@@ -94,54 +95,6 @@ namespace CesiumIonRevitAddin.Export
                     }
                 }
 
-                var bitmapInfoCollection = GetBitmapInfo(doc, material);
-                if (bitmapInfoCollection.Any())
-                {
-                    if (!samplers.List.Any())
-                    {
-                        samplers.AddOrUpdateCurrent("defaultSampler", new GltfSampler());
-                    }
-
-                    foreach (BitmapInfo bitmapInfo in bitmapInfoCollection)
-                    {
-                        if (bitmapInfo.GltfBitmapType == GltfBitmapType.baseColorTexture)
-                        {
-
-                            // addOrUpdate to images IndexedDir
-                            // TODO: handle file-name collision
-                            var fileName = Path.GetFileName(bitmapInfo.AbsolutePath);
-                            bool addtexture = false;
-                            if (!images.Contains(fileName))
-                            {
-                                var preferences = new Preferences(); // TODO: preferences
-                                var copiedFilePath = Path.Combine(preferences.OutputDirectory, fileName);
-                                File.Copy(bitmapInfo.AbsolutePath, copiedFilePath, true);
-                                var gltfImage = new GltfImage
-                                {
-                                    Uri = fileName
-                                };
-                                images.AddOrUpdateCurrent(fileName, gltfImage);
-                                addtexture = true;
-                            }
-
-                            // addorUpdateTextures
-                            // TODO: assuming one-to-one mapping between glTF images and texture arrays
-                            if (addtexture)
-                            {
-                                var imageIndex = images.GetIndexFromUuid(fileName);
-                                var gltfTexture = new GltfTexture
-                                {
-                                    Sampler = 0,
-                                    Source = imageIndex
-                                };
-                                textures.AddOrUpdateCurrent(imageIndex.ToString(), gltfTexture);
-                            }
-                        }
-                        // switch {
-                        //    // TODO: add non-baseColor
-                        //}
-                    }
-                }
 
                 ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial, extStructuralMetadata);
 
@@ -163,6 +116,60 @@ namespace CesiumIonRevitAddin.Export
 
                 var pbr = new GltfPbr();
                 SetMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
+
+                var bitmapInfoCollection = GetBitmapInfo(doc, material);
+                materialHasTexture = bitmapInfoCollection.Any();
+                if (materialHasTexture)
+                {
+                    if (!samplers.List.Any())
+                    {
+                        samplers.AddOrUpdateCurrent("defaultSampler", new GltfSampler());
+                    }
+
+                    foreach (BitmapInfo bitmapInfo in bitmapInfoCollection)
+                    {
+                        if (bitmapInfo.GltfBitmapType == GltfBitmapType.baseColorTexture)
+                        {
+                            // addOrUpdate to images IndexedDir
+                            // TODO: handle file-name collision
+                            var fileName = Path.GetFileName(bitmapInfo.AbsolutePath);
+                            int imageIndex;
+                            if (images.Contains(fileName))
+                            {
+                                imageIndex = images.GetIndexFromUuid(fileName);
+                            }
+                            else
+                            {
+                                var preferences = new Preferences(); // TODO: preferences
+                                var copiedFilePath = Path.Combine(preferences.OutputDirectory, fileName);
+                                File.Copy(bitmapInfo.AbsolutePath, copiedFilePath, true);
+                                var gltfImage = new GltfImage
+                                {
+                                    Uri = fileName
+                                };
+                                images.AddOrUpdateCurrent(fileName, gltfImage);
+
+                                // TODO: assuming one-to-one mapping between glTF images and texture arrays
+                                imageIndex = images.GetIndexFromUuid(fileName);
+                                var gltfTexture = new GltfTexture
+                                {
+                                    Sampler = 0,
+                                    Source = imageIndex
+                                };
+                                textures.AddOrUpdateCurrent(fileName, gltfTexture);
+                            }
+
+                            gltfMaterial.PbrMetallicRoughness.BaseColorTexture = new GltfTextureInfo
+                            {
+                                Index = imageIndex,
+                                TexCoord = 0
+                            };
+                        }
+                        // switch {
+                        //    // TODO: add non-baseColor
+                        //}
+                    }
+                }
 
                 materials.AddOrUpdateCurrentMaterial(uniqueId, gltfMaterial, false);
             }

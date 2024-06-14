@@ -362,12 +362,14 @@ namespace CesiumIonRevitAddin.Gltf
                 var preferences = new Preferences(); // TODO: use user-set preferences
                 foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
                 {
+                    var name = kvp.Key;
+                    var geometryDataObject = kvp.Value;
                     GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
                         buffers,
                         accessors,
                         bufferViews,
-                        kvp.Value, // GeometryData
-                        kvp.Key,
+                        geometryDataObject,
+                        name,
                         elementId.IntegerValue,
                         preferences.Normals);
 
@@ -379,9 +381,9 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
                     }
-                    if (currentGeometry.CurrentItem.TexCoords.Count > 0)
-                    {
-                        meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
+                    if (elementBinaryData.TexCoordBuffer.Count > 0)
+                        {
+                            meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
                     }
                     meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
                     if (preferences.Materials)
@@ -527,12 +529,13 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnMaterial(MaterialNode node)
         {
+            materialHasTexture = false;
             // TODO: user-defined parameters
             var preferences = new Preferences();
             if (preferences.Materials)
             {
                 System.Diagnostics.Debug.WriteLine("Starting material export");
-                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadata, samplers, images, textures);
+                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
                 System.Diagnostics.Debug.WriteLine("Finishing material export");
             }
         }
@@ -559,7 +562,7 @@ namespace CesiumIonRevitAddin.Gltf
                 GltfExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
-            GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
+            if (materialHasTexture) GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
         }
 
         RenderNodeAction IExportContext.OnViewBegin(ViewNode node)
@@ -580,6 +583,7 @@ namespace CesiumIonRevitAddin.Gltf
         IndexedDictionary<GeometryDataObject> currentGeometry;
         IndexedDictionary<VertexLookupIntObject> currentVertices;
         Dictionary<string, int> meshHashIndices = new Dictionary<string, int>();
+        bool materialHasTexture;
 
         string GetFamilyName(Element element)
         {
