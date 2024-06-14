@@ -1,6 +1,7 @@
 ﻿using CesiumIonRevitAddin.Gltf;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -32,11 +33,14 @@ namespace CesiumIonRevitAddin.Export
                 meshes = meshes,
                 buffers = buffers,
                 bufferViews = bufferViews,
-                accessors = accessors,
-                images = images,
-                textures = textures,
-                samplers = samplers
+                accessors = accessors
             };
+
+            if (images.Any()) {
+                model.images = images;
+                model.textures = textures;
+                model.samplers = samplers;
+            }
 
             if (materials.Count > 0)
             {

@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Security.Policy;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -318,8 +319,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnElementEnd(ElementId elementId)
         {
-            if (skipElementFlag || 
-                currentVertices == null || 
+            if (skipElementFlag ||
+                currentVertices == null ||
                 currentVertices.List.Count == 0 ||
                 !Util.CanBeLockOrHidden(element, view))
             {
@@ -334,70 +335,81 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-            var hash = ComputeHash(newMesh);
-            if (meshHashIndices.TryGetValue(hash, out var index))
+            //var hash = ComputeHash(newMesh);
+            //if (meshHashIndices.TryGetValue(hash, out var index))
+            //{
+            //    nodes.CurrentItem.Mesh = index;
+            //}
+            //else
+            //{
+            //meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
+
+            //nodes.CurrentItem.Mesh = meshes.CurrentIndex;
+            //meshHashIndices.Add(hash, meshes.CurrentIndex);
+
+            // Add vertex data to currentGeometry for each geometry/material pairing
+            foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
+            {
+                var vertices = currentGeometry.GetElement(kvp.Key).Vertices;
+                foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
+                {
+                    vertices.Add(p.Key.X);
+                    vertices.Add(p.Key.Y);
+                    vertices.Add(p.Key.Z);
+                }
+            }
+
+            // Convert currentGeometry objects into glTFMeshPrimitives
+            var preferences = new Preferences(); // TODO: use user-set preferences
+            foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
+            {
+                var name = kvp.Key;
+                var geometryDataObject = kvp.Value;
+                GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
+                    buffers,
+                    accessors,
+                    bufferViews,
+                    geometryDataObject,
+                    name,
+                    elementId.IntegerValue,
+                    preferences.Normals);
+
+                binaryFileData.Add(elementBinaryData);
+
+                var meshPrimitive = new GltfMeshPrimitive();
+                meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
+                if (preferences.Normals)
+                {
+                    meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
+                }
+                if (elementBinaryData.TexCoordBuffer.Count > 0)
+                {
+                    meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
+                }
+                meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
+                if (preferences.Materials)
+                {
+                    var materialKey = kvp.Key.Split(UNDERSCORE)[1];
+                    if (materials.Contains(materialKey))
+                    {
+                        meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
+                    }
+                }
+
+                newMesh.Primitives.Add(meshPrimitive);
+            }
+
+            var meshHash = ComputeHash(newMesh);
+            if (meshHashIndices.TryGetValue(meshHash, out var index))
             {
                 nodes.CurrentItem.Mesh = index;
             }
             else
             {
                 meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
-
                 nodes.CurrentItem.Mesh = meshes.CurrentIndex;
-                meshHashIndices.Add(hash, meshes.CurrentIndex);
-
-                // Add vertex data to currentGeometry for each geometry/material pairing
-                foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
-                {
-                    var vertices = currentGeometry.GetElement(kvp.Key).Vertices;
-                    foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
-                    {
-                        vertices.Add(p.Key.X);
-                        vertices.Add(p.Key.Y);
-                        vertices.Add(p.Key.Z);
-                    }
-                }
-
-                // Convert currentGeometry objects into glTFMeshPrimitives
-                var preferences = new Preferences(); // TODO: use user-set preferences
-                foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
-                {
-                    var name = kvp.Key;
-                    var geometryDataObject = kvp.Value;
-                    GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
-                        buffers,
-                        accessors,
-                        bufferViews,
-                        geometryDataObject,
-                        name,
-                        elementId.IntegerValue,
-                        preferences.Normals);
-
-                    binaryFileData.Add(elementBinaryData);
-
-                    var meshPrimitive = new GltfMeshPrimitive();
-                    meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
-                    if (preferences.Normals)
-                    {
-                        meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
-                    }
-                    if (elementBinaryData.TexCoordBuffer.Count > 0)
-                        {
-                            meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
-                    }
-                    meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
-                    if (preferences.Materials)
-                    {
-                        var materialKey = kvp.Key.Split(UNDERSCORE)[1];
-                        if (materials.Contains(materialKey))
-                        {
-                            meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
-                        }
-                    }
-
-                    meshes.CurrentItem.Primitives.Add(meshPrimitive);
-                    meshes.CurrentItem.Name = element.Name;
-                }
+                meshes.CurrentItem.Name = newMesh.Name;
+                meshHashIndices.Add(meshHash, meshes.CurrentIndex);
             }
         }
 
