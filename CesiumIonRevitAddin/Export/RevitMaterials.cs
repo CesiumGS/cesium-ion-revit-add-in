@@ -11,8 +11,14 @@ using Autodesk.Revit.UI;
 using Newtonsoft.Json.Linq;
 // using System.Windows.Media.Media3D;
 
-namespace CesiumIonRevitAddin.Export
-{
+namespace CesiumIonRevitAddin.Export { 
+
+    struct XY
+    {
+        public double X;
+        public double Y;
+    }
+
     public class MaterialCacheDTO
     {
         public MaterialCacheDTO(string materialName, string uniqueId)
@@ -45,15 +51,37 @@ namespace CesiumIonRevitAddin.Export
             emissiveTexture
         }
 
+        //struct BitmapInfo
+        //{
+        //    readonly public string AbsolutePath;
+        //    readonly public GltfBitmapType GltfBitmapType;
+        //    public float[] Offset { get; set; }
+
+        //    public BitmapInfo(string absolutePath, GltfBitmapType gltfBitmapType)
+        //    {
+        //        AbsolutePath = absolutePath;
+        //        GltfBitmapType = gltfBitmapType;
+
+        //    }
+        //}
+
+
+
+
         struct BitmapInfo
         {
-            readonly public string AbsolutePath;
-            readonly public GltfBitmapType GltfBitmapType;
+            public readonly string AbsolutePath;
+            public readonly GltfBitmapType GltfBitmapType;
+            public XY? Offset;
+            public double? Rotation;
+            public XY? Scale;
 
             public BitmapInfo(string absolutePath, GltfBitmapType gltfBitmapType)
             {
                 AbsolutePath = absolutePath;
                 GltfBitmapType = gltfBitmapType;
+                Offset = Scale = null;
+                Rotation = null;
             }
         }
 
@@ -77,6 +105,12 @@ namespace CesiumIonRevitAddin.Export
                 var material = doc.GetElement(materialNode.MaterialId) as Material;
                 if (material != null)
                 {
+                    if (Logger.Enabled)
+                    {
+                        var materialName = material.Name;
+                        Logger.Instance.Log("Starting Export: " + materialName);
+                    }
+
                     var materialGltfName = Utils.Util.GetGltfName(material.Name);
                     gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
 
@@ -94,7 +128,6 @@ namespace CesiumIonRevitAddin.Export
                         }
                     }
                 }
-
 
                 ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial, extStructuralMetadata);
 
@@ -164,6 +197,19 @@ namespace CesiumIonRevitAddin.Export
                                 Index = imageIndex,
                                 TexCoord = 0
                             };
+
+                            KHRTextureTransform khrTextureTransformExtension;
+                            if(gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.TryGetValue("KHR_texture_transform", out var extension))
+                            {
+                                khrTextureTransformExtension = (KHRTextureTransform) extension;
+                            } else
+                            {
+                                khrTextureTransformExtension = new KHRTextureTransform();
+                                gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.Add("KHR_texture_transform", khrTextureTransformExtension);
+                            }
+                            khrTextureTransformExtension.Offset = bitmapInfo.Offset;
+                            khrTextureTransformExtension.Rotation = bitmapInfo.Rotation;
+                            khrTextureTransformExtension.Scale = bitmapInfo.Scale;
                         }
                         // switch {
                         //    // TODO: add non-baseColor
@@ -281,70 +327,14 @@ namespace CesiumIonRevitAddin.Export
                         attachedBitmapInfo = ParseSchemaHardwoodSchema(asset);
                         break;
                     default:
-                        throw new System.Exception("unknown material schema type: " + schema);
+                        // throw new System.Exception("unknown material schema type: " + schema);
+                        // TODO: write unknown schema to log file
+                        break;
                 }
             }
 
             return attachedBitmapInfo;
         }
-
-        // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
-        // first try via looping
-        //static List<BitmapInfo> ParseSchemaPrismOpaque(Asset renderingAsset)
-        //{
-        //    var bitmapInfoCollection = new List<BitmapInfo>();
-
-        //    // TODO: Walk through all first level assets to find 
-        //    // connected Bitmap properties.  Note: it is 
-        //    // possible to have multilevel connected 
-        //    // properties with Bitmaps in the leaf nodes.  
-        //    // So this would need to be recursive.
-        //    int size = renderingAsset.Size;
-        //    for (int assetIdx = 0; assetIdx < size; assetIdx++)
-        //    {
-        //        AssetProperty aProperty = renderingAsset[assetIdx];
-
-        //        if (aProperty.NumberOfConnectedProperties < 1)
-        //            continue;
-
-        //        // Find first connected property.  
-        //        // Should work for all current (2018) schemas.  
-        //        // Safer code would loop through all connected
-        //        // properties based on the number provided.
-
-        //        Asset connectedAsset = aProperty
-        //          .GetConnectedProperty(0) as Asset;
-
-        //        // We are only checking for bitmap connected assets. 
-        //        // TODO: other connected assets to handle?
-        //        if (connectedAsset.Name == "UnifiedBitmapSchema")
-        //        {
-        //            // This line is 2018.1 & up because of the 
-        //            // property reference to UnifiedBitmap
-        //            // .UnifiedbitmapBitmap.  In earlier versions,
-        //            // you can still reference the string name 
-        //            // instead: "unifiedbitmap_Bitmap"
-
-        //            // AssetPropertyString path = connectedAsset[UnifiedBitmap.UnifiedbitmapBitmap] as AssetPropertyString;
-        //            AssetPropertyString path = connectedAsset.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
-
-        //            // This will be a relative path to the built-in materials folder, additional 
-        //            // render appearance folder, or an absolute path.
-
-        //            // TODO: clean up
-        //            var absPath = System.String.Format("{0} from {2}: {1}", aProperty.Name, path.Value, connectedAsset.LibraryName);
-        //            absPath = GetAbsoluteMaterialPath(absPath);
-        //            var gltfBitmapType = GetGltfBitmapType(aProperty);
-        //            if (gltfBitmapType != null)
-        //            {
-        //                var bitMapInfo = new BitmapInfo(absPath, gltfBitmapType.Value);
-        //                bitmapInfoCollection.Add(bitMapInfo);
-        //            }
-        //        }
-        //    }
-
-        //    return bitmapInfoCollection;
-        //}
 
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
         static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
@@ -359,6 +349,9 @@ namespace CesiumIonRevitAddin.Export
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
             BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
+
+            AddTextureTransformInfo(ref baseColor, connectedProperty);
+
             bitmapInfoCollection.Add(baseColor);
 
             // TODO: add normal maps, roughness, etc.
@@ -379,11 +372,30 @@ namespace CesiumIonRevitAddin.Export
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
             BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
+
+            AddTextureTransformInfo(ref baseColor, connectedProperty);
+
             bitmapInfoCollection.Add(baseColor);
 
             // TODO: add normal maps, roughness, etc.
 
             return bitmapInfoCollection;
+        }
+
+        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
+        static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
+        {
+            var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDouble;
+            var yOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) as AssetPropertyDouble;
+            // TODO: why is null check needed? RevitLookupTool shows val of 0. Maybe it handles null before display.
+            bitmapInfo.Offset = new XY { X = xOffset == null ? 0 : xOffset.Value, Y = yOffset == null ? 0 : yOffset.Value};
+
+            var rotation = connectedProperty.FindByName(UnifiedBitmap.TextureWAngle) as AssetPropertyDouble;
+            bitmapInfo.Rotation = rotation.Value;
+
+            var xScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) as AssetPropertyDouble;
+            var yScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) as AssetPropertyDouble;
+            bitmapInfo.Scale = new XY { X = xScale == null ? 0 : xScale.Value,   Y = yScale == null ? 0 : yScale.Value };
         }
 
         static GltfBitmapType? GetGltfBitmapType(AssetProperty assetProperty)

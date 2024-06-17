@@ -14,5 +14,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         [JsonProperty("texCoord")]
         public int TexCoord { get; set; } = 0;  // Default to using the first set of UV coordinates, typically base color
+
+        [JsonProperty("extensions")]
+        public Dictionary<string, Object> Extensions { get; set; } = new Dictionary<string, Object>();
     }
 }

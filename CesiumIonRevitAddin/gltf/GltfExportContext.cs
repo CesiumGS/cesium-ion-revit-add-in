@@ -8,6 +8,10 @@ using Newtonsoft.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Security.Policy;
+using System.Data.SqlClient;
+using System.Xml.Linq;
+using Autodesk.Revit.UI;
+using System.Reflection;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -15,6 +19,7 @@ namespace CesiumIonRevitAddin.Gltf
     {
 
         const char UNDERSCORE = '_';
+        bool verboseLog = true;
 
         public GltfExportContext(Document doc)
         {
@@ -58,6 +63,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public bool Start()
         {
+            Logger.Enabled = verboseLog;
             cancelation = false;
 
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
@@ -126,7 +132,8 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                     else
                     {
-                        Autodesk.Revit.UI.TaskDialog.Show("Error creating category-level glTF type", "definition->Name has no mapped ForgeTypeId");
+                        // TODO: handle no mapped ForgeTypeId
+                        // Autodesk.Revit.UI.TaskDialog.Show("Error creating category-level glTF type", "definition->Name has no mapped ForgeTypeId");
                     }
 
                     var categories = elementBinding.Categories;
@@ -226,6 +233,8 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 linkTransformation = linkInstance.GetTransform();
             }
+
+            Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
 
             var newNode = new GltfNode();
             // TODO: needed?
@@ -328,6 +337,8 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
+            Logger.Instance.Log("Starting OnElementEnd: " + element.Name);
+
             // create a new mesh for the node (assuming 1 mesh per node w/ multiple primitives on mesh)
             var newMesh = new GltfMesh
             {
@@ -335,82 +346,94 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-            //var hash = ComputeHash(newMesh);
-            //if (meshHashIndices.TryGetValue(hash, out var index))
-            //{
-            //    nodes.CurrentItem.Mesh = index;
-            //}
-            //else
-            //{
-            //meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
 
-            //nodes.CurrentItem.Mesh = meshes.CurrentIndex;
-            //meshHashIndices.Add(hash, meshes.CurrentIndex);
 
+            var collectionToHash = new Dictionary<string, GeometryDataObject>(); // contains data that will be common across instances
             // Add vertex data to currentGeometry for each geometry/material pairing
             foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
             {
-                var vertices = currentGeometry.GetElement(kvp.Key).Vertices;
+                GeometryDataObject geometryDataObject = currentGeometry.GetElement(kvp.Key);
+                var vertices = geometryDataObject.Vertices;
                 foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
                 {
                     vertices.Add(p.Key.X);
                     vertices.Add(p.Key.Y);
                     vertices.Add(p.Key.Z);
                 }
+
+                var materialKey = kvp.Key.Split('_')[1];
+                collectionToHash.Add(materialKey, geometryDataObject);
             }
 
-            // Convert currentGeometry objects into glTFMeshPrimitives
-            var preferences = new Preferences(); // TODO: use user-set preferences
-            foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
-            {
-                var name = kvp.Key;
-                var geometryDataObject = kvp.Value;
-                GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
-                    buffers,
-                    accessors,
-                    bufferViews,
-                    geometryDataObject,
-                    name,
-                    elementId.IntegerValue,
-                    preferences.Normals);
-
-                binaryFileData.Add(elementBinaryData);
-
-                var meshPrimitive = new GltfMeshPrimitive();
-                meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
-                if (preferences.Normals)
-                {
-                    meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
-                }
-                if (elementBinaryData.TexCoordBuffer.Count > 0)
-                {
-                    meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
-                }
-                meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
-                if (preferences.Materials)
-                {
-                    var materialKey = kvp.Key.Split(UNDERSCORE)[1];
-                    if (materials.Contains(materialKey))
-                    {
-                        meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
-                    }
-                }
-
-                newMesh.Primitives.Add(meshPrimitive);
-            }
-
-            var meshHash = ComputeHash(newMesh);
-            if (meshHashIndices.TryGetValue(meshHash, out var index))
+            // hash
+            var geometryDataObjectHash = ComputeHash(collectionToHash);
+            if (geometryDataObjectIndices.TryGetValue(geometryDataObjectHash, out var index))
             {
                 nodes.CurrentItem.Mesh = index;
             }
             else
             {
+                // Convert currentGeometry objects into glTFMeshPrimitives
+                var preferences = new Preferences(); // TODO: use user-set preferences
+                foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
+                {
+                    var name = kvp.Key;
+                    var geometryDataObject = kvp.Value;
+                    GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
+                        buffers,
+                        accessors,
+                        bufferViews,
+                        geometryDataObject,
+                        name,
+                        elementId.IntegerValue,
+                        preferences.Normals);
+
+                    binaryFileData.Add(elementBinaryData);
+
+                    var meshPrimitive = new GltfMeshPrimitive();
+                    meshPrimitive.Attributes.POSITION = elementBinaryData.VertexAccessorIndex;
+                    if (preferences.Normals)
+                    {
+                        meshPrimitive.Attributes.NORMAL = elementBinaryData.NormalsAccessorIndex;
+                    }
+                    if (elementBinaryData.TexCoordBuffer.Count > 0)
+                    {
+                        meshPrimitive.Attributes.TEXCOORD_0 = elementBinaryData.TexCoordAccessorIndex;
+                    }
+                    meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
+                    if (preferences.Materials)
+                    {
+                        var materialKey = kvp.Key.Split(UNDERSCORE)[1];
+                        if (materials.Contains(materialKey))
+                        {
+                            meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
+                        }
+                    }
+
+                    newMesh.Primitives.Add(meshPrimitive);
+                }
+
                 meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
                 nodes.CurrentItem.Mesh = meshes.CurrentIndex;
                 meshes.CurrentItem.Name = newMesh.Name;
-                meshHashIndices.Add(meshHash, meshes.CurrentIndex);
+                geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
             }
+
+
+            //var meshHash = ComputeHash(newMesh);
+            //if (meshHashIndices.TryGetValue(meshHash, out var index))
+            //{
+            //    nodes.CurrentItem.Mesh = index;
+            //}
+            //else
+            //{
+            //    meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
+            //    nodes.CurrentItem.Mesh = meshes.CurrentIndex;
+            //    meshes.CurrentItem.Name = newMesh.Name;
+            //    meshHashIndices.Add(meshHash, meshes.CurrentIndex);
+            //}
+
+            Logger.Instance.Log("...Ended OnElementEnd: " + element.Name);
         }
 
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
@@ -539,21 +562,33 @@ namespace CesiumIonRevitAddin.Gltf
             // this custom exporter is currently not exporting lights
         }
 
-        public void OnMaterial(MaterialNode node)
+        bool khrTextureTransformAdded;
+        public void OnMaterial(MaterialNode materialNode)
         {
+            Logger.Instance.Log("Starting OnMaterial");
+
             materialHasTexture = false;
             // TODO: user-defined parameters
             var preferences = new Preferences();
             if (preferences.Materials)
             {
                 System.Diagnostics.Debug.WriteLine("Starting material export");
-                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
+                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
                 System.Diagnostics.Debug.WriteLine("Finishing material export");
+
+                if (!khrTextureTransformAdded && materialHasTexture)
+                {
+                    extensionsUsed.Add("KHR_texture_transform");
+                    khrTextureTransformAdded = true;
+                }
             }
+
+            Logger.Instance.Log("Ending OnMaterial: " + materialNode.NodeName);
         }
 
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
+            Logger.Instance.Log("Starting OnPolymesh...");
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
@@ -575,6 +610,8 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             if (materialHasTexture) GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
+
+            Logger.Instance.Log("...Ending OnPolymesh");
         }
 
         RenderNodeAction IExportContext.OnViewBegin(ViewNode node)
@@ -594,7 +631,8 @@ namespace CesiumIonRevitAddin.Gltf
         Autodesk.Revit.DB.Transform linkTransformation;
         IndexedDictionary<GeometryDataObject> currentGeometry;
         IndexedDictionary<VertexLookupIntObject> currentVertices;
-        Dictionary<string, int> meshHashIndices = new Dictionary<string, int>();
+        // Dictionary<string, int> meshHashIndices = new Dictionary<string, int>();
+        Dictionary<string, int> geometryDataObjectIndices = new Dictionary<string, int>();
         bool materialHasTexture;
 
         string GetFamilyName(Element element)
@@ -681,6 +719,30 @@ namespace CesiumIonRevitAddin.Gltf
                     hash.Append(b.ToString("x2"));
                 }
                 return hash.ToString();
+            }
+        }
+
+        public static string ComputeHash(Dictionary<string, GeometryDataObject> collectionToHash)
+        {
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                Formatting = Formatting.None,
+                NullValueHandling = NullValueHandling.Ignore
+            };
+            string json = JsonConvert.SerializeObject(collectionToHash, settings);
+
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                byte[] data = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(json));
+
+                // Convert the byte array to a hexadecimal string
+                StringBuilder sBuilder = new StringBuilder();
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sBuilder.Append(data[i].ToString("x2"));
+                }
+                return sBuilder.ToString();
             }
         }
     }
