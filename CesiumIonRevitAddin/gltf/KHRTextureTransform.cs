@@ -6,10 +6,10 @@ namespace CesiumIonRevitAddin.Gltf
     internal class KHRTextureTransform
     {
         [JsonProperty("offset")]
-        public XY? Offset { get; set; }
+        public double[] Offset { get; set; } = new double[] { 0, 0 };
         [JsonProperty("rotation")]
         public double? Rotation { get; set; }
         [JsonProperty("scale")]
-        public XY? Scale { get; set; }
+        public double[] Scale { get; set; } = new double[] { 1.0, 1.0 };
     }
 }

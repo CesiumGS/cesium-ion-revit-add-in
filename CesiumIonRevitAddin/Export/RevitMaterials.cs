@@ -9,15 +9,11 @@ using System.Linq;
 using System.Windows.Controls;
 using Autodesk.Revit.UI;
 using Newtonsoft.Json.Linq;
+using System;
 // using System.Windows.Media.Media3D;
 
-namespace CesiumIonRevitAddin.Export { 
+namespace CesiumIonRevitAddin.Export {
 
-    struct XY
-    {
-        public double X;
-        public double Y;
-    }
 
     public class MaterialCacheDTO
     {
@@ -36,6 +32,7 @@ namespace CesiumIonRevitAddin.Export {
         const string BLEND = "BLEND";
         const string OPAQUE = "OPAQUE";
         const int ONEINTVALUE = 1;
+        const double magicNumber = 11.11;
 
         /// <summary>
         /// Container for material names (Local cache to avoid Revit API I/O)
@@ -72,9 +69,9 @@ namespace CesiumIonRevitAddin.Export {
         {
             public readonly string AbsolutePath;
             public readonly GltfBitmapType GltfBitmapType;
-            public XY? Offset;
+            public double[] Offset;
             public double? Rotation;
-            public XY? Scale;
+            public double[] Scale;
 
             public BitmapInfo(string absolutePath, GltfBitmapType gltfBitmapType)
             {
@@ -339,6 +336,43 @@ namespace CesiumIonRevitAddin.Export {
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
         static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
         {
+            // DEBUG
+            string propertyName = "opaque_albedo"; //  AdvancedOpaque.OpaqueAlbedo; // Update this based on actual schema documentation
+            propertyName = AdvancedOpaque.OpaqueAlbedo;
+            AssetProperty baseColorProperty_ = renderingAsset.FindByName(propertyName);
+            if (baseColorProperty_ == null)
+            {
+                System.Diagnostics.Debug.WriteLine("is null");
+            }
+            else
+            {
+                Asset connectedProperty_ = baseColorProperty_.GetSingleConnectedAsset();
+                if (connectedProperty_ == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("is null");
+                }
+                else
+                {
+                    string rwsx = "texture_RealWorldScaleX";
+                    rwsx = UnifiedBitmap.TextureRealWorldScaleX;
+                    var scaleX = connectedProperty_.FindByName(rwsx);
+                    if (scaleX == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("is null");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("is not null");
+                        AssetPropertyDistance assetPropertyDistance = (AssetPropertyDistance)scaleX;
+                        var x = assetPropertyDistance.Value;
+                        System.Diagnostics.Debug.WriteLine("x is " + x);
+                    }
+                }
+            }
+
+
+
+
             var bitmapInfoCollection = new List<BitmapInfo>();
 
             // AssetProperty baseColorProperty = renderingAsset.FindByName("opaque_albedo");
@@ -385,17 +419,18 @@ namespace CesiumIonRevitAddin.Export {
         // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
         static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
-            var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDouble;
-            var yOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) as AssetPropertyDouble;
+            // TODO: magicNumber
+            var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDistance;
+            var yOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) as AssetPropertyDistance;
             // TODO: why is null check needed? RevitLookupTool shows val of 0. Maybe it handles null before display.
-            bitmapInfo.Offset = new XY { X = xOffset == null ? 0 : xOffset.Value, Y = yOffset == null ? 0 : yOffset.Value};
+            bitmapInfo.Offset = new double[] { xOffset == null ? 0 : xOffset.Value * magicNumber, yOffset == null ? 0 : yOffset.Value * magicNumber };
 
             var rotation = connectedProperty.FindByName(UnifiedBitmap.TextureWAngle) as AssetPropertyDouble;
             bitmapInfo.Rotation = rotation.Value;
 
-            var xScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) as AssetPropertyDouble;
-            var yScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) as AssetPropertyDouble;
-            bitmapInfo.Scale = new XY { X = xScale == null ? 0 : xScale.Value,   Y = yScale == null ? 0 : yScale.Value };
+            var xScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) as AssetPropertyDistance;
+            var yScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) as AssetPropertyDistance;
+            bitmapInfo.Scale = new double[] { xScale == null ? 1.0 : 1.0 / xScale.Value * magicNumber, yScale == null ? 1.0 : 1.0 / yScale.Value * magicNumber };
         }
 
         static GltfBitmapType? GetGltfBitmapType(AssetProperty assetProperty)
