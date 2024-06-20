@@ -218,90 +218,11 @@ namespace CesiumIonRevitAddin.Export {
             }
         }
 
-        // see https://thebuildingcoder.typepad.com/blog/2017/10/material-texture-path.html
-        // and https://forums.autodesk.com/t5/revit-api-forum/parsing-assetproperty-to-unifiedbitmap/td-p/10406464
-        //static string GetMaterialBitmapPath(Document doc, Material material)
-        //{
-        //    string result = null;
-
-        //    // Find materials
-        //    FilteredElementCollector fec
-        //      = new FilteredElementCollector(doc);
-
-        //    fec.OfClass(typeof(Material));
-
-        //    IEnumerable<Material> targetMaterials
-        //      = fec.Cast<Material>().Where<Material>(mtl =>
-        //        mtl.Name == material.Name);
-
-        //    var targetMaterial = targetMaterials.FirstOrDefault();
-        //    if (targetMaterial != null)
-        //    {                
-        //        // Get appearance asset for read
-        //        ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
-
-        //        AppearanceAssetElement appearanceAssetElem = doc.GetElement(appearanceAssetId) as AppearanceAssetElement;
-        //        Asset asset = appearanceAssetElem.GetRenderingAsset();
-
-        //        // Walk through all first level assets to find 
-        //        // connected Bitmap properties.  Note: it is 
-        //        // possible to have multilevel connected 
-        //        // properties with Bitmaps in the leaf nodes.  
-        //        // So this would need to be recursive.
-        //        int size = asset.Size;
-        //        for (int assetIdx = 0; assetIdx < size; assetIdx++)
-        //        {
-        //            AssetProperty aProperty = asset[assetIdx];
-
-        //            if (aProperty.NumberOfConnectedProperties < 1)
-        //                continue;
-
-        //            // Find first connected property.  
-        //            // Should work for all current (2018) schemas.  
-        //            // Safer code would loop through all connected
-        //            // properties based on the number provided.
-
-        //            Asset connectedAsset = aProperty
-        //              .GetConnectedProperty(0) as Asset;
-
-        //            // We are only checking for bitmap connected assets. 
-        //            if (connectedAsset.Name == "UnifiedBitmapSchema")
-        //            {
-        //                // This line is 2018.1 & up because of the 
-        //                // property reference to UnifiedBitmap
-        //                // .UnifiedbitmapBitmap.  In earlier versions,
-        //                // you can still reference the string name 
-        //                // instead: "unifiedbitmap_Bitmap"
-
-        //                // AssetPropertyString path = connectedAsset[UnifiedBitmap.UnifiedbitmapBitmap] as AssetPropertyString;
-        //                AssetPropertyString path = connectedAsset.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
-
-        //                // This will be a relative path to the built -in materials folder, additional 
-        //                // render appearance folder, or an absolute path.
-
-        //                result = System.String.Format("{0} from {2}: {1}", aProperty.Name, path.Value, connectedAsset.LibraryName);
-        //                result = GetAbsoluteMaterialPath(result);
-        //            }
-        //        }
-        //    }
-
-        //    return result;
-        //}
-
         static List<BitmapInfo> GetBitmapInfo(Document document, Material material)
         {
             var attachedBitmapInfo = new List<BitmapInfo>();
 
-            // Find materials
-            FilteredElementCollector filteredElementCollector
-              = new FilteredElementCollector(document);
-            filteredElementCollector.OfClass(typeof(Material));
-            IEnumerable<Material> targetMaterials
-              = filteredElementCollector.Cast<Material>().Where<Material>(mtl =>
-                mtl.Name == material.Name);
-
-            var targetMaterial = targetMaterials.FirstOrDefault();
-            if (targetMaterial != null)
+            if (document.GetElement(material.Id) is Material targetMaterial)
             {
                 ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
 
@@ -336,10 +257,7 @@ namespace CesiumIonRevitAddin.Export {
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
         static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
         {
-            // DEBUG
-            string propertyName = "opaque_albedo"; //  AdvancedOpaque.OpaqueAlbedo; // Update this based on actual schema documentation
-            propertyName = AdvancedOpaque.OpaqueAlbedo;
-            AssetProperty baseColorProperty_ = renderingAsset.FindByName(propertyName);
+            AssetProperty baseColorProperty_ = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
             if (baseColorProperty_ == null)
             {
                 System.Diagnostics.Debug.WriteLine("is null");
@@ -353,9 +271,7 @@ namespace CesiumIonRevitAddin.Export {
                 }
                 else
                 {
-                    string rwsx = "texture_RealWorldScaleX";
-                    rwsx = UnifiedBitmap.TextureRealWorldScaleX;
-                    var scaleX = connectedProperty_.FindByName(rwsx);
+                    var scaleX = connectedProperty_.FindByName(UnifiedBitmap.TextureRealWorldScaleX);
                     if (scaleX == null)
                     {
                         System.Diagnostics.Debug.WriteLine("is null");

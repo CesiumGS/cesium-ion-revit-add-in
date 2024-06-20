@@ -31,7 +31,7 @@ namespace CesiumIonRevitAddin
                 {
                     lock (LogMutex)
                     {
-                        if (instance == null) // Double-check locking
+                        if (instance == null)
                         {
                             instance = new Logger();
                         }
@@ -48,7 +48,7 @@ namespace CesiumIonRevitAddin
             lock (LogMutex)
             {
                 var now = DateTime.Now;
-                var timeStr = now.ToString("yyyy-MM-dd HH:mm:ss");
+                var timeStr = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 logFile.WriteLine($"{timeStr}: {message}");
             }
         }
