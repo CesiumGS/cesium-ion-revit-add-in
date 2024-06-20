@@ -12,6 +12,8 @@ using System.Data.SqlClient;
 using System.Xml.Linq;
 using Autodesk.Revit.UI;
 using System.Reflection;
+using System.Threading;
+using CesiumIonRevitAddin.Export;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -61,10 +63,18 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
+        // TODO: make export not a singleton and remove Reset()
+        void Reset()
+        {
+            RevitMaterials.materialIdDictionary.Clear();
+        }
+
         public bool Start()
         {
             Logger.Enabled = verboseLog;
             cancelation = false;
+
+            Reset();
 
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
 

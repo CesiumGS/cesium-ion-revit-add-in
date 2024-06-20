@@ -12,7 +12,8 @@ using Newtonsoft.Json.Linq;
 using System;
 // using System.Windows.Media.Media3D;
 
-namespace CesiumIonRevitAddin.Export {
+namespace CesiumIonRevitAddin.Export
+{
 
 
     public class MaterialCacheDTO
@@ -82,6 +83,8 @@ namespace CesiumIonRevitAddin.Export {
             }
         }
 
+        public static Dictionary<ElementId, GltfMaterial> materialIdDictionary = new Dictionary<ElementId, GltfMaterial>();
+
         public static void Export(MaterialNode materialNode,
             Document doc,
             IndexedDictionary<GltfMaterial> materials,
@@ -92,50 +95,57 @@ namespace CesiumIonRevitAddin.Export {
             ref bool materialHasTexture)
         {
             ElementId id = materialNode.MaterialId;
-            var gltfMaterial = new GltfMaterial();
-            float opacity = ONEINTVALUE - (float) materialNode.Transparency;
-
             // Validate if the material is valid because for some reason there are
             // materials with invalid Ids
-            if (id != ElementId.InvalidElementId)
+            if (id == ElementId.InvalidElementId) return;
+
+            string uniqueId;
+            GltfMaterial gltfMaterial;
+            if (materialIdDictionary.TryGetValue(id, out gltfMaterial)) {
+                var materialElement = doc.GetElement(materialNode.MaterialId);
+                gltfMaterial.Name = materialElement.Name;
+                uniqueId = materialElement.UniqueId;
+                materialHasTexture = gltfMaterial.PbrMetallicRoughness.BaseColorTexture != null;
+            } else
             {
+                gltfMaterial = new GltfMaterial();
+                float opacity = ONEINTVALUE - (float)materialNode.Transparency;
+
                 var material = doc.GetElement(materialNode.MaterialId) as Material;
-                if (material != null)
+                if (material == null) return;
+
+                if (Logger.Enabled)
                 {
-                    if (Logger.Enabled)
+                    var materialName = material.Name;
+                    Logger.Instance.Log("Starting Export: " + materialName);
+                }
+
+                var materialGltfName = Utils.Util.GetGltfName(material.Name);
+                gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
+
+                ParameterSetIterator paramIterator = material.Parameters.ForwardIterator();
+                while (paramIterator.MoveNext())
+                {
+                    var parameter = (Parameter)paramIterator.Current;
+                    var paramName = parameter.Definition.Name;
+                    var paramValue = GetParameterValueAsString(parameter);
+                    var paramGltfName = Utils.Util.GetGltfName(paramName);
+
+                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
                     {
-                        var materialName = material.Name;
-                        Logger.Instance.Log("Starting Export: " + materialName);
-                    }
-
-                    var materialGltfName = Utils.Util.GetGltfName(material.Name);
-                    gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
-
-                    ParameterSetIterator paramIterator = material.Parameters.ForwardIterator();
-                    while (paramIterator.MoveNext())
-                    {
-                        var parameter = (Parameter) paramIterator.Current;
-                        var paramName = parameter.Definition.Name;
-                        var paramValue = GetParameterValueAsString(parameter);
-                        var paramGltfName = Utils.Util.GetGltfName(paramName);
-
-                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
-                        {
-                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
-                        }
+                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
                     }
                 }
 
                 ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial, extStructuralMetadata);
 
-                string uniqueId;
-                if (!MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDTO materialElement))
+                if (!MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDTO materialCacheDTO))
                 {
                     // construct a material from the node
-                    var m = doc.GetElement(materialNode.MaterialId);
-                    gltfMaterial.Name = m.Name;
-                    uniqueId = m.UniqueId;
-                    MaterialNameContainer.Add(materialNode.MaterialId, new MaterialCacheDTO(m.Name, m.UniqueId));
+                    var materialElement = doc.GetElement(materialNode.MaterialId);
+                    gltfMaterial.Name = materialElement.Name;
+                    uniqueId = materialElement.UniqueId;
+                    MaterialNameContainer.Add(materialNode.MaterialId, new MaterialCacheDTO(materialElement.Name, materialElement.UniqueId));
                 }
                 else
                 {
@@ -196,10 +206,11 @@ namespace CesiumIonRevitAddin.Export {
                             };
 
                             KHRTextureTransform khrTextureTransformExtension;
-                            if(gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.TryGetValue("KHR_texture_transform", out var extension))
+                            if (gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.TryGetValue("KHR_texture_transform", out var extension))
                             {
-                                khrTextureTransformExtension = (KHRTextureTransform) extension;
-                            } else
+                                khrTextureTransformExtension = (KHRTextureTransform)extension;
+                            }
+                            else
                             {
                                 khrTextureTransformExtension = new KHRTextureTransform();
                                 gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.Add("KHR_texture_transform", khrTextureTransformExtension);
@@ -214,8 +225,10 @@ namespace CesiumIonRevitAddin.Export {
                     }
                 }
 
-                materials.AddOrUpdateCurrentMaterial(uniqueId, gltfMaterial, false);
+                materialIdDictionary.Add(id, gltfMaterial);
             }
+
+            materials.AddOrUpdateCurrentMaterial(uniqueId, gltfMaterial, false);
         }
 
         static List<BitmapInfo> GetBitmapInfo(Document document, Material material)
@@ -486,9 +499,11 @@ namespace CesiumIonRevitAddin.Export {
                     string gltfPropertyName = Util.GetGltfName(propertyString.Name);
 
                     // TODO: DEBUG
-                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName)) {
+                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
+                    {
                         gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyString.Value);
-                    } else
+                    }
+                    else
                     {
                         // TODO: why does this fire?
                         System.Diagnostics.Debug.WriteLine("Error: should not happen");
@@ -498,7 +513,7 @@ namespace CesiumIonRevitAddin.Export {
                     if (!classPropertiesSchema.ContainsKey(gltfPropertyName))
                     {
                         classPropertiesSchema.Add(gltfPropertyName, new Dictionary<string, object>());
-                        var schemaProperty = (Dictionary<string, object>) classPropertiesSchema[gltfPropertyName];
+                        var schemaProperty = (Dictionary<string, object>)classPropertiesSchema[gltfPropertyName];
 
                         if (!schemaProperty.ContainsKey("name"))
                         {
