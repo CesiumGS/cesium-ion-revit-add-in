@@ -8,12 +8,12 @@ namespace CesiumIonRevitAddin.Utils
     {
         public static List<Mesh> GetMeshes(Document document, Element element)
         {
-            var geometryElement = GetGeometryElement(document, element);
+            GeometryElement geometryElement = GetGeometryElement(document, element);
 
             List<Mesh> meshes = new List<Mesh>();
             foreach (GeometryInstance geoObject in geometryElement.OfType<GeometryInstance>())
             {
-                foreach (var mesh in geoObject.GetInstanceGeometry().OfType<Mesh>())
+                foreach (var mesh in geoObject.GetSymbolGeometry().OfType<Mesh>())
                 {
                     meshes.Add(mesh);
                 }

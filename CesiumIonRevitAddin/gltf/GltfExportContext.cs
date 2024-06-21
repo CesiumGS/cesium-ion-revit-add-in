@@ -512,7 +512,7 @@ namespace CesiumIonRevitAddin.Gltf
             // TODO: use user-defined prefs
             var preferences = new Preferences();
 
-            List<Autodesk.Revit.DB.Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
+            List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
 
             if (meshes.Count == 0)
             {
@@ -539,26 +539,14 @@ namespace CesiumIonRevitAddin.Gltf
                         continue;
                     }
 
-                    var pts = new List<XYZ>(); // ignore IntelliSense
-                    pts.Add(triangle.get_Vertex(0));
-                    pts.Add(triangle.get_Vertex(1));
-                    pts.Add(triangle.get_Vertex(2));
-
-                    List<XYZ> ptsTransformed = new List<XYZ>(); // ignore IntelliSense
-                    if (isLink)
+                    var pts = new List<XYZ>
                     {
-                        ptsTransformed = new List<XYZ>();
-                        foreach (XYZ p in pts)
-                        {
-                            ptsTransformed.Add(LinkOriginalTranformation.OfPoint(p));
-                        }
-                    }
-                    else
-                    {
-                        ptsTransformed = new List<XYZ>(pts);
-                    }
+                        triangle.get_Vertex(0),
+                        triangle.get_Vertex(1),
+                        triangle.get_Vertex(2)
+                    };
 
-                    GltfExportUtils.AddVerticesAndFaces(currentVertices.CurrentItem, currentGeometry.CurrentItem, ptsTransformed);
+                    GltfExportUtils.AddVerticesAndFaces(currentVertices.CurrentItem, currentGeometry.CurrentItem, pts);
 
                     if (preferences.Normals)
                     {
