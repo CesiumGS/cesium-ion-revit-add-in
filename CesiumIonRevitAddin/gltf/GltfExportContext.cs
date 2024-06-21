@@ -14,6 +14,7 @@ using Autodesk.Revit.UI;
 using System.Reflection;
 using System.Threading;
 using CesiumIonRevitAddin.Export;
+using Autodesk.Revit.DB.Visual;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -582,9 +583,9 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
             if (preferences.Materials)
             {
-                System.Diagnostics.Debug.WriteLine("Starting material export");
+                System.Diagnostics.Debug.WriteLine("Starting material export...");
                 Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
-                System.Diagnostics.Debug.WriteLine("Finishing material export");
+                System.Diagnostics.Debug.WriteLine("...Finishing material export");
 
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {

@@ -4,13 +4,7 @@ using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Utils;
 using System.IO;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Windows.Controls;
-using Autodesk.Revit.UI;
-using Newtonsoft.Json.Linq;
-using System;
-// using System.Windows.Media.Media3D;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -98,6 +92,23 @@ namespace CesiumIonRevitAddin.Export
             // Validate if the material is valid because for some reason there are
             // materials with invalid Ids
             if (id == ElementId.InvalidElementId) return;
+
+            // record material-schema stats
+            if (doc.GetElement(id) is Material targetMaterial)
+            {
+                ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
+
+                AppearanceAssetElement appearanceAssetElem = doc.GetElement(appearanceAssetId) as AppearanceAssetElement;
+                Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
+
+                // it seems asset.Name is typically a schema
+                var schema = renderingAsset.Name;
+                if (renderingAsset.FindByName("BaseSchema") is AssetPropertyString baseSchema)
+                {
+                    schema = baseSchema.Value;
+                }
+                Logger.Instance.Log("Material schema: " + schema);
+            }
 
             string uniqueId;
             GltfMaterial gltfMaterial;
@@ -240,10 +251,18 @@ namespace CesiumIonRevitAddin.Export
                 ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
 
                 AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
-                Asset asset = appearanceAssetElem.GetRenderingAsset();
+                Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
 
-                // it seems asset.Name is typically a schema
-                var schema = asset.Name;
+                string schema;
+                if (renderingAsset.FindByName("BaseSchema") is AssetPropertyString baseSchema)
+                {
+                    schema = baseSchema.Value;
+                }
+                else
+                {
+                    // it seems asset.Name is typically a schema
+                    schema = renderingAsset.Name;
+                }
 
                 // schema list at https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_General_Material_Information_html
                 // apparently not exhaustive: missing "PrismOpaqueSchema"
@@ -252,10 +271,10 @@ namespace CesiumIonRevitAddin.Export
                 {
                     case "PrismOpaqueSchema":
                     case "AdvancedOpaque":
-                        attachedBitmapInfo = ParseSchemaPrismOpaqueSchema(asset);
+                        attachedBitmapInfo = ParseSchemaPrismOpaqueSchema(renderingAsset);
                         break;
                     case "HardwoodSchema":
-                        attachedBitmapInfo = ParseSchemaHardwoodSchema(asset);
+                        attachedBitmapInfo = ParseSchemaHardwoodSchema(renderingAsset);
                         break;
                     default:
                         // throw new System.Exception("unknown material schema type: " + schema);
