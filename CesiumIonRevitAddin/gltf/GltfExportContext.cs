@@ -121,6 +121,14 @@ namespace CesiumIonRevitAddin.Gltf
                     var forgeTypeId = internalDefinition.GetDataType();
                     // String^ glTFDataType = "";
                     var isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
+
+
+                    // DEBUG
+                    if (definition.Name == "Family Thumbnail")
+                    {
+                        System.Diagnostics.Debug.WriteLine("break");
+                    }
+
                     var categoryGltfProperty = new Dictionary<string, Object>
                     {
                         { "name", definition.Name },
@@ -144,8 +152,9 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                     else
                     {
-                        // TODO: handle no mapped ForgeTypeId
-                        // Autodesk.Revit.UI.TaskDialog.Show("Error creating category-level glTF type", "definition->Name has no mapped ForgeTypeId");
+                        // no mapped ForgeTypeId
+                        Logger.Instance.Log("no mapped ForgeTypeId: " + definition.Name);
+                        continue;
                     }
 
                     var categories = elementBinding.Categories;
@@ -377,13 +386,19 @@ namespace CesiumIonRevitAddin.Gltf
                     vertices.Add(p.Key.X);
                     vertices.Add(p.Key.Y);
                     vertices.Add(p.Key.Z);
-
-                    // Logger.Instance.Log(p.Key.X.ToString() + "," + p.Key.Y.ToString() + "," + p.Key.Z.ToString());
                 }
 
                 var materialKey = kvp.Key.Split('_')[1];
                 collectionToHash.Add(materialKey, geometryDataObject);
             }
+
+            // DEBUG
+            var serialized = JsonConvert.SerializeObject(collectionToHash, Formatting.None, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+            Logger.Instance.Log(serialized);
+
 
             // hash
             var geometryDataObjectHash = ComputeHash(collectionToHash);
@@ -615,12 +630,12 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             // DEBUG
-            var serialized = JsonConvert.SerializeObject(pts, Formatting.None, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            });
-            Logger.Instance.Log("dumping polymesh points: ");
-            Logger.Instance.Log(serialized);
+            //var serialized = JsonConvert.SerializeObject(pts, Formatting.None, new JsonSerializerSettings
+            //{
+            //    NullValueHandling = NullValueHandling.Ignore
+            //});
+            //Logger.Instance.Log("dumping polymesh points: ");
+            //Logger.Instance.Log(serialized);
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
