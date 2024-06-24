@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Threading;
 using CesiumIonRevitAddin.Export;
 using Autodesk.Revit.DB.Visual;
+using System.Linq;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -219,8 +220,14 @@ namespace CesiumIonRevitAddin.Gltf
             return cancelation;
         }
 
+        // Most instanced elements have this event stack order: OnElementBegin->OnInstanceBegin->(geometry/material events)->OnInstanceEnd->OnElementEnd
+        // But some do this: OnElementBegin->OnInstanceBegin->->OnInstanceEnd->(geometry/material events)->OnElementEnd
+        // This records if the latter has happened
+        bool onInstanceEndCompleted = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
+            onInstanceEndCompleted = false;
+
             element = Doc.GetElement(elementId);
 
             // TODO: add actual user preferences
@@ -357,7 +364,7 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-
+            // Logger.Instance.Log("Starting element point dump:");
 
             var collectionToHash = new Dictionary<string, GeometryDataObject>(); // contains data that will be common across instances
             // Add vertex data to currentGeometry for each geometry/material pairing
@@ -370,6 +377,8 @@ namespace CesiumIonRevitAddin.Gltf
                     vertices.Add(p.Key.X);
                     vertices.Add(p.Key.Y);
                     vertices.Add(p.Key.Z);
+
+                    // Logger.Instance.Log(p.Key.X.ToString() + "," + p.Key.Y.ToString() + "," + p.Key.Z.ToString());
                 }
 
                 var materialKey = kvp.Key.Split('_')[1];
@@ -449,6 +458,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
+            Logger.Instance.Log("Beginning OnInstanceBegin");
             var transform = instanceNode.GetTransform();
             var transformationMultiply = CurrentTransform.Multiply(transform);
             transformStack.Push(transformationMultiply);
@@ -456,11 +466,15 @@ namespace CesiumIonRevitAddin.Gltf
             return RenderNodeAction.Proceed;
         }
 
+
+        Autodesk.Revit.DB.Transform cachedTransform;
         public void OnInstanceEnd(InstanceNode node)
         {
             // Note: This method is invoked even for instances that were skipped.
 
-            var transform = transformStack.Pop();
+            Logger.Instance.Log("Beginning OnInstanceEnd");
+
+            Autodesk.Revit.DB.Transform transform = transformStack.Pop();
             if (!transform.IsIdentity)
             {
                 var currentNode = nodes.CurrentItem;
@@ -472,6 +486,9 @@ namespace CesiumIonRevitAddin.Gltf
                     transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
                 };
             }
+
+            cachedTransform = transform;
+            onInstanceEndCompleted = true;
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
@@ -591,6 +608,20 @@ namespace CesiumIonRevitAddin.Gltf
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
+            if (onInstanceEndCompleted)
+            {
+                var inverse = cachedTransform.Inverse;
+                pts = pts.Select(p => inverse.OfPoint(p)).ToList();
+            }
+
+            // DEBUG
+            var serialized = JsonConvert.SerializeObject(pts, Formatting.None, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+            Logger.Instance.Log("dumping polymesh points: ");
+            Logger.Instance.Log(serialized);
+
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
                 foreach (var vertIndex in facet.GetVertices())
@@ -730,6 +761,7 @@ namespace CesiumIonRevitAddin.Gltf
                 NullValueHandling = NullValueHandling.Ignore
             };
             string json = JsonConvert.SerializeObject(collectionToHash, settings);
+            Logger.Instance.Log("hash string: " + json);
 
             using (SHA256 sha256Hash = SHA256.Create())
             {

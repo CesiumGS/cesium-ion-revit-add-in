@@ -20,7 +20,7 @@ namespace CesiumIonRevitAddin
         private Logger()
         {
             string logFilePath = "C:\\Scratch\\CesiumIonRevitAddin\\CesiumIonRevitAddinLog.txt";
-            logFile = new StreamWriter(logFilePath, true) { AutoFlush = true };
+            logFile = new StreamWriter(logFilePath, false) { AutoFlush = true };
         }
 
         public static Logger Instance
