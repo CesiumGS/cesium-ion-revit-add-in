@@ -46,7 +46,7 @@ namespace CesiumIonRevitAddin.Gltf
         public ClassType GetClass(string gltfClassName)
         {
             var classes = GetClasses();
-            return (ClassType) classes[gltfClassName];
+            return classes.ContainsKey(gltfClassName) ? (ClassType) classes[gltfClassName] : null;
         }
 
         public ClassesType GetClasses()

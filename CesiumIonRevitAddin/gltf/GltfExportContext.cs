@@ -164,6 +164,12 @@ namespace CesiumIonRevitAddin.Gltf
                         var categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.Name);
                         // categoryNames += category->Name + "; ";
 
+                        // DEBUG
+                        if (category.Name == "Mirror")
+                        {
+                            System.Diagnostics.Debug.WriteLine("Mirror");
+                        }
+
                         extStructuralMetadata.AddCategory(category.Name);
                         var class_ = extStructuralMetadata.GetClass(categoryGltfName);
                         var schemaProperties = extStructuralMetadata.GetProperties(class_);
@@ -209,6 +215,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             extensionsUsed.Add("EXT_structural_metadata");
             extensions.Add("EXT_structural_metadata", extStructuralMetadata);
+
+            Logger.Instance.Log("Finishing Start");
 
             return true;
         }

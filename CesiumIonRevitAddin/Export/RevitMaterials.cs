@@ -5,6 +5,7 @@ using CesiumIonRevitAddin.Utils;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Controls;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -79,26 +80,15 @@ namespace CesiumIonRevitAddin.Export
 
         public static Dictionary<ElementId, GltfMaterial> materialIdDictionary = new Dictionary<ElementId, GltfMaterial>();
 
-        public static void Export(MaterialNode materialNode,
-            Document doc,
-            IndexedDictionary<GltfMaterial> materials,
-            GltfExtStructuralMetadataExtensionSchema extStructuralMetadata,
-            IndexedDictionary<GltfSampler> samplers,
-            IndexedDictionary<GltfImage> images,
-            IndexedDictionary<GltfTexture> textures,
-            ref bool materialHasTexture)
+        static void LogMaterialSchemaStats(MaterialNode materialNode, Document document)
         {
             ElementId id = materialNode.MaterialId;
-            // Validate if the material is valid because for some reason there are
-            // materials with invalid Ids
-            if (id == ElementId.InvalidElementId) return;
 
-            // record material-schema stats
-            if (doc.GetElement(id) is Material targetMaterial)
+            if (document.GetElement(id) is Material targetMaterial)
             {
                 ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
 
-                AppearanceAssetElement appearanceAssetElem = doc.GetElement(appearanceAssetId) as AppearanceAssetElement;
+                AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
                 Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
 
                 // it seems asset.Name is typically a schema
@@ -109,6 +99,23 @@ namespace CesiumIonRevitAddin.Export
                 }
                 Logger.Instance.Log("Material schema: " + schema);
             }
+        }
+
+        public static void Export(MaterialNode materialNode,
+            Document doc,
+            IndexedDictionary<GltfMaterial> materials,
+            GltfExtStructuralMetadataExtensionSchema extStructuralMetadataExtensionSchema,
+            IndexedDictionary<GltfSampler> samplers,
+            IndexedDictionary<GltfImage> images,
+            IndexedDictionary<GltfTexture> textures,
+            ref bool materialHasTexture)
+        {
+            ElementId id = materialNode.MaterialId;
+            // Validate if the material is valid because for some reason there are
+            // materials with invalid Ids
+            if (id == ElementId.InvalidElementId) return;
+
+            LogMaterialSchemaStats(materialNode, doc);
 
             string uniqueId;
             GltfMaterial gltfMaterial;
@@ -122,8 +129,7 @@ namespace CesiumIonRevitAddin.Export
                 gltfMaterial = new GltfMaterial();
                 float opacity = ONEINTVALUE - (float)materialNode.Transparency;
 
-                var material = doc.GetElement(materialNode.MaterialId) as Material;
-                if (material == null) return;
+                if (!(doc.GetElement(materialNode.MaterialId) is Material material)) return;
 
                 if (Logger.Enabled)
                 {
@@ -134,6 +140,7 @@ namespace CesiumIonRevitAddin.Export
                 var materialGltfName = Utils.Util.GetGltfName(material.Name);
                 gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
 
+                var classSchema = extStructuralMetadataExtensionSchema.GetClass(materialGltfName) ?? extStructuralMetadataExtensionSchema.AddClass(material.Name);
                 ParameterSetIterator paramIterator = material.Parameters.ForwardIterator();
                 while (paramIterator.MoveNext())
                 {
@@ -145,10 +152,11 @@ namespace CesiumIonRevitAddin.Export
                     if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
                     {
                         gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
+                        AddParameterToClassSchema(parameter, classSchema);
                     }
                 }
 
-                ExtractPropertyStringsFromMaterial(material, doc, gltfMaterial, extStructuralMetadata);
+                AddMaterialRenderingPropertiesToSchema(material, doc, gltfMaterial, extStructuralMetadataExtensionSchema);
 
                 if (!MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDTO materialCacheDTO))
                 {
@@ -166,7 +174,7 @@ namespace CesiumIonRevitAddin.Export
                 }
 
                 var pbr = new GltfPbr();
-                SetMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
+                SetGltfMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
 
                 var bitmapInfoCollection = GetBitmapInfo(doc, material);
                 materialHasTexture = bitmapInfoCollection.Any();
@@ -478,7 +486,7 @@ namespace CesiumIonRevitAddin.Export
             }
         }
 
-        static void ExtractPropertyStringsFromMaterial(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial,
+        static void AddMaterialRenderingPropertiesToSchema(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial,
             GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema)
         {
             if (!(doc.GetElement(material.AppearanceAssetId) is AppearanceAssetElement assetElement))
@@ -495,10 +503,16 @@ namespace CesiumIonRevitAddin.Export
             }
 
             var materialGltfName = Utils.Util.GetGltfName(material.Name);
-            var classes = extStructuralMetadataSchema.GetClasses();
+
+            // DEBUG
+            if (materialGltfName == "mirror")
+            {
+                System.Diagnostics.Debug.WriteLine("mirror");
+            }
+            var schemaClasses = extStructuralMetadataSchema.GetClasses();
             Dictionary<string, object> classSchema;
             Dictionary<string, object> classPropertiesSchema;
-            if (classes.ContainsKey(materialGltfName))
+            if (schemaClasses.ContainsKey(materialGltfName))
             {
                 classSchema = extStructuralMetadataSchema.GetClass(materialGltfName);
                 classPropertiesSchema = (Dictionary<string, object>)classSchema["properties"];
@@ -513,14 +527,14 @@ namespace CesiumIonRevitAddin.Export
             for (int i = 0; i < renderingAsset.Size; i++)
             {
                 AssetProperty property = renderingAsset.Get(i);
-                if (property is AssetPropertyString propertyString)
+                if (property is AssetPropertyString assetPropertyString)
                 {
-                    string gltfPropertyName = Util.GetGltfName(propertyString.Name);
+                    string gltfPropertyName = Util.GetGltfName(assetPropertyString.Name);
 
                     // TODO: DEBUG
                     if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
                     {
-                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyString.Value);
+                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
                     }
                     else
                     {
@@ -536,7 +550,7 @@ namespace CesiumIonRevitAddin.Export
 
                         if (!schemaProperty.ContainsKey("name"))
                         {
-                            schemaProperty.Add("name", propertyString.Name);
+                            schemaProperty.Add("name", assetPropertyString.Name);
                         }
 
                         // TODO: more deeply investigate this way of handling the type
@@ -560,14 +574,56 @@ namespace CesiumIonRevitAddin.Export
                                 break;
                         }
 
-                        schemaProperty.Add("required", GltfExtStructuralMetadataExtensionSchema.IsRequired(propertyString.Name));
+                        schemaProperty.Add("required", GltfExtStructuralMetadataExtensionSchema.IsRequired(assetPropertyString.Name));
                     }
                 }
             }
             System.Diagnostics.Debug.WriteLine("Finished adding properties");
         }
 
-        static void SetMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)
+        static void AddParameterToClassSchema(Parameter parameter, Dictionary<string, object> classSchema)
+        {
+            var gltfPropertyName = Utils.Util.GetGltfName(parameter.Definition.Name);
+
+            Dictionary<string, object> classSchemaProperties;
+            if (classSchema.ContainsKey("properties"))
+            {
+                classSchemaProperties = (Dictionary<string, object>) classSchema["properties"];
+            } else
+            {
+                classSchemaProperties = new Dictionary<string, object>();
+                classSchema.Add("properties", classSchemaProperties);
+            }
+
+            var propertySchema = new Dictionary<string, object>();
+            classSchemaProperties.Add(gltfPropertyName, propertySchema);
+
+            propertySchema.Add("name", parameter.Definition.Name);
+
+            switch (parameter.StorageType)
+            {
+                case StorageType.Double:
+                    propertySchema.Add("type", "SCALAR");
+                    propertySchema.Add("componentType", "FLOAT32");
+                    break;
+                case StorageType.Integer:
+                    propertySchema.Add("type", "SCALAR");
+                    propertySchema.Add("componentType", "INT32");
+                    break;
+                case StorageType.String:
+                    propertySchema.Add("type", "STRING");
+                    break;
+                case StorageType.ElementId:
+                    propertySchema.Add("type", "STRING");
+                    break;
+                default:
+                    break;
+            }
+
+            propertySchema.Add("required", false);
+        }
+
+        static void SetGltfMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)
         {
             pbr.BaseColorFactor = new List<float>(4) { node.Color.Red / 255f, node.Color.Green / 255f, node.Color.Blue / 255f, opacity };
             pbr.MetallicFactor = 0f;
