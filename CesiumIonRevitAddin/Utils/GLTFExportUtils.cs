@@ -14,6 +14,7 @@ namespace CesiumIonRevitAddin.Utils
         {
             // search for an already existing material
             var m = gltfMaterials.FirstOrDefault(x =>
+            x.PbrMetallicRoughness != null &&
             x.PbrMetallicRoughness.BaseColorFactor[0] == material.Color.Red &&
             x.PbrMetallicRoughness.BaseColorFactor[1] == material.Color.Green &&
             x.PbrMetallicRoughness.BaseColorFactor[2] == material.Color.Blue && x.DoubleSided == doubleSided);

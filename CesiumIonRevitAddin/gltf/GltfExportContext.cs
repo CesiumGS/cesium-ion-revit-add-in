@@ -368,8 +368,6 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-            // Logger.Instance.Log("Starting element point dump:");
-
             var collectionToHash = new Dictionary<string, GeometryDataObject>(); // contains data that will be common across instances
             // Add vertex data to currentGeometry for each geometry/material pairing
             foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
@@ -428,7 +426,12 @@ namespace CesiumIonRevitAddin.Gltf
                         var materialKey = kvp.Key.Split(UNDERSCORE)[1];
                         if (materials.Contains(materialKey))
                         {
-                            meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
+                            // var material = materials.GetIndexFromUuid(materialKey);
+                            var material = materials.Dict[materialKey];
+                            if (material.Name != RevitMaterials.INVALID_MATERIAL)
+                            {
+                                meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
+                            }
                         }
                     }
 
@@ -460,11 +463,12 @@ namespace CesiumIonRevitAddin.Gltf
 
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
-            Logger.Instance.Log("Beginning OnInstanceBegin");
+            Logger.Instance.Log("Beginning OnInstanceBegin...");
             var transform = instanceNode.GetTransform();
             var transformationMultiply = CurrentTransform.Multiply(transform);
             transformStack.Push(transformationMultiply);
 
+            Logger.Instance.Log("...Ending OnInstanceBegin");
             return RenderNodeAction.Proceed;
         }
 
@@ -495,6 +499,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
         {
+            Logger.Instance.Log("Beginning OnLinkBegin");
             isLink = true;
 
             documents.Add(node.GetDocument());
@@ -528,6 +533,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnRPC(RPCNode node)
         {
+            Logger.Instance.Log("Beginning OnRPC...");
             // TODO: use user-defined prefs
             var preferences = new Preferences();
 
@@ -573,6 +579,7 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
             }
+            Logger.Instance.Log("...Finishing OnRPC");
         }
 
         public void OnLight(LightNode node)
@@ -590,9 +597,7 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
             if (preferences.Materials)
             {
-                System.Diagnostics.Debug.WriteLine("Starting material export...");
                 Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
-                System.Diagnostics.Debug.WriteLine("...Finishing material export");
 
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {
@@ -755,7 +760,6 @@ namespace CesiumIonRevitAddin.Gltf
                 NullValueHandling = NullValueHandling.Ignore
             };
             string json = JsonConvert.SerializeObject(collectionToHash, settings);
-            Logger.Instance.Log("hash string: " + json);
 
             using (SHA256 sha256Hash = SHA256.Create())
             {

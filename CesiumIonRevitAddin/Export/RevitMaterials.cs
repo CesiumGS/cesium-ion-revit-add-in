@@ -101,6 +101,8 @@ namespace CesiumIonRevitAddin.Export
             }
         }
 
+        static bool invalidMaterial = false;
+        public const string INVALID_MATERIAL = "INVALID_MATERIAL";
         public static void Export(MaterialNode materialNode,
             Document doc,
             IndexedDictionary<GltfMaterial> materials,
@@ -113,7 +115,15 @@ namespace CesiumIonRevitAddin.Export
             ElementId id = materialNode.MaterialId;
             // Validate if the material is valid because for some reason there are
             // materials with invalid Ids
-            if (id == ElementId.InvalidElementId) return;
+            if (id == ElementId.InvalidElementId)
+            {
+                invalidMaterial = true;
+                materials.AddOrUpdateCurrentMaterial(INVALID_MATERIAL, new GltfMaterial { Name = "Revit Invalid Material" }, false);
+                return;
+            }
+            invalidMaterial = false;
+
+            System.Diagnostics.Debug.WriteLine("Starting material export...");
 
             LogMaterialSchemaStats(materialNode, doc);
 
@@ -248,6 +258,8 @@ namespace CesiumIonRevitAddin.Export
             }
 
             materials.AddOrUpdateCurrentMaterial(uniqueId, gltfMaterial, false);
+
+            System.Diagnostics.Debug.WriteLine("...Finishing material export");
         }
 
         static List<BitmapInfo> GetBitmapInfo(Document document, Material material)
@@ -591,6 +603,13 @@ namespace CesiumIonRevitAddin.Export
             }
 
             var propertySchema = new Dictionary<string, object>();
+            // DEBUG: "Image" parameter triggered this. Why?
+            // 
+            if (classSchemaProperties.ContainsKey(gltfPropertyName))
+            {
+                Logger.Instance.Log("Error: class schema properties already contains property " + gltfPropertyName);
+                return;
+            }
             classSchemaProperties.Add(gltfPropertyName, propertySchema);
 
             propertySchema.Add("name", parameter.Definition.Name);
@@ -616,6 +635,8 @@ namespace CesiumIonRevitAddin.Export
             }
 
             propertySchema.Add("required", false);
+            Logger.Instance.Log("...Finishing AddParameterToClassSchema");
+
         }
 
         static void SetGltfMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)
