@@ -504,11 +504,6 @@ namespace CesiumIonRevitAddin.Export
 
             var materialGltfName = Utils.Util.GetGltfName(material.Name);
 
-            // DEBUG
-            if (materialGltfName == "mirror")
-            {
-                System.Diagnostics.Debug.WriteLine("mirror");
-            }
             var schemaClasses = extStructuralMetadataSchema.GetClasses();
             Dictionary<string, object> classSchema;
             Dictionary<string, object> classPropertiesSchema;

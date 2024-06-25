@@ -126,8 +126,15 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         case StorageType.None:
                             {
-                                // TODO
-                                schemaProperty.Add("type", "None");
+                                /* TODO: unsure how to handle "None". Stringifying for now
+                                 schema/classes/rVTLinksSystemFamily/properties/projectInformation has triggered this case:
+                                    "projectInformation": {
+                                        "name": "Project Information",
+                                        "type": "None",
+                                        "required": false
+                                    },
+                                */
+                                schemaProperty.Add("type", "STRING");
                                 break;
                             }
                         case StorageType.String:

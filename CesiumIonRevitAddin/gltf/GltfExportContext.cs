@@ -122,13 +122,6 @@ namespace CesiumIonRevitAddin.Gltf
                     // String^ glTFDataType = "";
                     var isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
 
-
-                    // DEBUG
-                    if (definition.Name == "Family Thumbnail")
-                    {
-                        System.Diagnostics.Debug.WriteLine("break");
-                    }
-
                     var categoryGltfProperty = new Dictionary<string, Object>
                     {
                         { "name", definition.Name },
@@ -163,12 +156,6 @@ namespace CesiumIonRevitAddin.Gltf
                         var category = (Category)obj;
                         var categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.Name);
                         // categoryNames += category->Name + "; ";
-
-                        // DEBUG
-                        if (category.Name == "Mirror")
-                        {
-                            System.Diagnostics.Debug.WriteLine("Mirror");
-                        }
 
                         extStructuralMetadata.AddCategory(category.Name);
                         var class_ = extStructuralMetadata.GetClass(categoryGltfName);
@@ -400,14 +387,6 @@ namespace CesiumIonRevitAddin.Gltf
                 collectionToHash.Add(materialKey, geometryDataObject);
             }
 
-            // DEBUG
-            var serialized = JsonConvert.SerializeObject(collectionToHash, Formatting.None, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            });
-            Logger.Instance.Log(serialized);
-
-
             // hash
             var geometryDataObjectHash = ComputeHash(collectionToHash);
             if (geometryDataObjectIndices.TryGetValue(geometryDataObjectHash, out var index))
@@ -636,14 +615,6 @@ namespace CesiumIonRevitAddin.Gltf
                 var inverse = cachedTransform.Inverse;
                 pts = pts.Select(p => inverse.OfPoint(p)).ToList();
             }
-
-            // DEBUG
-            //var serialized = JsonConvert.SerializeObject(pts, Formatting.None, new JsonSerializerSettings
-            //{
-            //    NullValueHandling = NullValueHandling.Ignore
-            //});
-            //Logger.Instance.Log("dumping polymesh points: ");
-            //Logger.Instance.Log(serialized);
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
