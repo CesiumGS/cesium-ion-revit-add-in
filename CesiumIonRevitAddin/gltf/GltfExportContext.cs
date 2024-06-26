@@ -258,6 +258,11 @@ namespace CesiumIonRevitAddin.Gltf
 
             Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
 
+            if (element.Name == "Balustrade_23 w Piers w End Post")
+            {
+                System.Diagnostics.Debug.WriteLine("End Post");
+            }
+
             var newNode = new GltfNode();
             // TODO: needed?
             // GLTFExtras^ extras = gcnew GLTFExtras();
@@ -461,8 +466,11 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("...Ended OnElementEnd: " + element.Name);
         }
 
+        int instanceStackDepth = 0;
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
+            instanceStackDepth++;
+
             Logger.Instance.Log("Beginning OnInstanceBegin...");
             var transform = instanceNode.GetTransform();
             var transformationMultiply = CurrentTransform.Multiply(transform);
@@ -476,11 +484,17 @@ namespace CesiumIonRevitAddin.Gltf
         Autodesk.Revit.DB.Transform cachedTransform;
         public void OnInstanceEnd(InstanceNode node)
         {
+            Logger.Instance.Log("Beginning OnInstanceEnd");
+            instanceStackDepth--;
+
             // Note: This method is invoked even for instances that were skipped.
 
-            Logger.Instance.Log("Beginning OnInstanceEnd");
 
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
+
+            // do not write to the node if there is an instance stack
+            // this happens with railings because the balusters are sub-instances of the railing instance
+            if (instanceStackDepth > 0) return;
             if (!transform.IsIdentity)
             {
                 var currentNode = nodes.CurrentItem;
@@ -615,10 +629,15 @@ namespace CesiumIonRevitAddin.Gltf
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
-            if (onInstanceEndCompleted)
+            // handle the case of where OnInstanceBegin and OnInstanceEnd occur with no events in between
+            // i.e.: OnElementBegin->OnInstanceBegin->OnInstanceEnd->OnPolymesh
+            if (onInstanceEndCompleted && instanceStackDepth == 0)
             {
                 var inverse = cachedTransform.Inverse;
                 pts = pts.Select(p => inverse.OfPoint(p)).ToList();
+            } else if (instanceStackDepth == 2)
+            {
+                pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
             }
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
