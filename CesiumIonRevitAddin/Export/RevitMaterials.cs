@@ -635,8 +635,6 @@ namespace CesiumIonRevitAddin.Export
             }
 
             propertySchema.Add("required", false);
-            Logger.Instance.Log("...Finishing AddParameterToClassSchema");
-
         }
 
         static void SetGltfMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)

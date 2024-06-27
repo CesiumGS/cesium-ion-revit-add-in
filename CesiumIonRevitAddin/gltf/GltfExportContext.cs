@@ -16,6 +16,7 @@ using System.Threading;
 using CesiumIonRevitAddin.Export;
 using Autodesk.Revit.DB.Visual;
 using System.Linq;
+using static CesiumIonRevitAddin.Gltf.GltfExportContext;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -258,9 +259,9 @@ namespace CesiumIonRevitAddin.Gltf
 
             Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
 
-            if (element.Name == "Balustrade_23 w Piers w End Post")
+            if (element.Name == "AC_Bandstand Canopy Rib Centerplane")
             {
-                System.Diagnostics.Debug.WriteLine("End Post");
+                System.Diagnostics.Debug.WriteLine("AC_Bandstand Canopy Rib Centerplane");
             }
 
             var newNode = new GltfNode();
@@ -388,6 +389,11 @@ namespace CesiumIonRevitAddin.Gltf
 
                 var materialKey = kvp.Key.Split('_')[1];
                 collectionToHash.Add(materialKey, geometryDataObject);
+
+                // DEBUG
+                string serializedVertices = JsonConvert.SerializeObject(vertices, Formatting.Indented);
+                Logger.Instance.Log("Serialized Vertices:");
+                Logger.Instance.Log(serializedVertices);
             }
 
             // hash
@@ -497,6 +503,24 @@ namespace CesiumIonRevitAddin.Gltf
             if (instanceStackDepth > 0) return;
             if (!transform.IsIdentity)
             {
+                //Autodesk.Revit.DB.Transform justRotation = Autodesk.Revit.DB.Transform.Identity;
+                //justRotation.BasisX = transform.BasisX.Normalize();
+                //justRotation.BasisY = transform.BasisY.Normalize();
+                //justRotation.BasisZ = transform.BasisZ.Normalize();
+
+                //var justTranslation = Autodesk.Revit.DB.Transform.Identity;
+                //justTranslation.Origin = new XYZ(transform.Origin.X, transform.Origin.Y, transform.Origin.Z);
+
+                //var RT = justRotation * justTranslation;
+                //var TR = justTranslation * justRotation;
+
+                //Autodesk.Revit.DB.Transform finalTransform;
+                //finalTransform = justTranslation;
+
+                Logger.Instance.Log("   adding transformation to glTF node matrix:");
+                var serializableTransform = new SerializableTransform(transform);
+                Logger.Instance.Log(serializableTransform.ToString());
+
                 var currentNode = nodes.CurrentItem;
                 currentNode.Matrix = new List<double>
                 {
@@ -505,6 +529,14 @@ namespace CesiumIonRevitAddin.Gltf
                     transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0.0,
                     transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
                 };
+                //currentNode.Matrix = new List<double>
+                //{
+                //    finalTransform.BasisX.X, finalTransform.BasisY.X, finalTransform.BasisZ.X, 0.0,
+                //    finalTransform.BasisX.Y, finalTransform.BasisY.Y, finalTransform.BasisZ.Y, 0.0,
+                //    finalTransform.BasisX.Z, finalTransform.BasisY.Z, finalTransform.BasisZ.Z, 0.0,
+                //    finalTransform.Origin.X, finalTransform.Origin.Y, finalTransform.Origin.Z, 1.0
+                //};
+
             }
 
             cachedTransform = transform;
@@ -604,7 +636,7 @@ namespace CesiumIonRevitAddin.Gltf
         bool khrTextureTransformAdded;
         public void OnMaterial(MaterialNode materialNode)
         {
-            Logger.Instance.Log("Starting OnMaterial");
+            Logger.Instance.Log("Starting OnMaterial...");
 
             materialHasTexture = false;
             // TODO: user-defined parameters
@@ -620,7 +652,51 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            Logger.Instance.Log("Ending OnMaterial: " + materialNode.NodeName);
+            Logger.Instance.Log("...Ending OnMaterial: " + materialNode.NodeName);
+        }
+
+        public class SerializableTransform
+        {
+            public double[,] Matrix { get; set; }
+
+            public SerializableTransform(Autodesk.Revit.DB.Transform transform)
+            {
+                Matrix = new double[4, 4] {
+            { transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0 },
+            { transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0 },
+            { transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0 },
+            { transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1 }
+        };
+            }
+
+            public override string ToString()
+            {
+                var rows = new List<string>();
+                for (int i = 0; i < 4; i++)
+                {
+                    var row = new List<string>();
+                    for (int j = 0; j < 4; j++)
+                    {
+                        row.Add(Matrix[i, j].ToString());
+                    }
+                    rows.Add(string.Join(",", row));
+                }
+                return string.Join("\n", rows);
+            }
+        }
+
+        public class SerializablePoint
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double Z { get; set; }
+
+            public SerializablePoint(XYZ point)
+            {
+                X = point.X;
+                Y = point.Y;
+                Z = point.Z;
+            }
         }
 
         public void OnPolymesh(PolymeshTopology polymeshTopology)
@@ -635,10 +711,30 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 var inverse = cachedTransform.Inverse;
                 pts = pts.Select(p => inverse.OfPoint(p)).ToList();
-            } else if (instanceStackDepth == 2)
+            }
+            else if (instanceStackDepth == 2)
             {
                 pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+            } else // DEBUG
+            {
+                //pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+                //var serializableTransform = new SerializableTransform(CurrentTransform);
+                //Logger.Instance.Log("Serialized transform applied to points:\n" + serializableTransform.ToString());
+                Logger.Instance.Log("   Not applying any transformation to polymesh points");
+
+                var serializableTransform = new SerializableTransform(CurrentTransform);
+                Logger.Instance.Log("Serialized transform hypothetically applied to points:\n" + serializableTransform.ToString());
+                var transformedPts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+                var hypotheticalPoints = transformedPts.Select(p => new SerializablePoint(p)).ToList();
+                string hypotheticalPointsSerialized = JsonConvert.SerializeObject(hypotheticalPoints, Formatting.Indented);
+                Logger.Instance.Log("   polymeshTopology HYPOTHETICAL points going to the buffer:");
+                Logger.Instance.Log(hypotheticalPointsSerialized);
             }
+
+            var serializablePoints = pts.Select(p => new SerializablePoint(p)).ToList();
+            string serializedPoints = JsonConvert.SerializeObject(serializablePoints, Formatting.Indented);
+            Logger.Instance.Log("   polymeshTopology points going to the buffer:");
+            Logger.Instance.Log(serializedPoints);
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
@@ -650,6 +746,8 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
+
+
             // TODO: use user-defined preferences
             var preferences = new Preferences();
             if (preferences.Normals)
@@ -658,6 +756,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             if (materialHasTexture) GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
+
 
             Logger.Instance.Log("...Ending OnPolymesh");
         }
