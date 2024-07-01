@@ -229,9 +229,11 @@ namespace CesiumIonRevitAddin.Gltf
         // But some do this: OnElementBegin->OnInstanceBegin->->OnInstanceEnd->(geometry/material events)->OnElementEnd
         // This records if the latter has happened
         bool onInstanceEndCompleted = false;
+        bool useTopStackTransform = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             onInstanceEndCompleted = false;
+            useTopStackTransform = false;
 
             element = Doc.GetElement(elementId);
 
@@ -258,10 +260,11 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
+            Logger.Instance.Log("nodes.CurrentKey: " + nodes.CurrentKey);
 
-            if (element.Name == "AC_Bandstand Canopy Rib Centerplane")
+            if (element.Name == "Multistory Stairs")
             {
-                System.Diagnostics.Debug.WriteLine("AC_Bandstand Canopy Rib Centerplane");
+                System.Diagnostics.Debug.WriteLine("Multistory Stairs");
             }
 
             var newNode = new GltfNode();
@@ -314,23 +317,23 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             extStructuralMetadata.AddCategory(categoryName);
-            var class_ = extStructuralMetadata.AddFamily(categoryName, familyName);
+            var classMetadata = extStructuralMetadata.AddFamily(categoryName, familyName);
             extStructuralMetadata.AddProperties(categoryName, familyName, parameterSet);
-            // set parent to Supercomponent if it exists
-            if (element is FamilyInstance familyInstance)
-            {
-                var superComponent = familyInstance.SuperComponent;
-                if (superComponent != null)
-                {
-                    // TODO: looks like superComponent->Id is how to parent non-schema nodes
-                    var superComponentClass = Util.GetGltfName(superComponent.Category.Name);
-                    class_["parent"] = superComponentClass;
-                }
-            }
-
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
-
-            rootNode.Children.Add(nodes.CurrentIndex);
+            // set parent to Supercomponent if it exists
+            if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
+            {
+                Element superComponent = familyInstance.SuperComponent;
+                string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
+                classMetadata["parent"] = superComponentClass;
+                GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
+                if (parentNode.Children == null) parentNode.Children = new List<int>();
+                parentNode.Children.Add(nodes.CurrentIndex);
+                useTopStackTransform = true;
+            } else
+            {
+                rootNode.Children.Add(nodes.CurrentIndex);
+            }
 
             // Reset currentGeometry for new element
             if (currentGeometry == null)
@@ -356,6 +359,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnElementEnd(ElementId elementId)
         {
+            Logger.Instance.Log("Starting OnElementEnd: " + element.Name);
+
             if (skipElementFlag ||
                 currentVertices == null ||
                 currentVertices.List.Count == 0 ||
@@ -365,7 +370,6 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
-            Logger.Instance.Log("Starting OnElementEnd: " + element.Name);
 
             // create a new mesh for the node (assuming 1 mesh per node w/ multiple primitives on mesh)
             var newMesh = new GltfMesh
@@ -391,9 +395,9 @@ namespace CesiumIonRevitAddin.Gltf
                 collectionToHash.Add(materialKey, geometryDataObject);
 
                 // DEBUG
-                string serializedVertices = JsonConvert.SerializeObject(vertices, Formatting.Indented);
-                Logger.Instance.Log("Serialized Vertices:");
-                Logger.Instance.Log(serializedVertices);
+                //string serializedVertices = JsonConvert.SerializeObject(vertices, Formatting.Indented);
+                //Logger.Instance.Log("Serialized Vertices:");
+                //Logger.Instance.Log(serializedVertices);
             }
 
             // hash
@@ -473,13 +477,14 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         int instanceStackDepth = 0;
+        Autodesk.Revit.DB.Transform topStackTransform = null;
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
             instanceStackDepth++;
 
             Logger.Instance.Log("Beginning OnInstanceBegin...");
-            var transform = instanceNode.GetTransform();
-            var transformationMultiply = CurrentTransform.Multiply(transform);
+            topStackTransform = instanceNode.GetTransform();
+            var transformationMultiply = CurrentTransform.Multiply(topStackTransform);
             transformStack.Push(transformationMultiply);
 
             Logger.Instance.Log("...Ending OnInstanceBegin");
@@ -517,18 +522,41 @@ namespace CesiumIonRevitAddin.Gltf
                 //Autodesk.Revit.DB.Transform finalTransform;
                 //finalTransform = justTranslation;
 
-                Logger.Instance.Log("   adding transformation to glTF node matrix:");
-                var serializableTransform = new SerializableTransform(transform);
-                Logger.Instance.Log(serializableTransform.ToString());
+                //Logger.Instance.Log("   adding transformation to glTF node matrix:");
+                //var serializableTransform = new SerializableTransform(transform);
+                //Logger.Instance.Log(serializableTransform.ToString());
 
                 var currentNode = nodes.CurrentItem;
-                currentNode.Matrix = new List<double>
+                //DEBUG
+                if (currentNode.Name == "rootNode")
                 {
-                    transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0.0,
-                    transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0.0,
-                    transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0.0,
-                    transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
-                };
+                    Logger.Instance.Log("rootnode is in OnInstanceEnd");
+                }
+
+                topStackTransform = node.GetTransform();
+                if (useTopStackTransform) // for nodes with a non-root parent
+                {
+                    if (!topStackTransform.IsIdentity)
+                    {
+                        currentNode.Matrix = new List<double>
+                        {
+                            topStackTransform.BasisX.X, topStackTransform.BasisY.X, topStackTransform.BasisZ.X, 0.0,
+                            topStackTransform.BasisX.Y, topStackTransform.BasisY.Y, topStackTransform.BasisZ.Y, 0.0,
+                            topStackTransform.BasisX.Z, topStackTransform.BasisY.Z, topStackTransform.BasisZ.Z, 0.0,
+                            0, topStackTransform.Origin.Y, topStackTransform.Origin.Z, 1.0
+                        };
+                        }
+                }
+                else
+                {
+                    currentNode.Matrix = new List<double>
+                    {
+                        transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0.0,
+                        transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0.0,
+                        transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0.0,
+                        transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
+                    };
+                }
                 //currentNode.Matrix = new List<double>
                 //{
                 //    finalTransform.BasisX.X, finalTransform.BasisY.X, finalTransform.BasisZ.X, 0.0,
@@ -715,26 +743,27 @@ namespace CesiumIonRevitAddin.Gltf
             else if (instanceStackDepth == 2)
             {
                 pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
-            } else // DEBUG
-            {
-                //pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
-                //var serializableTransform = new SerializableTransform(CurrentTransform);
-                //Logger.Instance.Log("Serialized transform applied to points:\n" + serializableTransform.ToString());
-                Logger.Instance.Log("   Not applying any transformation to polymesh points");
+            } 
+            //else // debug
+            //{
+            //    //pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+            //    //var serializableTransform = new SerializableTransform(CurrentTransform);
+            //    ////Logger.Instance.Log("Serialized transform applied to points:\n" + serializableTransform.ToString());
+            //    //Logger.Instance.Log("   Not applying any transformation to polymesh points");
 
-                var serializableTransform = new SerializableTransform(CurrentTransform);
-                Logger.Instance.Log("Serialized transform hypothetically applied to points:\n" + serializableTransform.ToString());
-                var transformedPts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
-                var hypotheticalPoints = transformedPts.Select(p => new SerializablePoint(p)).ToList();
-                string hypotheticalPointsSerialized = JsonConvert.SerializeObject(hypotheticalPoints, Formatting.Indented);
-                Logger.Instance.Log("   polymeshTopology HYPOTHETICAL points going to the buffer:");
-                Logger.Instance.Log(hypotheticalPointsSerialized);
-            }
+            //    //var serializableTransform = new SerializableTransform(CurrentTransform);
+            //    //Logger.Instance.Log("Serialized transform hypothetically applied to points:\n" + serializableTransform.ToString());
+            //    //var transformedPts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+            //    //var hypotheticalPoints = transformedPts.Select(p => new SerializablePoint(p)).ToList();
+            //    //string hypotheticalPointsSerialized = JsonConvert.SerializeObject(hypotheticalPoints, Formatting.Indented);
+            //    //Logger.Instance.Log("   polymeshTopology HYPOTHETICAL points going to the buffer:");
+            //    Logger.Instance.Log(hypotheticalPointsSerialized);
+            //}
 
-            var serializablePoints = pts.Select(p => new SerializablePoint(p)).ToList();
-            string serializedPoints = JsonConvert.SerializeObject(serializablePoints, Formatting.Indented);
-            Logger.Instance.Log("   polymeshTopology points going to the buffer:");
-            Logger.Instance.Log(serializedPoints);
+            //var serializablePoints = pts.Select(p => new SerializablePoint(p)).ToList();
+            //string serializedPoints = JsonConvert.SerializeObject(serializablePoints, Formatting.Indented);
+            //Logger.Instance.Log("   polymeshTopology points going to the buffer:");
+            //Logger.Instance.Log(serializedPoints);
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
