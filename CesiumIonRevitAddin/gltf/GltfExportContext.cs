@@ -84,9 +84,10 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences(); // TODO: user user-defined preferences
             rootNode = new GltfNode
             {
-                Name = "rootNode",
-                // Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis)
+                Name = "rootNode"
             };
+
+            if (preferences.FlipAxis) rootNode.Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis);
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
 
@@ -522,7 +523,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
 
-            if (disableInstancing)
+            var preferences = new Preferences();
+            if (!preferences.Instancing)
             {
                 return;
             }
@@ -759,14 +761,14 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        bool disableInstancing = true;
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
             Logger.Instance.Log("Starting OnPolymesh...");
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
-            if (disableInstancing)
+            var preferences = new Preferences(); // TODO: preferences
+            if (!preferences.Instancing)
             {
                 pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
             }
@@ -815,10 +817,6 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-
-
-            // TODO: use user-defined preferences
-            var preferences = new Preferences();
             if (preferences.Normals)
             {
                 GltfExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
