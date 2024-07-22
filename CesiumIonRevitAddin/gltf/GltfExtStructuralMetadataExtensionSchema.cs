@@ -20,18 +20,21 @@ namespace CesiumIonRevitAddin.Gltf
             schema.Add("classes", new ClassesType()); // ignore IntelliSense
 
             var elementClass = new ClassType();
+            var elementClassProperties = new PropertiesType();
+            elementClass.Add("name", "Element");
+            elementClass.Add("properties", elementClassProperties);
 
             var uniqueIdProperty = new PropertyType();
             uniqueIdProperty.Add("name", "UniqueId");
             uniqueIdProperty.Add("type", "STRING");
             uniqueIdProperty.Add("required", false);
-            elementClass.Add("uniqueId", uniqueIdProperty);
+            elementClassProperties.Add("uniqueId", uniqueIdProperty);
 
             var levelIdProperty = new PropertyType();
             levelIdProperty.Add("name", "LevelId");
             levelIdProperty.Add("type", "STRING");
             levelIdProperty.Add("required", false);
-            elementClass.Add("levelId", levelIdProperty);
+            elementClassProperties.Add("levelId", levelIdProperty);
 
             var classes = GetClasses();
             classes.Add("element", elementClass);
