@@ -187,7 +187,8 @@ namespace CesiumIonRevitAddin.Export
                 SetGltfMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
 
                 var bitmapInfoCollection = GetBitmapInfo(doc, material);
-                materialHasTexture = bitmapInfoCollection.Any();
+                var prefs = new Preferences();
+                materialHasTexture = prefs.Textures && bitmapInfoCollection.Any();
                 if (materialHasTexture)
                 {
                     if (!samplers.List.Any())

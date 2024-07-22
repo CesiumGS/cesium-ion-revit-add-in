@@ -85,7 +85,7 @@ namespace CesiumIonRevitAddin.Gltf
             rootNode = new GltfNode
             {
                 Name = "rootNode",
-                Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis)
+                // Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis)
             };
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
@@ -484,11 +484,30 @@ namespace CesiumIonRevitAddin.Gltf
 
             Logger.Instance.Log("Beginning OnInstanceBegin...");
             topStackTransform = instanceNode.GetTransform();
+            Logger.Instance.Log("  topStackTransform: ");
+            Logger.Instance.Log("  " + GetTransformDetails(topStackTransform));
             var transformationMultiply = CurrentTransform.Multiply(topStackTransform);
+            Logger.Instance.Log("  transformationMultiply: ");
+            Logger.Instance.Log("  " + GetTransformDetails(transformationMultiply));
             transformStack.Push(transformationMultiply);
 
             Logger.Instance.Log("...Ending OnInstanceBegin");
             return RenderNodeAction.Proceed;
+        }
+
+        string GetTransformDetails(Autodesk.Revit.DB.Transform transform)
+        {
+            var x = transform.BasisX;
+            var y = transform.BasisY;
+            var z = transform.BasisZ;
+            var origin = transform.Origin;
+
+            string transformDetails = $"BasisX: ({x.X}, {x.Y}, {x.Z})\n" +
+                                      $"BasisY: ({y.X}, {y.Y}, {y.Z})\n" +
+                                      $"BasisZ: ({z.X}, {z.Y}, {z.Z})\n" +
+                                      $"Origin: ({origin.X}, {origin.Y}, {origin.Z})\n";
+
+            return transformDetails;
         }
 
 
@@ -502,6 +521,11 @@ namespace CesiumIonRevitAddin.Gltf
 
 
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
+
+            if (disableInstancing)
+            {
+                return;
+            }
 
             // do not write to the node if there is an instance stack
             // this happens with railings because the balusters are sub-instances of the railing instance
@@ -538,17 +562,22 @@ namespace CesiumIonRevitAddin.Gltf
                 {
                     if (!topStackTransform.IsIdentity)
                     {
+                        Logger.Instance.Log("Writing topStackTransform:");
+                        Logger.Instance.Log(GetTransformDetails(topStackTransform));
                         currentNode.Matrix = new List<double>
                         {
                             topStackTransform.BasisX.X, topStackTransform.BasisY.X, topStackTransform.BasisZ.X, 0.0,
                             topStackTransform.BasisX.Y, topStackTransform.BasisY.Y, topStackTransform.BasisZ.Y, 0.0,
                             topStackTransform.BasisX.Z, topStackTransform.BasisY.Z, topStackTransform.BasisZ.Z, 0.0,
-                            0, topStackTransform.Origin.Y, topStackTransform.Origin.Z, 1.0
+                            topStackTransform.Origin.X, topStackTransform.Origin.Y, topStackTransform.Origin.Z, 1.0
                         };
                         }
                 }
                 else
                 {
+                    Logger.Instance.Log("Writing transform:");
+                    Logger.Instance.Log(GetTransformDetails(transform));
+
                     currentNode.Matrix = new List<double>
                     {
                         transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0.0,
@@ -673,6 +702,9 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
 
+                var prefs = new Preferences();
+                if (!prefs.Textures) materialHasTexture = false;
+
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {
                     extensionsUsed.Add("KHR_texture_transform");
@@ -727,23 +759,31 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
+        bool disableInstancing = true;
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
             Logger.Instance.Log("Starting OnPolymesh...");
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
-            // handle the case of where OnInstanceBegin and OnInstanceEnd occur with no events in between
-            // i.e.: OnElementBegin->OnInstanceBegin->OnInstanceEnd->OnPolymesh
-            if (onInstanceEndCompleted && instanceStackDepth == 0)
-            {
-                var inverse = cachedTransform.Inverse;
-                pts = pts.Select(p => inverse.OfPoint(p)).ToList();
-            }
-            else if (instanceStackDepth == 2)
+            if (disableInstancing)
             {
                 pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
-            } 
+            }
+            else
+            {
+                // handle the case of where OnInstanceBegin and OnInstanceEnd occur with no events in between
+                // i.e.: OnElementBegin->OnInstanceBegin->OnInstanceEnd->OnPolymesh
+                if (onInstanceEndCompleted && instanceStackDepth == 0)
+                {
+                    var inverse = cachedTransform.Inverse;
+                    pts = pts.Select(p => inverse.OfPoint(p)).ToList();
+                }
+                else if (instanceStackDepth == 2)
+                {
+                    pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+                }
+            }
             //else // debug
             //{
             //    //pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();

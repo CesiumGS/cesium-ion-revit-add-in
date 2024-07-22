@@ -11,6 +11,7 @@ namespace CesiumIonRevitAddin
     {
         // TODO: use user-defined vals
         public bool Materials { get; set; } = true;
+        public bool Textures { get; set; } = false;
         // public FormatEnum format = FormatEnum::gltf;
         // TODO: use user-defined vals
         public bool Normals { get; set; } = true;
