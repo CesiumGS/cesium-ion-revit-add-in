@@ -92,10 +92,11 @@ namespace CesiumIonRevitAddin.Gltf
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
 
-            var rootSchema = extStructuralMetadataSchema.GetClass("rootNode") ?? extStructuralMetadataSchema.AddClass("rootNode");
+            var rootSchema = extStructuralMetadataSchema.GetClass("project") ?? extStructuralMetadataSchema.AddClass("Project");
             var rootSchemaProperties = new Dictionary<string, object>();
             rootSchema.Add("properties", rootSchemaProperties);
 
+            rootNode.Extensions.EXT_structural_metadata.Class = "project";
             AddPropertyInfoProperty("Project Name", projectInfo.Name, rootSchemaProperties, rootNode);
             AddPropertyInfoProperty("Project Number", projectInfo.Number, rootSchemaProperties, rootNode);
             AddPropertyInfoProperty("Client Name", projectInfo.ClientName, rootSchemaProperties, rootNode);
@@ -215,6 +216,7 @@ namespace CesiumIonRevitAddin.Gltf
             return true;
         }
 
+        // Add information about the Revit (physical) property (via PropertyInfo) to glTF "properties"
         void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
         {
             if (propertyValue == "") return;
@@ -238,8 +240,9 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
+            // TODO: remove GltfVersion
             FileExport.Run(bufferViews, buffers, binaryFileData,
-                scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, gltfVersion, images, textures, samplers);
+                scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
         }
 
         public bool IsCanceled()
