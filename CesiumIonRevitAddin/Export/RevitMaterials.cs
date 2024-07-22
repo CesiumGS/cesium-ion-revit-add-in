@@ -44,23 +44,6 @@ namespace CesiumIonRevitAddin.Export
             emissiveTexture
         }
 
-        //struct BitmapInfo
-        //{
-        //    readonly public string AbsolutePath;
-        //    readonly public GltfBitmapType GltfBitmapType;
-        //    public float[] Offset { get; set; }
-
-        //    public BitmapInfo(string absolutePath, GltfBitmapType gltfBitmapType)
-        //    {
-        //        AbsolutePath = absolutePath;
-        //        GltfBitmapType = gltfBitmapType;
-
-        //    }
-        //}
-
-
-
-
         struct BitmapInfo
         {
             public readonly string AbsolutePath;
@@ -129,12 +112,14 @@ namespace CesiumIonRevitAddin.Export
 
             string uniqueId;
             GltfMaterial gltfMaterial;
-            if (materialIdDictionary.TryGetValue(id, out gltfMaterial)) {
+            if (materialIdDictionary.TryGetValue(id, out gltfMaterial))
+            {
                 var materialElement = doc.GetElement(materialNode.MaterialId);
                 gltfMaterial.Name = materialElement.Name;
                 uniqueId = materialElement.UniqueId;
                 materialHasTexture = gltfMaterial.PbrMetallicRoughness.BaseColorTexture != null;
-            } else
+            }
+            else
             {
                 gltfMaterial = new GltfMaterial();
                 float opacity = ONEINTVALUE - (float)materialNode.Transparency;
@@ -157,12 +142,16 @@ namespace CesiumIonRevitAddin.Export
                     var parameter = (Parameter)paramIterator.Current;
                     var paramName = parameter.Definition.Name;
                     var paramValue = GetParameterValueAsString(parameter);
+
                     var paramGltfName = Utils.Util.GetGltfName(paramName);
 
-                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
+                    if (parameter.HasValue)
                     {
-                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
-                        AddParameterToClassSchema(parameter, classSchema);
+                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
+                        {                             
+                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
+                            AddParameterToClassSchema(parameter, classSchema);
+                        }
                     }
                 }
 
@@ -596,8 +585,9 @@ namespace CesiumIonRevitAddin.Export
             Dictionary<string, object> classSchemaProperties;
             if (classSchema.ContainsKey("properties"))
             {
-                classSchemaProperties = (Dictionary<string, object>) classSchema["properties"];
-            } else
+                classSchemaProperties = (Dictionary<string, object>)classSchema["properties"];
+            }
+            else
             {
                 classSchemaProperties = new Dictionary<string, object>();
                 classSchema.Add("properties", classSchemaProperties);

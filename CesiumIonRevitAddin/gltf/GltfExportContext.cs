@@ -17,6 +17,7 @@ using CesiumIonRevitAddin.Export;
 using Autodesk.Revit.DB.Visual;
 using System.Linq;
 using static CesiumIonRevitAddin.Gltf.GltfExportContext;
+using System.Windows.Media.Media3D;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -38,7 +39,7 @@ namespace CesiumIonRevitAddin.Gltf
         bool cancelation;
         Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
         GltfNode rootNode;
-        readonly GltfVersion gltfVersion = new GltfVersion();
+        // readonly GltfVersion gltfVersion = new GltfVersion();
         // TODO: readonly?
         List<GltfAccessor> accessors = new List<GltfAccessor>();
         List<GltfBufferView> bufferViews = new List<GltfBufferView>();
@@ -55,7 +56,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         List<string> extensionsUsed = new List<string>();
         Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
-        GltfExtStructuralMetadataExtensionSchema extStructuralMetadata = new GltfExtStructuralMetadataExtensionSchema();
+        GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema = new GltfExtStructuralMetadataExtensionSchema();
 
         Document Doc
         {
@@ -91,16 +92,20 @@ namespace CesiumIonRevitAddin.Gltf
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
 
-            gltfVersion.extras.Add("Project Name", projectInfo.Name);
-            gltfVersion.extras.Add("Project Number", projectInfo.Number);
-            gltfVersion.extras.Add("Client Name", projectInfo.ClientName);
-            gltfVersion.extras.Add("Project Address", projectInfo.Address);
-            gltfVersion.extras.Add("Building Name", projectInfo.BuildingName);
-            gltfVersion.extras.Add("Author", projectInfo.Author);
-            gltfVersion.extras.Add("Organization Name", projectInfo.OrganizationName);
-            gltfVersion.extras.Add("Organization Description", projectInfo.OrganizationDescription);
-            gltfVersion.extras.Add("Issue Date", projectInfo.IssueDate);
-            gltfVersion.extras.Add("Project Status", projectInfo.Status);
+            var rootSchema = extStructuralMetadataSchema.GetClass("rootNode") ?? extStructuralMetadataSchema.AddClass("rootNode");
+            var rootSchemaProperties = new Dictionary<string, object>();
+            rootSchema.Add("properties", rootSchemaProperties);
+
+            AddPropertyInfoProperty("Project Name", projectInfo.Name, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Project Number", projectInfo.Number, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Client Name", projectInfo.ClientName, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Project Address", projectInfo.Address, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Building Name", projectInfo.BuildingName, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Author", projectInfo.Author, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Organization Name", projectInfo.OrganizationName, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Organization Description", projectInfo.OrganizationDescription, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
+            AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
 
             BindingMap bindingMap = Doc.ParameterBindings;
             var iterator = bindingMap.ForwardIterator();
@@ -159,9 +164,9 @@ namespace CesiumIonRevitAddin.Gltf
                         var categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.Name);
                         // categoryNames += category->Name + "; ";
 
-                        extStructuralMetadata.AddCategory(category.Name);
-                        var class_ = extStructuralMetadata.GetClass(categoryGltfName);
-                        var schemaProperties = extStructuralMetadata.GetProperties(class_);
+                        extStructuralMetadataSchema.AddCategory(category.Name);
+                        var class_ = extStructuralMetadataSchema.GetClass(categoryGltfName);
+                        var schemaProperties = extStructuralMetadataSchema.GetProperties(class_);
                         schemaProperties.Add(CesiumIonRevitAddin.Utils.Util.GetGltfName(definition.Name), categoryGltfProperty);
                     }
 
@@ -203,11 +208,27 @@ namespace CesiumIonRevitAddin.Gltf
             scenes.Add(defaultScene);
 
             extensionsUsed.Add("EXT_structural_metadata");
-            extensions.Add("EXT_structural_metadata", extStructuralMetadata);
+            extensions.Add("EXT_structural_metadata", extStructuralMetadataSchema);
 
             Logger.Instance.Log("Finishing Start");
 
             return true;
+        }
+
+        void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
+        {
+            if (propertyValue == "") return;
+
+            // add to node
+            var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
+            rootNode.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyValue);
+
+            // add to schema
+            var propertySchema = new Dictionary<string, object>();
+            rootSchemaProperties.Add(gltfPropertyName, propertySchema);
+            propertySchema.Add("name", propertyName);
+            propertySchema.Add("type", "STRING");
+            propertySchema.Add("required", false);
         }
 
         public void Finish()
@@ -290,16 +311,6 @@ namespace CesiumIonRevitAddin.Gltf
                 Util.CreateClassName(categoryName, familyName)
                 );
 
-            // TODO: maybe useful. For example "category" is an ElementId, so will come out as a stringified integer
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("elementId", elementId->IntegerValue);
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("category", categoryName);
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("familyName", familyName);
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("typeName", GetTypeNameIfApplicable(elementId));
-
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("testCategoryType", element->Category->CategoryType.ToString());
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("testBuiltInCategory", element->Category->BuiltInCategory);
-            //newNode->extensions->EXT_structural_metadata->Properties->Add("testSubElementCount", element->GetSubelements()->Count);
-
             newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
             newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
             newNode.Extensions.EXT_structural_metadata.Properties.Add("categoryName", Util.GetGltfName(categoryName));
@@ -317,9 +328,9 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            extStructuralMetadata.AddCategory(categoryName);
-            var classMetadata = extStructuralMetadata.AddFamily(categoryName, familyName);
-            extStructuralMetadata.AddProperties(categoryName, familyName, parameterSet);
+            extStructuralMetadataSchema.AddCategory(categoryName);
+            var classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
+            extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet);
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
             // set parent to Supercomponent if it exists
             if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
@@ -702,7 +713,7 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences();
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadata, samplers, images, textures, ref materialHasTexture);
+                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataSchema, samplers, images, textures, ref materialHasTexture);
 
                 var prefs = new Preferences();
                 if (!prefs.Textures) materialHasTexture = false;

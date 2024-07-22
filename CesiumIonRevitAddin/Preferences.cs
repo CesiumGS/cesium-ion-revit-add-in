@@ -11,14 +11,14 @@ namespace CesiumIonRevitAddin
     {
         // TODO: use user-defined vals
         public bool Materials { get; set; } = true;
-        public bool Textures { get; set; } = false;
+        public bool Textures { get; set; } = true;
         // public FormatEnum format = FormatEnum::gltf;
         // TODO: use user-defined vals
         public bool Normals { get; set; } = true;
         public bool Levels { get; set; }
         public bool Properties { get; set; }
         public bool RelocateTo0 { get; set; }
-        public bool FlipAxis { get; set; } = false;
+        public bool FlipAxis { get; set; } = true;
         public bool Instancing { get; set; } = false;
 
         // TODO: needed?
