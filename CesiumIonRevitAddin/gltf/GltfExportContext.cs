@@ -316,8 +316,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
             newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
-            newNode.Extensions.EXT_structural_metadata.Properties.Add("categoryName", Util.GetGltfName(categoryName));
-
 
             // create a glTF property from any remaining Revit parameter not explicitly added above
             var parameterSet = element.Parameters;
