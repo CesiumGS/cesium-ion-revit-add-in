@@ -24,6 +24,12 @@ namespace CesiumIonRevitAddin.Gltf
             elementClass.Add("name", "Element");
             elementClass.Add("properties", elementClassProperties);
 
+            var categoryNameProperty = new PropertyType();
+            categoryNameProperty.Add("name", "Category Name");
+            categoryNameProperty.Add("type", "STRING");
+            categoryNameProperty.Add("required", false);
+            elementClassProperties.Add("categoryName", categoryNameProperty);
+
             var uniqueIdProperty = new PropertyType();
             uniqueIdProperty.Add("name", "UniqueId");
             uniqueIdProperty.Add("type", "STRING");
@@ -35,6 +41,8 @@ namespace CesiumIonRevitAddin.Gltf
             levelIdProperty.Add("type", "STRING");
             levelIdProperty.Add("required", false);
             elementClassProperties.Add("levelId", levelIdProperty);
+
+
 
             var classes = GetClasses();
             classes.Add("element", elementClass);

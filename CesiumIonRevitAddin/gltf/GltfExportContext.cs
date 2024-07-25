@@ -254,11 +254,12 @@ namespace CesiumIonRevitAddin.Gltf
         // But some do this: OnElementBegin->OnInstanceBegin->->OnInstanceEnd->(geometry/material events)->OnElementEnd
         // This records if the latter has happened
         bool onInstanceEndCompleted = false;
-        bool useTopStackTransform = false;
+        bool useCurrentInstanceTransform = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             onInstanceEndCompleted = false;
-            useTopStackTransform = false;
+            useCurrentInstanceTransform = false;
+            parentTransformInverse = null;
 
             element = Doc.GetElement(elementId);
 
@@ -286,11 +287,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
             Logger.Instance.Log("nodes.CurrentKey: " + nodes.CurrentKey);
-
-            if (element.Name == "Multistory Stairs")
-            {
-                System.Diagnostics.Debug.WriteLine("Multistory Stairs");
-            }
 
             var newNode = new GltfNode();
             // TODO: needed?
@@ -342,8 +338,12 @@ namespace CesiumIonRevitAddin.Gltf
                 GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
                 if (parentNode.Children == null) parentNode.Children = new List<int>();
                 parentNode.Children.Add(nodes.CurrentIndex);
-                useTopStackTransform = true;
-            } else
+                useCurrentInstanceTransform = true;
+
+                var parentInstance = (Instance) superComponent;
+                parentTransformInverse = parentInstance.GetTransform().Inverse;
+            }
+            else
             {
                 rootNode.Children.Add(nodes.CurrentIndex);
             }
@@ -407,10 +407,6 @@ namespace CesiumIonRevitAddin.Gltf
                 var materialKey = kvp.Key.Split('_')[1];
                 collectionToHash.Add(materialKey, geometryDataObject);
 
-                // DEBUG
-                //string serializedVertices = JsonConvert.SerializeObject(vertices, Formatting.Indented);
-                //Logger.Instance.Log("Serialized Vertices:");
-                //Logger.Instance.Log(serializedVertices);
             }
 
             // hash
@@ -472,37 +468,36 @@ namespace CesiumIonRevitAddin.Gltf
                 geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
             }
 
-
-            //var meshHash = ComputeHash(newMesh);
-            //if (meshHashIndices.TryGetValue(meshHash, out var index))
-            //{
-            //    nodes.CurrentItem.Mesh = index;
-            //}
-            //else
-            //{
-            //    meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
-            //    nodes.CurrentItem.Mesh = meshes.CurrentIndex;
-            //    meshes.CurrentItem.Name = newMesh.Name;
-            //    meshHashIndices.Add(meshHash, meshes.CurrentIndex);
-            //}
-
             Logger.Instance.Log("...Ended OnElementEnd: " + element.Name);
         }
 
         int instanceStackDepth = 0;
-        Autodesk.Revit.DB.Transform topStackTransform = null;
+        Autodesk.Revit.DB.Transform currentInstanceTransform = null;
+        Autodesk.Revit.DB.Transform stackInverse = null;
+        Autodesk.Revit.DB.Transform parentTransformInverse = null;
+
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
             instanceStackDepth++;
 
             Logger.Instance.Log("Beginning OnInstanceBegin...");
-            topStackTransform = instanceNode.GetTransform();
-            Logger.Instance.Log("  topStackTransform: ");
-            Logger.Instance.Log("  " + GetTransformDetails(topStackTransform));
-            var transformationMultiply = CurrentTransform.Multiply(topStackTransform);
-            Logger.Instance.Log("  transformationMultiply: ");
-            Logger.Instance.Log("  " + GetTransformDetails(transformationMultiply));
+
+            Logger.Instance.Log("CurrentFullTransform: ");
+            Logger.Instance.Log(GetTransformDetails(CurrentFullTransform));
+
+            stackInverse = transformStack.Peek().Inverse;
+
+            // TODO. Note that currentInstanceTransform always seems to be the full transform stack.
+            // Chase down an example of instance transforms that actually stack
+            // Note that balustrades may be this example (instances of instances)
+            currentInstanceTransform = instanceNode.GetTransform();
+            Logger.Instance.Log("  currentInstanceTransform: ");
+            Logger.Instance.Log("  " + GetTransformDetails(currentInstanceTransform));
+
+            var transformationMultiply = CurrentFullTransform.Multiply(currentInstanceTransform);
             transformStack.Push(transformationMultiply);
+            Logger.Instance.Log("  CurrentFullTransform (after pushing to stack): ");
+            Logger.Instance.Log("  " + GetTransformDetails(CurrentFullTransform));
 
             Logger.Instance.Log("...Ending OnInstanceBegin");
             return RenderNodeAction.Proceed;
@@ -546,72 +541,52 @@ namespace CesiumIonRevitAddin.Gltf
             if (instanceStackDepth > 0) return;
             if (!transform.IsIdentity)
             {
-                //Autodesk.Revit.DB.Transform justRotation = Autodesk.Revit.DB.Transform.Identity;
-                //justRotation.BasisX = transform.BasisX.Normalize();
-                //justRotation.BasisY = transform.BasisY.Normalize();
-                //justRotation.BasisZ = transform.BasisZ.Normalize();
-
-                //var justTranslation = Autodesk.Revit.DB.Transform.Identity;
-                //justTranslation.Origin = new XYZ(transform.Origin.X, transform.Origin.Y, transform.Origin.Z);
-
-                //var RT = justRotation * justTranslation;
-                //var TR = justTranslation * justRotation;
-
-                //Autodesk.Revit.DB.Transform finalTransform;
-                //finalTransform = justTranslation;
-
-                //Logger.Instance.Log("   adding transformation to glTF node matrix:");
-                //var serializableTransform = new SerializableTransform(transform);
-                //Logger.Instance.Log(serializableTransform.ToString());
 
                 var currentNode = nodes.CurrentItem;
-                //DEBUG
-                if (currentNode.Name == "rootNode")
-                {
-                    Logger.Instance.Log("rootnode is in OnInstanceEnd");
-                }
 
-                topStackTransform = node.GetTransform();
-                if (useTopStackTransform) // for nodes with a non-root parent
+                currentInstanceTransform = node.GetTransform();
+                if (useCurrentInstanceTransform) // for nodes with a non-root parent
                 {
-                    if (!topStackTransform.IsIdentity)
+                    if (!currentInstanceTransform.IsIdentity)
                     {
-                        Logger.Instance.Log("Writing topStackTransform:");
-                        Logger.Instance.Log(GetTransformDetails(topStackTransform));
-                        currentNode.Matrix = new List<double>
-                        {
-                            topStackTransform.BasisX.X, topStackTransform.BasisY.X, topStackTransform.BasisZ.X, 0.0,
-                            topStackTransform.BasisX.Y, topStackTransform.BasisY.Y, topStackTransform.BasisZ.Y, 0.0,
-                            topStackTransform.BasisX.Z, topStackTransform.BasisY.Z, topStackTransform.BasisZ.Z, 0.0,
-                            topStackTransform.Origin.X, topStackTransform.Origin.Y, topStackTransform.Origin.Z, 1.0
-                        };
-                        }
+                        Logger.Instance.Log("node has non-root parent.");
+
+                        Logger.Instance.Log("currentInstanceTransform:");
+                        Logger.Instance.Log(GetTransformDetails(currentInstanceTransform));
+
+                        Logger.Instance.Log("parentTransformInverse:");
+                        Logger.Instance.Log(GetTransformDetails(parentTransformInverse));
+
+                        var outgoingMatrix = parentTransformInverse * currentInstanceTransform;
+
+                        Logger.Instance.Log("outgoingMatrix:");
+                        Logger.Instance.Log(GetTransformDetails(outgoingMatrix));
+
+                        currentNode.Matrix = TransformToList(outgoingMatrix);
+                    }
                 }
                 else
                 {
                     Logger.Instance.Log("Writing transform:");
                     Logger.Instance.Log(GetTransformDetails(transform));
 
-                    currentNode.Matrix = new List<double>
-                    {
-                        transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0.0,
-                        transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0.0,
-                        transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0.0,
-                        transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
-                    };
+                    currentNode.Matrix = TransformToList(transform);
                 }
-                //currentNode.Matrix = new List<double>
-                //{
-                //    finalTransform.BasisX.X, finalTransform.BasisY.X, finalTransform.BasisZ.X, 0.0,
-                //    finalTransform.BasisX.Y, finalTransform.BasisY.Y, finalTransform.BasisZ.Y, 0.0,
-                //    finalTransform.BasisX.Z, finalTransform.BasisY.Z, finalTransform.BasisZ.Z, 0.0,
-                //    finalTransform.Origin.X, finalTransform.Origin.Y, finalTransform.Origin.Z, 1.0
-                //};
-
             }
 
             cachedTransform = transform;
             onInstanceEndCompleted = true;
+        }
+
+        List<double> TransformToList(Autodesk.Revit.DB.Transform transform)
+        {
+            return new List<double>
+                        {
+                            transform.BasisX.X, transform.BasisX.Y, transform.BasisX.Z, 0.0,
+                            transform.BasisY.X, transform.BasisY.Y, transform.BasisY.Z, 0.0,
+                            transform.BasisZ.X, transform.BasisZ.Y, transform.BasisZ.Z, 0.0,
+                            transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
+                        };
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
@@ -621,8 +596,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             documents.Add(node.GetDocument());
 
-            transformStack.Push(CurrentTransform.Multiply(linkTransformation));
-            LinkOriginalTranformation = new Autodesk.Revit.DB.Transform(CurrentTransform);
+            transformStack.Push(CurrentFullTransform.Multiply(linkTransformation));
+            LinkOriginalTranformation = new Autodesk.Revit.DB.Transform(CurrentFullTransform);
 
             // We can either skip this instance or proceed with rendering it.
             return RenderNodeAction.Proceed;
@@ -782,7 +757,7 @@ namespace CesiumIonRevitAddin.Gltf
             var preferences = new Preferences(); // TODO: preferences
             if (!preferences.Instancing)
             {
-                pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+                pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
             }
             else
             {
@@ -795,7 +770,7 @@ namespace CesiumIonRevitAddin.Gltf
                 }
                 else if (instanceStackDepth == 2)
                 {
-                    pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
+                    pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
                 }
             }
             //else // debug
@@ -831,7 +806,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(preferences, CurrentTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(preferences, CurrentFullTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture) GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
@@ -919,7 +894,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        Autodesk.Revit.DB.Transform CurrentTransform
+        Autodesk.Revit.DB.Transform CurrentFullTransform
         {
             get
             {
