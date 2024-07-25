@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
+using System;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -96,6 +97,7 @@ namespace CesiumIonRevitAddin.Export
             ref bool materialHasTexture)
         {
             ElementId id = materialNode.MaterialId;
+
             // Validate if the material is valid because for some reason there are
             // materials with invalid Ids
             if (id == ElementId.InvalidElementId)
@@ -114,7 +116,7 @@ namespace CesiumIonRevitAddin.Export
             GltfMaterial gltfMaterial;
             if (materialIdDictionary.TryGetValue(id, out gltfMaterial))
             {
-                var materialElement = doc.GetElement(materialNode.MaterialId);
+                Element materialElement = doc.GetElement(materialNode.MaterialId);
                 gltfMaterial.Name = materialElement.Name;
                 uniqueId = materialElement.UniqueId;
                 materialHasTexture = gltfMaterial.PbrMetallicRoughness.BaseColorTexture != null;
@@ -132,7 +134,7 @@ namespace CesiumIonRevitAddin.Export
                     Logger.Instance.Log("Starting Export: " + materialName);
                 }
 
-                var materialGltfName = Utils.Util.GetGltfName(material.Name);
+                string materialGltfName = Utils.Util.GetGltfName(material.Name);
                 gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
 
                 var classSchema = extStructuralMetadataExtensionSchema.GetClass(materialGltfName) ?? extStructuralMetadataExtensionSchema.AddClass(material.Name);
@@ -140,10 +142,10 @@ namespace CesiumIonRevitAddin.Export
                 while (paramIterator.MoveNext())
                 {
                     var parameter = (Parameter)paramIterator.Current;
-                    var paramName = parameter.Definition.Name;
-                    var paramValue = GetParameterValueAsString(parameter);
+                    string paramName = parameter.Definition.Name;
+                    string paramValue = GetParameterValueAsString(parameter);
 
-                    var paramGltfName = Utils.Util.GetGltfName(paramName);
+                    string paramGltfName = Utils.Util.GetGltfName(paramName);
 
                     if (parameter.HasValue)
                     {
@@ -191,31 +193,32 @@ namespace CesiumIonRevitAddin.Export
                         {
                             // addOrUpdate to images IndexedDir
                             // TODO: handle file-name collision
-                            var fileName = Path.GetFileName(bitmapInfo.AbsolutePath);
+                            var rawFileName = Path.GetFileName(bitmapInfo.AbsolutePath);
+
                             int imageIndex;
-                            if (images.Contains(fileName))
+                            if (images.Contains(rawFileName))
                             {
-                                imageIndex = images.GetIndexFromUuid(fileName);
+                                imageIndex = images.GetIndexFromUuid(rawFileName);
                             }
                             else
                             {
                                 var preferences = new Preferences(); // TODO: preferences
-                                var copiedFilePath = Path.Combine(preferences.OutputDirectory, fileName);
+                                var copiedFilePath = Path.Combine(preferences.OutputDirectory, rawFileName);
                                 File.Copy(bitmapInfo.AbsolutePath, copiedFilePath, true);
                                 var gltfImage = new GltfImage
                                 {
-                                    Uri = fileName
+                                    Uri = Uri.EscapeDataString(rawFileName)
                                 };
-                                images.AddOrUpdateCurrent(fileName, gltfImage);
+                                images.AddOrUpdateCurrent(rawFileName, gltfImage);
 
                                 // TODO: assuming one-to-one mapping between glTF images and texture arrays
-                                imageIndex = images.GetIndexFromUuid(fileName);
+                                imageIndex = images.GetIndexFromUuid(rawFileName);
                                 var gltfTexture = new GltfTexture
                                 {
                                     Sampler = 0,
                                     Source = imageIndex
                                 };
-                                textures.AddOrUpdateCurrent(fileName, gltfTexture);
+                                textures.AddOrUpdateCurrent(rawFileName, gltfTexture);
                             }
 
                             gltfMaterial.PbrMetallicRoughness.BaseColorTexture = new GltfTextureInfo
