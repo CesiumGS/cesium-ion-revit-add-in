@@ -18,8 +18,10 @@ namespace CesiumIonRevitAddin
         public bool Levels { get; set; }
         public bool Properties { get; set; }
         public bool RelocateTo0 { get; set; }
-        public bool FlipAxis { get; set; } = false;
+        public bool FlipAxis { get; set; } = true;
         public bool Instancing { get; set; } = true;
+        public bool TrueNorth { get; set; } = true;
+        public bool SharedCoordinates { get; set; } = true;
 
         // TODO: needed?
         //#if REVIT2019 || REVIT2020\

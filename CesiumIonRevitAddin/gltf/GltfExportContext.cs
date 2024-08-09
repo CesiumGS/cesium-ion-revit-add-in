@@ -80,15 +80,45 @@ namespace CesiumIonRevitAddin.Gltf
 
             Reset();
 
+            var preferences = new Preferences(); // TODO: user user-defined preferences
+
+            float scale = 0.3048f; // Decimal feet to meters
+
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
 
-            var preferences = new Preferences(); // TODO: user user-defined preferences
+            ProjectLocation currentLocation = Doc.ActiveProjectLocation;
+            ProjectPosition projectPosition = currentLocation.GetProjectPosition(new XYZ(0, 0, 0)); // Get the shared coordinates for 0,0,0
+
             rootNode = new GltfNode
             {
                 Name = "rootNode"
             };
 
-            if (preferences.FlipAxis) rootNode.Rotation = CesiumIonRevitAddin.Transform.ModelRotation.Get(preferences.FlipAxis);
+            // Add a transform that offsets the project to real coordinates
+            if (preferences.SharedCoordinates)
+            {
+                XYZ projectOffset = new XYZ(projectPosition.EastWest * scale, projectPosition.NorthSouth * scale, projectPosition.Elevation * scale);
+                
+                //TODO: Implement flip axis support here (not sure if we really need it?)
+                rootNode.Translation = new List<float>() { (float)projectOffset.X, (float)projectOffset.Z, -(float)projectOffset.Y };
+            }
+
+            Quaternion rootNodeRotation;
+
+            if (preferences.FlipAxis)
+                rootNodeRotation = new Quaternion(new Vector3D(1, 0, 0), -90);
+            else
+                rootNodeRotation = Quaternion.Identity;
+
+            // Add a transform that rotates the project to face true north
+            if (preferences.TrueNorth)
+            {
+                Quaternion trueNorth = new Quaternion(new Vector3D(0, 0, 1), projectPosition.Angle * (180.0 / Math.PI));
+                rootNodeRotation = Quaternion.Multiply(rootNodeRotation, trueNorth);
+            }
+
+            rootNode.Rotation = new List<double>() { rootNodeRotation.X, rootNodeRotation.Y, rootNodeRotation.Z, rootNodeRotation.W };
+            rootNode.Scale = new List<double>() { scale, scale, scale }; //Revit internal units are decimal feet - scale to meters
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
 
