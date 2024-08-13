@@ -10,6 +10,8 @@ using System.Xml.Linq;
 using CesiumIonRevitAddin.Gltf;
 
 using System.Runtime.InteropServices;
+using CesiumIonRevitAddin.Forms;
+using System.Windows.Forms;
 
 namespace CesiumIonRevitAddin
 {
@@ -125,6 +127,34 @@ namespace CesiumIonRevitAddin
             View3D exportView = (View3D) view;
 
             Preferences preferences = new Preferences();
+
+            // Display the export preferences dialog
+            using (ExportDialog exportDialog = new ExportDialog(ref preferences))
+            {
+                exportDialog.ShowDialog();
+                if (exportDialog.DialogResult != System.Windows.Forms.DialogResult.OK)
+                {
+                    return Result.Cancelled;
+                }
+            }
+
+            // Display the Safe File Dialog
+            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Filter = "glTF files (*.gltf)|*.gltf";
+                saveFileDialog.FilterIndex = 1;
+                saveFileDialog.RestoreDirectory = true;
+                saveFileDialog.FileName = Path.GetFileNameWithoutExtension(exportView.Document.PathName);
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    preferences.OutputPath = saveFileDialog.FileName;
+                }
+                else
+                {
+                    return Result.Cancelled;
+                }
+            }
 
             var ctx = new GltfExportContext(exportView.Document, preferences);
             CustomExporter exporter = new Autodesk.Revit.DB.CustomExporter(exportView.Document, ctx);

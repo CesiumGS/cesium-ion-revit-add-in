@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CesiumIonRevitAddin
 {
-    internal class Preferences
+    public class Preferences
     {
         // TODO: use user-defined vals
         public bool Materials { get; set; } = true;
@@ -32,15 +32,13 @@ namespace CesiumIonRevitAddin
         //#endif
 
         // TODO: use user-defined vals
-        public string path = "C:\\Scratch\\CesiumIonRevitAddin\\outfile";
+        public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.gltf";
         public string OutputDirectory
         {
             get
             {
-                return Path.GetDirectoryName(path);
+                return Path.GetDirectoryName(OutputPath);
             }
         }
-
-        public string FileName { get; set; } = "outfile";
     }
 }

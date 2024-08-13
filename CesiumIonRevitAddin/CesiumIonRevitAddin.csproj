@@ -50,6 +50,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -64,6 +66,12 @@
     <Compile Include="Export\GltfJson.cs" />
     <Compile Include="Export\RevitMaterials.cs" />
     <Compile Include="ExternalApplication.cs" />
+    <Compile Include="Forms\ExportDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\ExportDialog.Designer.cs">
+      <DependentUpon>ExportDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Gltf\ExtStructuralMetadata.cs" />
     <Compile Include="Export\FileExport.cs" />
     <Compile Include="Gltf\Gltf.cs" />
@@ -114,6 +122,12 @@
       <!-- Set the 'Copy to Output Directory' property for each file -->
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Images\cesium.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Forms\ExportDialog.resx">
+      <DependentUpon>ExportDialog.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
