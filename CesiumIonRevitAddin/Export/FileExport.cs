@@ -33,7 +33,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             string binFileName = outputPath + ".bin";
 
-            BufferConfig.Run(bufferViews, buffers, binFileName);
+            BufferConfig.Run(bufferViews, buffers, Path.GetFileName(binFileName));
             BinFile.Create(binFileName, binaryData, preferences.Normals, false);
 
             string gltfJson = GltfJson.Get(scenes, nodes.List, meshes.List, materials.List,
