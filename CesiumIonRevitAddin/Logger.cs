@@ -20,7 +20,11 @@ namespace CesiumIonRevitAddin
         private Logger()
         {
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            string logFilePath = $"C:\\Scratch\\CesiumIonRevitAddin\\CesiumIonRevitAddinLog_{timestamp}.txt";
+
+            string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string addinLogFolderPath = Path.Combine(localAppDataPath, "Cesium", "CesiumIonRevitAddin", "Logs");
+            Directory.CreateDirectory(addinLogFolderPath);
+            string logFilePath = Path.Combine(addinLogFolderPath, $"CesiumIonRevitAddinLog_{timestamp}.txt");
             logFile = new StreamWriter(logFilePath, false) { AutoFlush = true };
         }
 
