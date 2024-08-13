@@ -5,7 +5,7 @@ namespace CesiumIonRevitAddin.Export
 {
     internal class BufferConfig
     {
-        public static void Run(List<GltfBufferView> bufferViews, List<GltfBuffer> buffers)
+        public static void Run(List<GltfBufferView> bufferViews, List<GltfBuffer> buffers, string bufferUri)
         {
             int bytePosition = 0;
             int currentBuffer = 0;
@@ -29,13 +29,7 @@ namespace CesiumIonRevitAddin.Export
 
             var buffer = new GltfBuffer();
 
-            // TODO: add back preferences
-            var preferences = new Preferences();
-            {
-                var bufferUri = preferences.FileName + ".bin";
-                buffer.Uri = bufferUri;
-            }
-
+            buffer.Uri = bufferUri;
             buffer.ByteLength = bytePosition;
             buffers.Clear();
             buffers.Add(buffer);

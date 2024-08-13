@@ -27,12 +27,16 @@ namespace CesiumIonRevitAddin.Gltf
         const char UNDERSCORE = '_';
         bool verboseLog = true;
 
-        public GltfExportContext(Document doc)
+        public GltfExportContext(Document doc, Preferences preferences)
         {
             documents.Add(doc);
             view = doc.ActiveView;
+
+            this.preferences = preferences;
         }
 
+        // TODO: Do we want a better naming convention for private members?
+        Preferences preferences;
         View view;
         Autodesk.Revit.DB.Element element;
         List<Document> documents = new List<Document>();
@@ -79,8 +83,6 @@ namespace CesiumIonRevitAddin.Gltf
             cancelation = false;
 
             Reset();
-
-            var preferences = new Preferences(); // TODO: user user-defined preferences
 
             float scale = 0.3048f; // Decimal feet to meters
 
@@ -271,7 +273,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             // TODO: remove GltfVersion
-            FileExport.Run(bufferViews, buffers, binaryFileData,
+            FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
                 scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
         }
 
@@ -292,9 +294,6 @@ namespace CesiumIonRevitAddin.Gltf
             parentTransformInverse = null;
 
             element = Doc.GetElement(elementId);
-
-            // TODO: add actual user preferences
-            var preferences = new Preferences();
 
             if (!Util.CanBeLockOrHidden(element, view) ||
                 (element is Level))
@@ -448,7 +447,6 @@ namespace CesiumIonRevitAddin.Gltf
             else
             {
                 // Convert currentGeometry objects into glTFMeshPrimitives
-                var preferences = new Preferences(); // TODO: use user-set preferences
                 foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
                 {
                     var name = kvp.Key;
@@ -560,7 +558,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
 
-            var preferences = new Preferences();
             if (!preferences.Instancing)
             {
                 return;
@@ -656,9 +653,7 @@ namespace CesiumIonRevitAddin.Gltf
         public void OnRPC(RPCNode node)
         {
             Logger.Instance.Log("Beginning OnRPC...");
-            // TODO: use user-defined prefs
-            var preferences = new Preferences();
-
+            
             List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
 
             if (meshes.Count == 0)
@@ -715,14 +710,11 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("Starting OnMaterial...");
 
             materialHasTexture = false;
-            // TODO: user-defined parameters
-            var preferences = new Preferences();
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataSchema, samplers, images, textures, ref materialHasTexture);
+                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataSchema, samplers, images, textures, ref materialHasTexture, preferences);
 
-                var prefs = new Preferences();
-                if (!prefs.Textures) materialHasTexture = false;
+                if (!preferences.Textures) materialHasTexture = false;
 
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {
@@ -784,7 +776,6 @@ namespace CesiumIonRevitAddin.Gltf
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
-            var preferences = new Preferences(); // TODO: preferences
             if (!preferences.Instancing)
             {
                 pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();

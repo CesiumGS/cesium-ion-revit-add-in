@@ -94,7 +94,8 @@ namespace CesiumIonRevitAddin.Export
             IndexedDictionary<GltfSampler> samplers,
             IndexedDictionary<GltfImage> images,
             IndexedDictionary<GltfTexture> textures,
-            ref bool materialHasTexture)
+            ref bool materialHasTexture,
+            Preferences preferences)
         {
             ElementId id = materialNode.MaterialId;
 
@@ -178,8 +179,8 @@ namespace CesiumIonRevitAddin.Export
                 SetGltfMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
 
                 var bitmapInfoCollection = GetBitmapInfo(doc, material);
-                var prefs = new Preferences();
-                materialHasTexture = prefs.Textures && bitmapInfoCollection.Any();
+                
+                materialHasTexture = preferences.Textures && bitmapInfoCollection.Any();
                 if (materialHasTexture)
                 {
                     if (!samplers.List.Any())
@@ -202,7 +203,6 @@ namespace CesiumIonRevitAddin.Export
                             }
                             else
                             {
-                                var preferences = new Preferences(); // TODO: preferences
                                 var copiedFilePath = Path.Combine(preferences.OutputDirectory, rawFileName);
                                 File.Copy(bitmapInfo.AbsolutePath, copiedFilePath, true);
                                 var gltfImage = new GltfImage

@@ -124,7 +124,9 @@ namespace CesiumIonRevitAddin
             }
             View3D exportView = (View3D) view;
 
-            var ctx = new GltfExportContext(exportView.Document);
+            Preferences preferences = new Preferences();
+
+            var ctx = new GltfExportContext(exportView.Document, preferences);
             CustomExporter exporter = new Autodesk.Revit.DB.CustomExporter(exportView.Document, ctx);
 
             if (ctx == null || exporter == null)

@@ -8,6 +8,7 @@ namespace CesiumIonRevitAddin.Gltf
     internal class FileExport
     {
         public static void Run(
+            Preferences preferences,
             List<GltfBufferView> bufferViews,
             List<GltfBuffer> buffers,
             List<GltfBinaryData> binaryData,
@@ -23,16 +24,14 @@ namespace CesiumIonRevitAddin.Gltf
             IndexedDictionary<GltfTexture> textures,
             IndexedDictionary<GltfSampler> samplers)
         {
-            // TODO: remove placeholder Preferences object
-            var preferences = new Preferences();
-
             // TODO: needed? create extensions schema
 
             // DEBUG
             int bufferByteLength = buffers[0].ByteLength;
 
-            BufferConfig.Run(bufferViews, buffers);
             string binFileName = preferences.path + ".bin";
+
+            BufferConfig.Run(bufferViews, buffers, binFileName);
             BinFile.Create(binFileName, binaryData, preferences.Normals, false);
 
             string gltfJson = GltfJson.Get(scenes, nodes.List, meshes.List, materials.List,
