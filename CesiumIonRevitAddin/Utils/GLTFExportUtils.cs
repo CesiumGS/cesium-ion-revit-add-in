@@ -117,9 +117,14 @@ namespace CesiumIonRevitAddin.Utils
                         {
                             var newNormal = transform.OfVector(normal);
                             newNormal = newNormal.Normalize();
-                            normals.Add(newNormal.X);
-                            normals.Add(newNormal.Y);
-                            normals.Add(newNormal.Z);
+
+                            // Add a normal for each vertex of the facet
+                            for (int j = 0; j < 3; j++)
+                            {
+                                normals.Add(newNormal.X);
+                                normals.Add(newNormal.Y);
+                                normals.Add(newNormal.Z);
+                            }
                         }
 
                         break;
