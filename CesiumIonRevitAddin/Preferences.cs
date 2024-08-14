@@ -23,6 +23,8 @@ namespace CesiumIonRevitAddin
         public bool TrueNorth { get; set; } = true;
         public bool SharedCoordinates { get; set; } = true;
 
+        public string EpsgCode { get; set; } = "";
+
         // TODO: needed?
         //#if REVIT2019 || REVIT2020\
         //        DisplayUnitType units;

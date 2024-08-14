@@ -18,6 +18,7 @@ using Autodesk.Revit.DB.Visual;
 using System.Linq;
 using static CesiumIonRevitAddin.Gltf.GltfExportContext;
 using System.Windows.Media.Media3D;
+using System.IO;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -275,6 +276,10 @@ namespace CesiumIonRevitAddin.Gltf
             // TODO: remove GltfVersion
             FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
                 scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
+
+            string jsonPath = Path.Combine(preferences.OutputDirectory, Path.GetFileNameWithoutExtension(preferences.OutputPath) + ".json");
+
+            TilerExportUtils.WriteTilerJson(jsonPath, preferences);
         }
 
         public bool IsCanceled()

@@ -30,12 +30,14 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExportDialog));
             this.Georeferencing = new System.Windows.Forms.GroupBox();
-            this.sharedCoordinates = new System.Windows.Forms.RadioButton();
             this.internalOrigin = new System.Windows.Forms.RadioButton();
+            this.sharedCoordinates = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.instancing = new System.Windows.Forms.CheckBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
+            this.crsInput = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -44,26 +46,16 @@
             // 
             this.Georeferencing.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.Georeferencing.AutoSize = true;
+            this.Georeferencing.Controls.Add(this.label1);
+            this.Georeferencing.Controls.Add(this.crsInput);
             this.Georeferencing.Controls.Add(this.internalOrigin);
             this.Georeferencing.Controls.Add(this.sharedCoordinates);
             this.Georeferencing.Location = new System.Drawing.Point(12, 12);
             this.Georeferencing.Name = "Georeferencing";
-            this.Georeferencing.Size = new System.Drawing.Size(306, 80);
+            this.Georeferencing.Size = new System.Drawing.Size(334, 80);
             this.Georeferencing.TabIndex = 0;
             this.Georeferencing.TabStop = false;
             this.Georeferencing.Text = "Georeferencing";
-            // 
-            // sharedCoordinates
-            // 
-            this.sharedCoordinates.AutoSize = true;
-            this.sharedCoordinates.Location = new System.Drawing.Point(7, 20);
-            this.sharedCoordinates.Name = "sharedCoordinates";
-            this.sharedCoordinates.Size = new System.Drawing.Size(118, 17);
-            this.sharedCoordinates.TabIndex = 0;
-            this.sharedCoordinates.TabStop = true;
-            this.sharedCoordinates.Text = "Shared Coordinates";
-            this.sharedCoordinates.UseVisualStyleBackColor = true;
             // 
             // internalOrigin
             // 
@@ -76,6 +68,18 @@
             this.internalOrigin.Text = "Internal Origin";
             this.internalOrigin.UseVisualStyleBackColor = true;
             // 
+            // sharedCoordinates
+            // 
+            this.sharedCoordinates.AutoSize = true;
+            this.sharedCoordinates.Location = new System.Drawing.Point(7, 20);
+            this.sharedCoordinates.Name = "sharedCoordinates";
+            this.sharedCoordinates.Size = new System.Drawing.Size(118, 17);
+            this.sharedCoordinates.TabIndex = 0;
+            this.sharedCoordinates.TabStop = true;
+            this.sharedCoordinates.Text = "Shared Coordinates";
+            this.sharedCoordinates.UseVisualStyleBackColor = true;
+            this.sharedCoordinates.CheckedChanged += new System.EventHandler(this.sharedCoordinates_CheckedChanged);
+            // 
             // groupBox1
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
@@ -84,7 +88,7 @@
             this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(306, 56);
+            this.groupBox1.Size = new System.Drawing.Size(334, 56);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
@@ -101,9 +105,9 @@
             // 
             // cancelButton
             // 
-            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(243, 160);
+            this.cancelButton.Location = new System.Drawing.Point(271, 165);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
@@ -112,8 +116,8 @@
             // 
             // exportButton
             // 
-            this.exportButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.exportButton.Location = new System.Drawing.Point(162, 160);
+            this.exportButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.exportButton.Location = new System.Drawing.Point(190, 165);
             this.exportButton.Name = "exportButton";
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
@@ -121,11 +125,30 @@
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.exportButton_Click);
             // 
+            // crsInput
+            // 
+            this.crsInput.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.crsInput.Location = new System.Drawing.Point(228, 19);
+            this.crsInput.Name = "crsInput";
+            this.crsInput.Size = new System.Drawing.Size(100, 20);
+            this.crsInput.TabIndex = 2;
+            this.crsInput.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.crsInput_KeyPress);
+            // 
+            // label1
+            // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(186, 22);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(36, 13);
+            this.label1.TabIndex = 3;
+            this.label1.Text = "EPSG";
+            // 
             // ExportDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(330, 194);
+            this.ClientSize = new System.Drawing.Size(358, 200);
             this.Controls.Add(this.exportButton);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.groupBox1);
@@ -151,5 +174,7 @@
         private System.Windows.Forms.CheckBox instancing;
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Button exportButton;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox crsInput;
     }
 }

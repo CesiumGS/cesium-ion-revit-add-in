@@ -110,6 +110,7 @@
     <Compile Include="Utils\GltfBinaryDataUtils.cs" />
     <Compile Include="Utils\GltfExportUtils.cs" />
     <Compile Include="Utils\MaterialUtils.cs" />
+    <Compile Include="Utils\TilerExportUtils.cs" />
     <Compile Include="Utils\Util.cs" />
   </ItemGroup>
   <ItemGroup>
