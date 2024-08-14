@@ -12,6 +12,7 @@ using CesiumIonRevitAddin.Gltf;
 using System.Runtime.InteropServices;
 using CesiumIonRevitAddin.Forms;
 using System.Windows.Forms;
+using CesiumIonRevitAddin.Utils;
 
 namespace CesiumIonRevitAddin
 {
@@ -126,7 +127,14 @@ namespace CesiumIonRevitAddin
             }
             View3D exportView = (View3D) view;
 
-            Preferences preferences = new Preferences();
+            // Load preferences for this document, if it exists
+            Preferences preferences;
+            string preferencesPath = Preferences.GetPreferencesPathForProject(exportView.Document.PathName);
+            bool existingPreferences = File.Exists(preferencesPath);
+            if (existingPreferences && exportView.Document.PathName != "")
+                preferences = Preferences.LoadFromFile(preferencesPath);
+            else
+                preferences = new Preferences();
 
             // Display the export preferences dialog
             using (ExportDialog exportDialog = new ExportDialog(ref preferences))
@@ -143,8 +151,18 @@ namespace CesiumIonRevitAddin
             {
                 saveFileDialog.Filter = "glTF files (*.gltf)|*.gltf";
                 saveFileDialog.FilterIndex = 1;
-                saveFileDialog.RestoreDirectory = true;
-                saveFileDialog.FileName = Path.GetFileNameWithoutExtension(exportView.Document.PathName);
+                
+                // Load the initial directory and filename from the preferences
+                if (existingPreferences)
+                {
+                    saveFileDialog.FileName = preferences.OutputFilename;
+                    saveFileDialog.InitialDirectory = preferences.OutputDirectory;
+                }
+                else
+                {
+                    saveFileDialog.RestoreDirectory = true;
+                    saveFileDialog.FileName = Path.GetFileNameWithoutExtension(exportView.Document.PathName);
+                }
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
@@ -168,6 +186,11 @@ namespace CesiumIonRevitAddin
             exporter.ShouldStopOnError = false;
             exporter.IncludeGeometricObjects = false;
             exporter.Export(exportView);
+
+            // Write out the updated preferences for this document
+            if (exportView.Document.PathName != "")
+                preferences.SaveToFile(preferencesPath);
+
             Autodesk.Revit.UI.TaskDialog.Show("Cesium GS", "View exported to glTF");
 
             return Result.Succeeded;

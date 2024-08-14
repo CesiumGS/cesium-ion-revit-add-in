@@ -42,7 +42,7 @@ namespace CesiumIonRevitAddin.Utils
             };
 
             // Only add the CRS information if it exists
-            if (preferences.EpsgCode != "")
+            if (preferences.EpsgCode != "" && preferences.SharedCoordinates)
                 jsonObject["input"]["crs"] = "EPSG:" + preferences.EpsgCode;
             
             string jsonString = JsonConvert.SerializeObject(jsonObject, Formatting.Indented);

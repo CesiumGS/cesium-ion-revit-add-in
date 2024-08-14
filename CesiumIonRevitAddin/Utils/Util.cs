@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -65,6 +66,12 @@ namespace CesiumIonRevitAddin.Utils
         {
             if (scalars == null || scalars.Count == 0) return null;
             return new int[] { scalars.Min(), scalars.Max() };
+        }
+
+        public static string GetAddinUserDataFolder()
+        {
+            string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return Path.Combine(localAppDataPath, "Cesium", "CesiumIonRevitAddin");
         }
     }
 }

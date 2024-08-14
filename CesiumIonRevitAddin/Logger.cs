@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CesiumIonRevitAddin.Utils;
+using System;
 using System.IO;
 using System.Threading;
 
@@ -22,7 +23,7 @@ namespace CesiumIonRevitAddin
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
             string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string addinLogFolderPath = Path.Combine(localAppDataPath, "Cesium", "CesiumIonRevitAddin", "Logs");
+            string addinLogFolderPath = Path.Combine(Util.GetAddinUserDataFolder(), "Logs");
             Directory.CreateDirectory(addinLogFolderPath);
             string logFilePath = Path.Combine(addinLogFolderPath, $"CesiumIonRevitAddinLog_{timestamp}.txt");
             logFile = new StreamWriter(logFilePath, false) { AutoFlush = true };
