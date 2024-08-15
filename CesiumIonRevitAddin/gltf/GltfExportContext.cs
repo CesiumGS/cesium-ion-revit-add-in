@@ -624,6 +624,12 @@ namespace CesiumIonRevitAddin.Gltf
         public RenderNodeAction OnLinkBegin(LinkNode node)
         {
             Logger.Instance.Log("Beginning OnLinkBegin");
+
+            if (!preferences.Links)
+            {
+                return RenderNodeAction.Skip;
+            }
+
             isLink = true;
 
             documents.Add(node.GetDocument());

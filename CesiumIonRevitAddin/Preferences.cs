@@ -15,6 +15,7 @@ namespace CesiumIonRevitAddin
         public bool Materials { get; set; } = true;
         public bool Textures { get; set; } = true;
         public bool Normals { get; set; } = true;
+        public bool Links { get; set; } = false;
         public bool Levels { get; set; }
         public bool Properties { get; set; }
         public bool RelocateTo0 { get; set; }

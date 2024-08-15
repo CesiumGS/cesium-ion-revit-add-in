@@ -38,6 +38,9 @@
             this.exportButton = new System.Windows.Forms.Button();
             this.crsInput = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.materials = new System.Windows.Forms.CheckBox();
+            this.textures = new System.Windows.Forms.CheckBox();
+            this.links = new System.Windows.Forms.CheckBox();
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -85,10 +88,13 @@
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.AutoSize = true;
+            this.groupBox1.Controls.Add(this.links);
+            this.groupBox1.Controls.Add(this.textures);
+            this.groupBox1.Controls.Add(this.materials);
             this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(334, 56);
+            this.groupBox1.Size = new System.Drawing.Size(334, 124);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
@@ -96,7 +102,7 @@
             // instancing
             // 
             this.instancing.AutoSize = true;
-            this.instancing.Location = new System.Drawing.Point(7, 20);
+            this.instancing.Location = new System.Drawing.Point(6, 19);
             this.instancing.Name = "instancing";
             this.instancing.Size = new System.Drawing.Size(75, 17);
             this.instancing.TabIndex = 0;
@@ -107,7 +113,7 @@
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(271, 165);
+            this.cancelButton.Location = new System.Drawing.Point(271, 233);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
@@ -117,7 +123,7 @@
             // exportButton
             // 
             this.exportButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.exportButton.Location = new System.Drawing.Point(190, 165);
+            this.exportButton.Location = new System.Drawing.Point(190, 233);
             this.exportButton.Name = "exportButton";
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
@@ -144,11 +150,41 @@
             this.label1.TabIndex = 3;
             this.label1.Text = "EPSG";
             // 
+            // materials
+            // 
+            this.materials.AutoSize = true;
+            this.materials.Location = new System.Drawing.Point(6, 42);
+            this.materials.Name = "materials";
+            this.materials.Size = new System.Drawing.Size(68, 17);
+            this.materials.TabIndex = 1;
+            this.materials.Text = "Materials";
+            this.materials.UseVisualStyleBackColor = true;
+            // 
+            // textures
+            // 
+            this.textures.AutoSize = true;
+            this.textures.Location = new System.Drawing.Point(6, 65);
+            this.textures.Name = "textures";
+            this.textures.Size = new System.Drawing.Size(67, 17);
+            this.textures.TabIndex = 2;
+            this.textures.Text = "Textures";
+            this.textures.UseVisualStyleBackColor = true;
+            // 
+            // links
+            // 
+            this.links.AutoSize = true;
+            this.links.Location = new System.Drawing.Point(6, 88);
+            this.links.Name = "links";
+            this.links.Size = new System.Drawing.Size(79, 17);
+            this.links.TabIndex = 3;
+            this.links.Text = "Revit Links";
+            this.links.UseVisualStyleBackColor = true;
+            // 
             // ExportDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(358, 200);
+            this.ClientSize = new System.Drawing.Size(358, 268);
             this.Controls.Add(this.exportButton);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.groupBox1);
@@ -176,5 +212,8 @@
         private System.Windows.Forms.Button exportButton;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox crsInput;
+        private System.Windows.Forms.CheckBox textures;
+        private System.Windows.Forms.CheckBox materials;
+        private System.Windows.Forms.CheckBox links;
     }
 }
