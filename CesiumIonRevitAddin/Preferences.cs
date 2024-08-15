@@ -24,6 +24,7 @@ namespace CesiumIonRevitAddin
         public bool TrueNorth { get; set; } = true;
         public bool SharedCoordinates { get; set; } = true;
         public string EpsgCode { get; set; } = "";
+        public int MaxTextureSize { get; set; } = 2048;
 
         // TODO: needed?
         //#if REVIT2019 || REVIT2020\

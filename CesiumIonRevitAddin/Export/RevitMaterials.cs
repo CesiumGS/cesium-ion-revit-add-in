@@ -204,7 +204,9 @@ namespace CesiumIonRevitAddin.Export
                             else
                             {
                                 var copiedFilePath = Path.Combine(preferences.OutputDirectory, rawFileName);
-                                File.Copy(bitmapInfo.AbsolutePath, copiedFilePath, true);
+
+                                MaterialUtils.SaveDownsampledTexture(bitmapInfo.AbsolutePath, copiedFilePath, preferences.MaxTextureSize, preferences.MaxTextureSize);
+
                                 var gltfImage = new GltfImage
                                 {
                                     Uri = Uri.EscapeDataString(rawFileName)

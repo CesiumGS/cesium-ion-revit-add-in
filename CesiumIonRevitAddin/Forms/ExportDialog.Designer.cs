@@ -30,17 +30,19 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExportDialog));
             this.Georeferencing = new System.Windows.Forms.GroupBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.crsInput = new System.Windows.Forms.TextBox();
             this.internalOrigin = new System.Windows.Forms.RadioButton();
             this.sharedCoordinates = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.links = new System.Windows.Forms.CheckBox();
+            this.textures = new System.Windows.Forms.CheckBox();
+            this.materials = new System.Windows.Forms.CheckBox();
             this.instancing = new System.Windows.Forms.CheckBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
-            this.crsInput = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
-            this.materials = new System.Windows.Forms.CheckBox();
-            this.textures = new System.Windows.Forms.CheckBox();
-            this.links = new System.Windows.Forms.CheckBox();
+            this.maxTextureSize = new System.Windows.Forms.ComboBox();
+            this.maxTextureSizeLabel = new System.Windows.Forms.Label();
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -55,10 +57,29 @@
             this.Georeferencing.Controls.Add(this.sharedCoordinates);
             this.Georeferencing.Location = new System.Drawing.Point(12, 12);
             this.Georeferencing.Name = "Georeferencing";
-            this.Georeferencing.Size = new System.Drawing.Size(334, 80);
+            this.Georeferencing.Size = new System.Drawing.Size(309, 80);
             this.Georeferencing.TabIndex = 0;
             this.Georeferencing.TabStop = false;
             this.Georeferencing.Text = "Georeferencing";
+            // 
+            // label1
+            // 
+            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(161, 22);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(36, 13);
+            this.label1.TabIndex = 3;
+            this.label1.Text = "EPSG";
+            // 
+            // crsInput
+            // 
+            this.crsInput.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.crsInput.Location = new System.Drawing.Point(203, 19);
+            this.crsInput.Name = "crsInput";
+            this.crsInput.Size = new System.Drawing.Size(100, 20);
+            this.crsInput.TabIndex = 2;
+            this.crsInput.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.crsInput_KeyPress);
             // 
             // internalOrigin
             // 
@@ -87,17 +108,49 @@
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox1.AutoSize = true;
+            this.groupBox1.Controls.Add(this.maxTextureSizeLabel);
+            this.groupBox1.Controls.Add(this.maxTextureSize);
             this.groupBox1.Controls.Add(this.links);
             this.groupBox1.Controls.Add(this.textures);
             this.groupBox1.Controls.Add(this.materials);
             this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(334, 124);
+            this.groupBox1.Size = new System.Drawing.Size(309, 111);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
+            // 
+            // links
+            // 
+            this.links.AutoSize = true;
+            this.links.Location = new System.Drawing.Point(6, 88);
+            this.links.Name = "links";
+            this.links.Size = new System.Drawing.Size(79, 17);
+            this.links.TabIndex = 3;
+            this.links.Text = "Revit Links";
+            this.links.UseVisualStyleBackColor = true;
+            // 
+            // textures
+            // 
+            this.textures.AutoSize = true;
+            this.textures.Location = new System.Drawing.Point(6, 65);
+            this.textures.Name = "textures";
+            this.textures.Size = new System.Drawing.Size(67, 17);
+            this.textures.TabIndex = 2;
+            this.textures.Text = "Textures";
+            this.textures.UseVisualStyleBackColor = true;
+            this.textures.CheckedChanged += new System.EventHandler(this.textures_CheckedChanged);
+            // 
+            // materials
+            // 
+            this.materials.AutoSize = true;
+            this.materials.Location = new System.Drawing.Point(6, 42);
+            this.materials.Name = "materials";
+            this.materials.Size = new System.Drawing.Size(68, 17);
+            this.materials.TabIndex = 1;
+            this.materials.Text = "Materials";
+            this.materials.UseVisualStyleBackColor = true;
             // 
             // instancing
             // 
@@ -113,7 +166,7 @@
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(271, 233);
+            this.cancelButton.Location = new System.Drawing.Point(246, 225);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
@@ -123,7 +176,7 @@
             // exportButton
             // 
             this.exportButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.exportButton.Location = new System.Drawing.Point(190, 233);
+            this.exportButton.Location = new System.Drawing.Point(165, 225);
             this.exportButton.Name = "exportButton";
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
@@ -131,60 +184,35 @@
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.exportButton_Click);
             // 
-            // crsInput
+            // maxTextureSize
             // 
-            this.crsInput.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.crsInput.Location = new System.Drawing.Point(228, 19);
-            this.crsInput.Name = "crsInput";
-            this.crsInput.Size = new System.Drawing.Size(100, 20);
-            this.crsInput.TabIndex = 2;
-            this.crsInput.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.crsInput_KeyPress);
+            this.maxTextureSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.maxTextureSize.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.maxTextureSize.FormattingEnabled = true;
+            this.maxTextureSize.Items.AddRange(new object[] {
+            "4096",
+            "2048",
+            "1024"});
+            this.maxTextureSize.Location = new System.Drawing.Point(203, 63);
+            this.maxTextureSize.Name = "maxTextureSize";
+            this.maxTextureSize.Size = new System.Drawing.Size(100, 21);
+            this.maxTextureSize.TabIndex = 4;
             // 
-            // label1
+            // maxTextureSizeLabel
             // 
-            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(186, 22);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(36, 13);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "EPSG";
-            // 
-            // materials
-            // 
-            this.materials.AutoSize = true;
-            this.materials.Location = new System.Drawing.Point(6, 42);
-            this.materials.Name = "materials";
-            this.materials.Size = new System.Drawing.Size(68, 17);
-            this.materials.TabIndex = 1;
-            this.materials.Text = "Materials";
-            this.materials.UseVisualStyleBackColor = true;
-            // 
-            // textures
-            // 
-            this.textures.AutoSize = true;
-            this.textures.Location = new System.Drawing.Point(6, 65);
-            this.textures.Name = "textures";
-            this.textures.Size = new System.Drawing.Size(67, 17);
-            this.textures.TabIndex = 2;
-            this.textures.Text = "Textures";
-            this.textures.UseVisualStyleBackColor = true;
-            // 
-            // links
-            // 
-            this.links.AutoSize = true;
-            this.links.Location = new System.Drawing.Point(6, 88);
-            this.links.Name = "links";
-            this.links.Size = new System.Drawing.Size(79, 17);
-            this.links.TabIndex = 3;
-            this.links.Text = "Revit Links";
-            this.links.UseVisualStyleBackColor = true;
+            this.maxTextureSizeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.maxTextureSizeLabel.AutoSize = true;
+            this.maxTextureSizeLabel.Location = new System.Drawing.Point(147, 66);
+            this.maxTextureSizeLabel.Name = "maxTextureSizeLabel";
+            this.maxTextureSizeLabel.Size = new System.Drawing.Size(50, 13);
+            this.maxTextureSizeLabel.TabIndex = 5;
+            this.maxTextureSizeLabel.Text = "Max Size";
             // 
             // ExportDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(358, 268);
+            this.ClientSize = new System.Drawing.Size(333, 260);
             this.Controls.Add(this.exportButton);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.groupBox1);
@@ -197,7 +225,6 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -215,5 +242,7 @@
         private System.Windows.Forms.CheckBox textures;
         private System.Windows.Forms.CheckBox materials;
         private System.Windows.Forms.CheckBox links;
+        private System.Windows.Forms.Label maxTextureSizeLabel;
+        private System.Windows.Forms.ComboBox maxTextureSize;
     }
 }
