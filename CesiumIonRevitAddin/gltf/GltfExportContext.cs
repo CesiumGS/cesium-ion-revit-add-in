@@ -631,10 +631,8 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("Beginning OnLinkBegin");
 
             if (!preferences.Links)
-            {
                 return RenderNodeAction.Skip;
-            }
-
+            
             isLink = true;
 
             documents.Add(node.GetDocument());
@@ -648,6 +646,9 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnLinkEnd(LinkNode node)
         {
+            if (!preferences.Links)
+                return;
+            
             isLink = false;
             // Note: This method is invoked even for instances that were skipped.
             transformStack.Pop();
