@@ -279,7 +279,12 @@ namespace CesiumIonRevitAddin.Gltf
 
             string jsonPath = Path.Combine(preferences.OutputDirectory, Path.GetFileNameWithoutExtension(preferences.OutputPath) + ".json");
 
-            TilerExportUtils.WriteTilerJson(jsonPath, preferences);
+            // Write out the json for the tiler
+            TilerExportUtils.WriteTilerJson(jsonPath, preferences, false);
+
+            // Execute the tiler
+            TilerExportUtils.RunTiler(jsonPath);
+
         }
 
         public bool IsCanceled()

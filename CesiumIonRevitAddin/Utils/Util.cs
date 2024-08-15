@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Autodesk.Revit.DB.SpecTypeId;
+using System.Reflection;
 
 namespace CesiumIonRevitAddin.Utils
 {
@@ -72,6 +73,17 @@ namespace CesiumIonRevitAddin.Utils
         {
             string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             return Path.Combine(localAppDataPath, "Cesium", "CesiumIonRevitAddin");
+        }
+
+        public static string GetAddinFolder()
+        {
+            // Get the location of the executing assembly (the add-in itself)
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+
+            // Get the directory of the assembly
+            string addinDirectory = Path.GetDirectoryName(assemblyLocation);
+
+            return addinDirectory;
         }
     }
 }
