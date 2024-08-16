@@ -3,28 +3,29 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using Autodesk.Revit.DB;
 
 
 namespace CesiumIonRevitAddin.Utils
 {
     internal class TilerExportUtils
     {
-        public static void WriteTilerJson(string jsonPath, Preferences preferences, bool absolutePath = false)
+        public static void WriteTilerJson(Preferences preferences)
         {
-            string inputPath = preferences.OutputPath;
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath), Path.GetFileNameWithoutExtension(preferences.OutputPath), "tileset.json");
 
-            if (!absolutePath)
+            string outputPath = preferences.OutputPath;
+
+            // Export to a subfolder if not using a .3dtiles DB
+            if (!preferences.export3DTilesDB)
             {
-                inputPath = "./" + Path.GetFileName(inputPath);
-                outputPath = "./" + Path.GetFileNameWithoutExtension(inputPath) + "/tileset.json";
+                outputPath = Path.Combine(preferences.OutputDirectory, Path.GetFileNameWithoutExtension(outputPath), "tileset.json");
             }
 
             var jsonObject = new JObject
             {
                 ["input"] = new JObject
                 {
-                    ["path"] = inputPath
+                    ["path"] = preferences.GltfPath
                 },
                 ["output"] = new JObject
                 {
@@ -45,11 +46,13 @@ namespace CesiumIonRevitAddin.Utils
 
             // Only add the CRS information if it exists
             if (preferences.EpsgCode != "" && preferences.SharedCoordinates)
+            {
                 jsonObject["input"]["crs"] = "EPSG:" + preferences.EpsgCode;
+            }
 
             string jsonString = JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
 
-            File.WriteAllText(jsonPath, jsonString);
+            File.WriteAllText(preferences.JsonPath, jsonString);
         }
 
         public static void RunTiler(string jsonPath)
@@ -62,7 +65,7 @@ namespace CesiumIonRevitAddin.Utils
                 throw new FileNotFoundException("Tiler executable not found at: " + exePath);
 
             // Define the arguments
-            string arguments = $"--config {jsonPath}";
+            string arguments = $"--config \"{jsonPath}\"";
             string workingDirectory = Path.GetDirectoryName(jsonPath);
 
             // Create the process start information

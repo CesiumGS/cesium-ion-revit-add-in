@@ -29,18 +29,13 @@ namespace CesiumIonRevitAddin.Gltf
             // DEBUG
             int bufferByteLength = buffers[0].ByteLength;
 
-            string outputPath = Path.GetDirectoryName(preferences.OutputPath) + "\\" + Path.GetFileNameWithoutExtension(preferences.OutputPath);
-
-            string binFileName = outputPath + ".bin";
-
-            BufferConfig.Run(bufferViews, buffers, Path.GetFileName(binFileName));
-            BinFile.Create(binFileName, binaryData, preferences.Normals, false);
+            BufferConfig.Run(bufferViews, buffers, Path.GetFileName(preferences.BinPath));
+            BinFile.Create(preferences.BinPath, binaryData, preferences.Normals, false);
 
             string gltfJson = GltfJson.Get(scenes, nodes.List, meshes.List, materials.List,
                 buffers, bufferViews, accessors, extensionsUsed, extensions, preferences, asset, images.List, textures.List, samplers.List);
 
-            string gltfFileName = outputPath + ".gltf";
-            File.WriteAllText(gltfFileName, gltfJson);
+            File.WriteAllText(preferences.GltfPath, gltfJson);
         }
     }
 }

@@ -149,7 +149,7 @@ namespace CesiumIonRevitAddin
             // Display the Safe File Dialog
             using (SaveFileDialog saveFileDialog = new SaveFileDialog())
             {
-                saveFileDialog.Filter = "glTF files (*.gltf)|*.gltf";
+                saveFileDialog.Filter = "3D Tiles (*.3dtiles)|*.3dtiles";
                 saveFileDialog.FilterIndex = 1;
                 
                 // Load the initial directory and filename from the preferences

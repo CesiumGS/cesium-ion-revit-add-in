@@ -25,6 +25,8 @@ namespace CesiumIonRevitAddin
         public bool SharedCoordinates { get; set; } = true;
         public string EpsgCode { get; set; } = "";
         public int MaxTextureSize { get; set; } = 2048;
+        public bool KeepGltf { get; } = false;
+        public bool export3DTilesDB { get; } = true;
 
         // TODO: needed?
         //#if REVIT2019 || REVIT2020\
@@ -34,7 +36,7 @@ namespace CesiumIonRevitAddin
         //
         //#endif
 
-        public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.gltf";
+        public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.3dtiles";
         public string OutputDirectory
         {
             get
@@ -42,7 +44,6 @@ namespace CesiumIonRevitAddin
                 return Path.GetDirectoryName(OutputPath);
             }
         }
-
         public string OutputFilename
         {
             get
@@ -50,6 +51,35 @@ namespace CesiumIonRevitAddin
                 return Path.GetFileName(OutputPath);
             }
         }
+        public string GltfDirectory
+        {
+            get
+            {
+                return Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(OutputPath) + "_temp");
+            }
+        }
+        public string JsonPath
+        {
+            get
+            {
+                return Path.Combine(GltfDirectory, "tileset.json");
+            }
+        }
+        public string BinPath
+        {
+            get
+            {
+                return Path.Combine(GltfDirectory, "tileset.bin");
+            }
+        }
+        public string GltfPath
+        {
+            get
+            {
+                return Path.Combine(GltfDirectory, "tileset.gltf");
+            }
+        }
+
 
         public string ToJson()
         {

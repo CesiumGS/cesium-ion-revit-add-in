@@ -85,6 +85,14 @@ namespace CesiumIonRevitAddin.Gltf
 
             Reset();
 
+            // Create the glTF temp export directory
+            if (!Directory.Exists(preferences.GltfDirectory))
+            {
+                Directory.CreateDirectory(preferences.GltfDirectory);
+            }
+
+
+
             float scale = 0.3048f; // Decimal feet to meters
 
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
@@ -277,13 +285,15 @@ namespace CesiumIonRevitAddin.Gltf
             FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
                 scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
 
-            string jsonPath = Path.Combine(preferences.OutputDirectory, Path.GetFileNameWithoutExtension(preferences.OutputPath) + ".json");
-
             // Write out the json for the tiler
-            TilerExportUtils.WriteTilerJson(jsonPath, preferences, false);
+            TilerExportUtils.WriteTilerJson(preferences);
 
             // Execute the tiler
-            TilerExportUtils.RunTiler(jsonPath);
+            TilerExportUtils.RunTiler(preferences.JsonPath);
+
+            // Remove the temp glTF directory
+            if (!preferences.KeepGltf)
+                Directory.Delete(preferences.GltfDirectory, true);
 
         }
 
