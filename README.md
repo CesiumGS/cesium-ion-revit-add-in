@@ -20,17 +20,18 @@ After installation, add the .NET Framework 4.8 targeting pack:
 
 # Clone the Repo 
 
-It is recommended to clone the repo into the same parent directory as [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper). After cloning, your directory should have these two repos in it:
+It is recommended to clone the repo into the same parent directory as [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper). 
 
-![image](https://github.com/user-attachments/assets/5e47a21b-a4e5-4173-9fb5-d4f927875d9a)
+(It isn't necessary to clone or build the [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper) repo. As an alternative, you can download the latest wrapper release and place the contents in `cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\Debug`.
+The build process for the Revit Addin simply looks in this relative folder and copies the contents over to bundle the addin.)
 
 After changing to the appropriate directory, run the following:
 ```
 git clone git@github.com:CesiumGS/cesium-ion-revit-add-in.git
 ```
+After cloning, your directory should have these two folders in it:
 
-It isn't necessary to clone or build the [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper) repo. As an alternative, you can download the latest wrapper release and place the contents in `cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\Debug`.
-The build process for the Revit Addin simply looks in this relative folder and copies the contents over to bundle the addin.
+![image](https://github.com/user-attachments/assets/5e47a21b-a4e5-4173-9fb5-d4f927875d9a)
 
 With the addin repo cloned, open `CesiumIonRevitAddin.sln` and build. The addin DLL and all files from the Native wrapper will be in `cesium-ion-revit-add-in\CesiumIonRevitAddin\bin\Debug`
 
