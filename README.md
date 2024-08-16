@@ -18,6 +18,10 @@ After installation, add the .NET Framework 4.8 targeting pack:
 
 ![image](https://github.com/user-attachments/assets/e98dee83-46b8-400d-acf6-5e5b4615fccd)
 
+## RevitLookup (Optional, but highly recommended)
+
+Install [RevitLookup](https://github.com/jeremytammik/RevitLookup). This will allow you to query the API and objects in the scene for faster debugging and development.
+
 # Clone the Repo 
 
 It is recommended to clone the repo into the same parent directory as [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper). 
