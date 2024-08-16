@@ -37,7 +37,7 @@ With the addin repo cloned, open `CesiumIonRevitAddin.sln` and build. The addin 
 
 # Developing
 
-For development, we use [Revit Addin Manager](https://github.com/chuongmep/RevitAddInManager). We use RevitAddinManager because it allows for reloading the addin after code changes without restarting Revit.
+For development, we use [Revit AddinManager](https://github.com/chuongmep/RevitAddInManager). We use RevitAddinManager because it allows for reloading the addin after code changes without restarting Revit.
 
 
 The `CesiumIonRevit.addin` manifest file is also included in the repo if you wish to install more traditionally by [adding the manifest to a directory Revit looks in](https://help.autodesk.com/view/RVT/2024/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Introduction_Add_In_Integration_Add_in_Registration_html) such as `C:\ProgramData\Autodesk\Revit\Addins\Revit 2018` or `C:\Users<user>\AppData\Roaming\Autodesk\Revit\Addins\Revit 2024\`.
