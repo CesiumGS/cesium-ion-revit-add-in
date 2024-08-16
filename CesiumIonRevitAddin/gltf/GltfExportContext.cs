@@ -44,6 +44,7 @@ namespace CesiumIonRevitAddin.Gltf
         bool cancelation;
         Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
         GltfNode rootNode;
+        GltfNode upNode;
         // readonly GltfVersion gltfVersion = new GltfVersion();
         // TODO: readonly?
         List<GltfAccessor> accessors = new List<GltfAccessor>();
@@ -97,38 +98,49 @@ namespace CesiumIonRevitAddin.Gltf
 
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
 
-            ProjectLocation currentLocation = Doc.ActiveProjectLocation;
-            ProjectPosition projectPosition = currentLocation.GetProjectPosition(new XYZ(0, 0, 0)); // Get the shared coordinates for 0,0,0
-
+            // Holds metadata along with georeference transforms
             rootNode = new GltfNode
             {
                 Name = "rootNode"
             };
 
+            // Aligns to up-axis and contains geometry
+            upNode = new GltfNode
+            {
+                Name = "upNode"
+            };
+
             // Add a transform that offsets the project to real coordinates
             if (preferences.SharedCoordinates)
             {
-                XYZ projectOffset = new XYZ(projectPosition.EastWest * scale, projectPosition.NorthSouth * scale, projectPosition.Elevation * scale);
+                XYZ projectOffset = GeometryUtils.GetProjectOffset(Doc) * scale;
                 
                 //TODO: Implement flip axis support here (not sure if we really need it?)
                 rootNode.Translation = new List<float>() { (float)projectOffset.X, (float)projectOffset.Z, -(float)projectOffset.Y };
             }
 
-            Quaternion rootNodeRotation;
-
-            if (preferences.FlipAxis)
-                rootNodeRotation = new Quaternion(new Vector3D(1, 0, 0), -90);
-            else
-                rootNodeRotation = Quaternion.Identity;
+            // Root node rotates to true north, orient node rotates up-axis
+            Quaternion rootNodeRotation = Quaternion.Identity;
 
             // Add a transform that rotates the project to face true north
             if (preferences.TrueNorth)
             {
-                Quaternion trueNorth = new Quaternion(new Vector3D(0, 0, 1), projectPosition.Angle * (180.0 / Math.PI));
+                Quaternion trueNorth = new Quaternion(new Vector3D(0, 1, 0), GeometryUtils.GetProjectTrueNorth(Doc));
                 rootNodeRotation = Quaternion.Multiply(rootNodeRotation, trueNorth);
             }
 
             rootNode.Rotation = new List<double>() { rootNodeRotation.X, rootNodeRotation.Y, rootNodeRotation.Z, rootNodeRotation.W };
+
+            // Orient node is used to rotate to the correct up axis
+            Quaternion upNodeRotation;
+            if (preferences.FlipAxis)
+                upNodeRotation = new Quaternion(new Vector3D(1, 0, 0), -90);
+            else
+                upNodeRotation = Quaternion.Identity;
+
+            upNode.Rotation = new List<double>() { upNodeRotation.X, upNodeRotation.Y, upNodeRotation.Z, upNodeRotation.W };
+
+            // TODO: Maybe we should apply this to upNode (rename to xformNode?)
             rootNode.Scale = new List<double>() { scale, scale, scale }; //Revit internal units are decimal feet - scale to meters
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
@@ -243,7 +255,10 @@ namespace CesiumIonRevitAddin.Gltf
 
             // rootNode.Translation = new List<float> { 0, 0, 0 };
             rootNode.Children = new List<int>();
+            upNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
+            nodes.AddOrUpdateCurrent("upNode", upNode);
+            rootNode.Children.Add(nodes.CurrentIndex);
 
             var defaultScene = new GltfScene();
             defaultScene.Nodes.Add(0);
@@ -394,7 +409,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
             else
             {
-                rootNode.Children.Add(nodes.CurrentIndex);
+                upNode.Children.Add(nodes.CurrentIndex);
             }
 
             // Reset currentGeometry for new element

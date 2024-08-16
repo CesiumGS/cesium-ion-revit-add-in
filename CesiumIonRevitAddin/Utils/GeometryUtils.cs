@@ -1,4 +1,5 @@
 ﻿using Autodesk.Revit.DB;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -53,6 +54,20 @@ namespace CesiumIonRevitAddin.Utils
             var side2 = triangle.get_Vertex(2) - vertex0;
             var normal = side1.CrossProduct(side2);
             return normal.Normalize();
+        }
+
+        public static XYZ GetProjectOffset(Document doc)
+        {
+            ProjectLocation currentLocation = doc.ActiveProjectLocation;
+            ProjectPosition projectPosition = currentLocation.GetProjectPosition(new XYZ(0, 0, 0)); // Get the shared coordinates for 0,0,0
+            return new XYZ(projectPosition.EastWest, projectPosition.NorthSouth, projectPosition.Elevation);
+        }
+
+        public static double GetProjectTrueNorth(Document doc)
+        {
+            ProjectLocation currentLocation = doc.ActiveProjectLocation;
+            ProjectPosition projectPosition = currentLocation.GetProjectPosition(new XYZ(0, 0, 0)); // Get the shared coordinates for 0,0,0
+            return projectPosition.Angle * (180.0 / Math.PI);
         }
     }
 }
