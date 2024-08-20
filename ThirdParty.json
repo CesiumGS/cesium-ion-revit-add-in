@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Newtonsoft.Json",
+    "license": [
+      "MIT"
+    ],
+    "version": "13.0.3",
+    "url": "https://github.com/JamesNK/Newtonsoft.Json"
+  }
+]
