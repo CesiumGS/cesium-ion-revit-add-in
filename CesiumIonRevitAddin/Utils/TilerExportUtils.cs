@@ -16,7 +16,7 @@ namespace CesiumIonRevitAddin.Utils
             string outputPath = preferences.OutputPath;
 
             // Export to a subfolder if not using a .3dtiles DB
-            if (!preferences.export3DTilesDB)
+            if (!preferences.Export3DTilesDB)
             {
                 outputPath = Path.Combine(preferences.OutputDirectory, Path.GetFileNameWithoutExtension(outputPath), "tileset.json");
             }

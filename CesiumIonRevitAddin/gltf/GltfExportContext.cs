@@ -309,7 +309,6 @@ namespace CesiumIonRevitAddin.Gltf
             // Remove the temp glTF directory
             if (!preferences.KeepGltf)
                 Directory.Delete(preferences.GltfDirectory, true);
-
         }
 
         public bool IsCanceled()

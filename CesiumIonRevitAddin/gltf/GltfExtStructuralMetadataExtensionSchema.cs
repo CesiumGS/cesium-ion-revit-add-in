@@ -181,22 +181,24 @@ namespace CesiumIonRevitAddin.Gltf
         static HashSet<string> requiredParameters;
         public static bool IsRequired(string categoryName)
         {
-            if (requiredParameters == null)
-            {
-                requiredParameters = new HashSet<string>
-                {
-                    "Category",
-                    "Level",
-                    "Family and Type",
-                    "Family",
-                    "Type",
-                    "Family Name",
-                    "Type Name",
-                    "Type Id"
-                };
-            }
+            // skip marking parameters as "required" for the present
 
-            if (requiredParameters.Contains(categoryName)) return true;
+            //if (requiredParameters == null)
+            //{
+            //    requiredParameters = new HashSet<string>
+            //    {
+            //        "Category",
+            //        "Level",
+            //        "Family and Type",
+            //        "Family",
+            //        "Type",
+            //        "Family Name",
+            //        "Type Name",
+            //        "Type Id"
+            //    };
+            //}
+
+            //if (requiredParameters.Contains(categoryName)) return true;
 
             return false;
         }

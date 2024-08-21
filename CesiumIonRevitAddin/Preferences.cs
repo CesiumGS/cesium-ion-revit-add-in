@@ -26,7 +26,7 @@ namespace CesiumIonRevitAddin
         public string EpsgCode { get; set; } = "";
         public int MaxTextureSize { get; set; } = 2048;
         public bool KeepGltf { get; } = false;
-        public bool export3DTilesDB { get; } = true;
+        public bool Export3DTilesDB { get; } = true;
 
         // TODO: needed?
         //#if REVIT2019 || REVIT2020\
