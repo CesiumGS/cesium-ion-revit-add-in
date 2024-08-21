@@ -39,6 +39,14 @@ After cloning, your directory should have these two folders in it:
 
 With the addin repo cloned, open `CesiumIonRevitAddin.sln` and build. The addin DLL and all files from the Native wrapper will be in `cesium-ion-revit-add-in\CesiumIonRevitAddin\bin\Debug`
 
+# Referencing the Design Tiler
+
+The addin currently uses the Design Tiler to produce .3dtiles files at the end of the export process.
+
+The addin expects the tiler to be present in `CesiumIonRevitAddin\bin\Debug\Tiler\tilers.exe` or `CesiumIonRevitAddin\bin\Release\Tiler\tilers.exe`
+
+You will need to clone, build and place the Design Tiler at one of these locations.
+
 # Developing
 
 For development, we use [Revit AddinManager](https://github.com/chuongmep/RevitAddInManager). It allows for reloading the addin after code changes without restarting Revit.
