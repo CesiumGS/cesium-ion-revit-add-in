@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace CesiumIonRevitAddin
 {
@@ -51,7 +46,7 @@ namespace CesiumIonRevitAddin
                 return Path.GetFileName(OutputPath);
             }
         }
-        public string GltfDirectory
+        public string TempDirectory
         {
             get
             {
@@ -62,24 +57,30 @@ namespace CesiumIonRevitAddin
         {
             get
             {
-                return Path.Combine(GltfDirectory, "tileset.json");
+                return Path.Combine(TempDirectory, "tileset.json");
             }
         }
         public string BinPath
         {
             get
             {
-                return Path.Combine(GltfDirectory, "tileset.bin");
+                return Path.Combine(TempDirectory, "tileset.bin");
             }
         }
         public string GltfPath
         {
             get
             {
-                return Path.Combine(GltfDirectory, "tileset.gltf");
+                return Path.Combine(TempDirectory, "tileset.gltf");
             }
         }
-
+        public string Temp3DTilesPath
+        {
+            get
+            {
+                return Path.Combine(TempDirectory, OutputFilename);
+            }
+        }
 
         public string ToJson()
         {

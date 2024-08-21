@@ -13,6 +13,7 @@ namespace CesiumIonRevitAddin.Utils
         public static void WriteTilerJson(Preferences preferences)
         {
 
+            string inputPath = preferences.GltfPath;
             string outputPath = preferences.OutputPath;
 
             // Export to a subfolder if not using a .3dtiles DB
@@ -20,12 +21,28 @@ namespace CesiumIonRevitAddin.Utils
             {
                 outputPath = Path.Combine(preferences.OutputDirectory, Path.GetFileNameWithoutExtension(outputPath), "tileset.json");
             }
+            else
+            {
+                outputPath = preferences.Temp3DTilesPath;
+            }
+
+            // Generate Relative paths to the JSON
+            Uri jsonDirectoryUri = new Uri(Path.GetDirectoryName(preferences.JsonPath) + Path.DirectorySeparatorChar);
+            Uri inputPathUri = new Uri(inputPath);
+            Uri outputPathUri = new Uri(outputPath);
+
+            inputPathUri = jsonDirectoryUri.MakeRelativeUri(inputPathUri);
+            outputPathUri = jsonDirectoryUri.MakeRelativeUri(outputPathUri);
+
+            // Convert the URI to a relative path
+            inputPath = Uri.UnescapeDataString(inputPathUri.ToString()).Replace('/', Path.DirectorySeparatorChar);
+            outputPath = Uri.UnescapeDataString(outputPathUri.ToString()).Replace('/', Path.DirectorySeparatorChar);
 
             var jsonObject = new JObject
             {
                 ["input"] = new JObject
                 {
-                    ["path"] = preferences.GltfPath
+                    ["path"] = inputPathUri
                 },
                 ["output"] = new JObject
                 {
@@ -39,9 +56,11 @@ namespace CesiumIonRevitAddin.Utils
                     {
                         ["flattenClassHierarchy"] = true,
                         ["flattenObjectHierarchy"] = true,
-                        ["separatePropertyTables"] = true
+                        ["separatePropertyTables"] = true,
+                        ["mergeClasses"] = true,
                     }
-                }
+                },
+                ["gzip"] = true
             };
 
             // Only add the CRS information if it exists

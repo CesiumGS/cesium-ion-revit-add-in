@@ -87,9 +87,9 @@ namespace CesiumIonRevitAddin.Gltf
             Reset();
 
             // Create the glTF temp export directory
-            if (!Directory.Exists(preferences.GltfDirectory))
+            if (!Directory.Exists(preferences.TempDirectory))
             {
-                Directory.CreateDirectory(preferences.GltfDirectory);
+                Directory.CreateDirectory(preferences.TempDirectory);
             }
 
 
@@ -306,9 +306,16 @@ namespace CesiumIonRevitAddin.Gltf
             // Execute the tiler
             TilerExportUtils.RunTiler(preferences.JsonPath);
 
+            // Move the .3dtiles to the final location
+            if (preferences.Export3DTilesDB)
+            {
+                File.Copy(preferences.Temp3DTilesPath, preferences.OutputPath, overwrite: true);
+                File.Delete(preferences.Temp3DTilesPath);
+            }
+
             // Remove the temp glTF directory
             if (!preferences.KeepGltf)
-                Directory.Delete(preferences.GltfDirectory, true);
+                Directory.Delete(preferences.TempDirectory, true);
         }
 
         public bool IsCanceled()
