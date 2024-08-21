@@ -44,7 +44,7 @@ namespace CesiumIonRevitAddin.Gltf
         bool cancelation;
         Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
         GltfNode rootNode;
-        GltfNode upNode;
+        GltfNode xFormNode;
         // readonly GltfVersion gltfVersion = new GltfVersion();
         // TODO: readonly?
         List<GltfAccessor> accessors = new List<GltfAccessor>();
@@ -105,9 +105,9 @@ namespace CesiumIonRevitAddin.Gltf
             };
 
             // Aligns to up-axis and contains geometry
-            upNode = new GltfNode
+            xFormNode = new GltfNode
             {
-                Name = "upNode"
+                Name = "xFormNode"
             };
 
             // Add a transform that offsets the project to real coordinates
@@ -132,16 +132,14 @@ namespace CesiumIonRevitAddin.Gltf
             rootNode.Rotation = new List<double>() { rootNodeRotation.X, rootNodeRotation.Y, rootNodeRotation.Z, rootNodeRotation.W };
 
             // Orient node is used to rotate to the correct up axis
-            Quaternion upNodeRotation;
+            Quaternion XFormNodeRotation;
             if (preferences.FlipAxis)
-                upNodeRotation = new Quaternion(new Vector3D(1, 0, 0), -90);
+                XFormNodeRotation = new Quaternion(new Vector3D(1, 0, 0), -90);
             else
-                upNodeRotation = Quaternion.Identity;
+                XFormNodeRotation = Quaternion.Identity;
 
-            upNode.Rotation = new List<double>() { upNodeRotation.X, upNodeRotation.Y, upNodeRotation.Z, upNodeRotation.W };
-
-            // TODO: Maybe we should apply this to upNode (rename to xformNode?)
-            rootNode.Scale = new List<double>() { scale, scale, scale }; //Revit internal units are decimal feet - scale to meters
+            xFormNode.Rotation = new List<double>() { XFormNodeRotation.X, XFormNodeRotation.Y, XFormNodeRotation.Z, XFormNodeRotation.W };
+            xFormNode.Scale = new List<double>() { scale, scale, scale }; //Revit internal units are decimal feet - scale to meters
 
             ProjectInfo projectInfo = Doc.ProjectInformation;
 
@@ -255,9 +253,9 @@ namespace CesiumIonRevitAddin.Gltf
 
             // rootNode.Translation = new List<float> { 0, 0, 0 };
             rootNode.Children = new List<int>();
-            upNode.Children = new List<int>();
+            xFormNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
-            nodes.AddOrUpdateCurrent("upNode", upNode);
+            nodes.AddOrUpdateCurrent("xFormNode", xFormNode);
             rootNode.Children.Add(nodes.CurrentIndex);
 
             var defaultScene = new GltfScene();
@@ -415,7 +413,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
             else
             {
-                upNode.Children.Add(nodes.CurrentIndex);
+                xFormNode.Children.Add(nodes.CurrentIndex);
             }
 
             // Reset currentGeometry for new element
