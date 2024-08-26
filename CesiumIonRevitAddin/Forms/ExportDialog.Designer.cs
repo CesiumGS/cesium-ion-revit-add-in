@@ -35,14 +35,14 @@
             this.internalOrigin = new System.Windows.Forms.RadioButton();
             this.sharedCoordinates = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.maxTextureSizeLabel = new System.Windows.Forms.Label();
+            this.maxTextureSize = new System.Windows.Forms.ComboBox();
             this.links = new System.Windows.Forms.CheckBox();
             this.textures = new System.Windows.Forms.CheckBox();
             this.materials = new System.Windows.Forms.CheckBox();
             this.instancing = new System.Windows.Forms.CheckBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
-            this.maxTextureSize = new System.Windows.Forms.ComboBox();
-            this.maxTextureSizeLabel = new System.Windows.Forms.Label();
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -121,6 +121,30 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
             // 
+            // maxTextureSizeLabel
+            // 
+            this.maxTextureSizeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.maxTextureSizeLabel.AutoSize = true;
+            this.maxTextureSizeLabel.Location = new System.Drawing.Point(147, 66);
+            this.maxTextureSizeLabel.Name = "maxTextureSizeLabel";
+            this.maxTextureSizeLabel.Size = new System.Drawing.Size(50, 13);
+            this.maxTextureSizeLabel.TabIndex = 5;
+            this.maxTextureSizeLabel.Text = "Max Size";
+            // 
+            // maxTextureSize
+            // 
+            this.maxTextureSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.maxTextureSize.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.maxTextureSize.FormattingEnabled = true;
+            this.maxTextureSize.Items.AddRange(new object[] {
+            "4096",
+            "2048",
+            "1024"});
+            this.maxTextureSize.Location = new System.Drawing.Point(203, 63);
+            this.maxTextureSize.Name = "maxTextureSize";
+            this.maxTextureSize.Size = new System.Drawing.Size(100, 21);
+            this.maxTextureSize.TabIndex = 4;
+            // 
             // links
             // 
             this.links.AutoSize = true;
@@ -151,6 +175,7 @@
             this.materials.TabIndex = 1;
             this.materials.Text = "Materials";
             this.materials.UseVisualStyleBackColor = true;
+            this.materials.CheckedChanged += new System.EventHandler(this.materials_CheckedChanged);
             // 
             // instancing
             // 
@@ -183,30 +208,6 @@
             this.exportButton.Text = "Save";
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.exportButton_Click);
-            // 
-            // maxTextureSize
-            // 
-            this.maxTextureSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.maxTextureSize.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.maxTextureSize.FormattingEnabled = true;
-            this.maxTextureSize.Items.AddRange(new object[] {
-            "4096",
-            "2048",
-            "1024"});
-            this.maxTextureSize.Location = new System.Drawing.Point(203, 63);
-            this.maxTextureSize.Name = "maxTextureSize";
-            this.maxTextureSize.Size = new System.Drawing.Size(100, 21);
-            this.maxTextureSize.TabIndex = 4;
-            // 
-            // maxTextureSizeLabel
-            // 
-            this.maxTextureSizeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.maxTextureSizeLabel.AutoSize = true;
-            this.maxTextureSizeLabel.Location = new System.Drawing.Point(147, 66);
-            this.maxTextureSizeLabel.Name = "maxTextureSizeLabel";
-            this.maxTextureSizeLabel.Size = new System.Drawing.Size(50, 13);
-            this.maxTextureSizeLabel.TabIndex = 5;
-            this.maxTextureSizeLabel.Text = "Max Size";
             // 
             // ExportDialog
             // 

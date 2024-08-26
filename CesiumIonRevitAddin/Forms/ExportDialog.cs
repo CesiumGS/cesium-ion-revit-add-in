@@ -32,7 +32,9 @@ namespace CesiumIonRevitAddin.Forms
             links.Checked = this.preferences.Links;
 
             maxTextureSize.Text = this.preferences.MaxTextureSize.ToString();
-            maxTextureSize.Enabled = textures.Checked;
+            maxTextureSize.Enabled = textures.Checked && materials.Checked;
+
+            textures.Enabled = materials.Checked;
         }
 
         Preferences preferences;
@@ -70,6 +72,12 @@ namespace CesiumIonRevitAddin.Forms
         private void textures_CheckedChanged(object sender, EventArgs e)
         {
             maxTextureSize.Enabled = textures.Checked;
+        }
+
+        private void materials_CheckedChanged(object sender, EventArgs e)
+        {
+            textures.Enabled = materials.Checked;
+            maxTextureSize.Enabled = textures.Checked && materials.Checked;
         }
     }
 }

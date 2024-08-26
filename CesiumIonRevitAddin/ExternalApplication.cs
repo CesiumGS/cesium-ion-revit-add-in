@@ -13,6 +13,8 @@ using System.Runtime.InteropServices;
 using CesiumIonRevitAddin.Forms;
 using System.Windows.Forms;
 using CesiumIonRevitAddin.Utils;
+using System.Diagnostics;
+using System;
 
 namespace CesiumIonRevitAddin
 {
@@ -20,8 +22,8 @@ namespace CesiumIonRevitAddin
     [Regeneration(RegenerationOption.Manual)]
     public class ExternalApplication : IExternalApplication
     {
-        private const string RIBBONTAB = "Cesium GS";
-        private const string RIBBONPANEL = "Cesium Export Panel";
+        private const string RIBBONTAB = "Cesium";
+        private const string RIBBONPANEL = "Export";
         private static readonly string addInPath = Assembly.GetAssembly(typeof(ExternalApplication)).Location;
         private static readonly string buttonIconsFolder = Path.GetDirectoryName(addInPath) + "\\Images\\";
 
@@ -48,13 +50,17 @@ namespace CesiumIonRevitAddin
 
             ContextualHelp contexHelp = new Autodesk.Revit.UI.ContextualHelp(Autodesk.Revit.UI.ContextualHelpType.Url, "www.cesium.com");
             PushButtonData pushButtonData =
-                new Autodesk.Revit.UI.PushButtonData("push Button Name", "Export to Cesium 3D Tiles", addInPath, "CesiumIonRevitAddin.ExportCommand");
+                new Autodesk.Revit.UI.PushButtonData("push Button Name", "Export to 3D Tiles", addInPath, "CesiumIonRevitAddin.ExportCommand");
             pushButtonData.LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
             pushButtonData.SetContextualHelp(contexHelp);
-            pushButtonData.ToolTip = "Export View to 3D Tiles.";
-            pushButtonData.LongDescription = "Export any 3D View into the 3D Tiles ecosystem.";
+            pushButtonData.ToolTip = "Exports the current 3D View into a 3D Tiles tileset";
+            // TODO: Add LongDescription if needed
+            //pushButtonData.LongDescription = "Exports the current 3D View into a 3D Tiles tileset.";
             panel.AddItem(pushButtonData);
 
+            /*
+             * Remove for now until ion integration is complete
+             * 
             var ionConnectionButton = new PushButtonData("ion Connection", "ion Connection", addInPath, "CesiumIonRevitAddin.ConnectToIon");
             ionConnectionButton.LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
             ionConnectionButton.ToolTip = "Connect to ion";
@@ -68,6 +74,7 @@ namespace CesiumIonRevitAddin
             uploadButton.SetContextualHelp(contexHelp);
             uploadButton.LongDescription = "Upload to ion";
             panel.AddItem(uploadButton);
+            */
 
             // look for RibbonPanel, or create it if not already created
             Autodesk.Revit.UI.RibbonPanel panelAbout = null;
@@ -85,11 +92,12 @@ namespace CesiumIonRevitAddin
                 panelAbout = application.CreateRibbonPanel(RIBBONTAB, "About");
             }
 
-            var pushDataButtonAbout = new PushButtonData("About us", "About us", addInPath, "CesiumIonRevitAddin.AboutUs");
+            var pushDataButtonAbout = new PushButtonData("About", "About", addInPath, "CesiumIonRevitAddin.AboutUs");
             pushDataButtonAbout.LargeImage = new BitmapImage(new System.Uri(System.IO.Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
-            pushDataButtonAbout.ToolTip = "About Cesium 3D Tiles";
+            pushDataButtonAbout.ToolTip = "Find out more about Cesium and 3D Tiles";
             pushDataButtonAbout.SetContextualHelp(contexHelp);
-            pushDataButtonAbout.LongDescription = "Find out more about 3D Tiles and Cesium.";
+            // TODO: Add LongDescription if needed
+            //pushDataButtonAbout.LongDescription = "Find out more about Cesium and 3D Tiles";
             panelAbout.AddItem(pushDataButtonAbout);
 
             return Result.Succeeded;
@@ -191,7 +199,7 @@ namespace CesiumIonRevitAddin
             if (exportView.Document.PathName != "")
                 preferences.SaveToFile(preferencesPath);
 
-            Autodesk.Revit.UI.TaskDialog.Show("Cesium GS", "View exported to glTF");
+            Autodesk.Revit.UI.TaskDialog.Show("Export Complete", "View exported to 3D Tiles");
 
             return Result.Succeeded;
         }
@@ -231,4 +239,31 @@ namespace CesiumIonRevitAddin
             return Result.Succeeded;
         }
     };
+
+    [Transaction(TransactionMode.Manual)]
+    public class AboutUs : Autodesk.Revit.UI.IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            try
+            {
+                string url = "https://www.cesium.com";
+
+                // Use the default browser
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                message = ex.Message;
+                Autodesk.Revit.UI.TaskDialog.Show("Error", message);
+                return Result.Failed;
+            }
+        }
+    }
 }
