@@ -19,6 +19,8 @@ using System.Linq;
 using static CesiumIonRevitAddin.Gltf.GltfExportContext;
 using System.Windows.Media.Media3D;
 using System.IO;
+using System.Net;
+using Autodesk.Revit.DB.Architecture;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -354,7 +356,6 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
-            Logger.Instance.Log("nodes.CurrentKey: " + nodes.CurrentKey);
 
             var newNode = new GltfNode();
             // TODO: needed?
@@ -397,19 +398,31 @@ namespace CesiumIonRevitAddin.Gltf
             var classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
             extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet);
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
-            // set parent to Supercomponent if it exists
+
+            // set parent to Supercomponent if it exists.
             if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
             {
                 Element superComponent = familyInstance.SuperComponent;
-                string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
-                classMetadata["parent"] = superComponentClass;
-                GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
-                if (parentNode.Children == null) parentNode.Children = new List<int>();
-                parentNode.Children.Add(nodes.CurrentIndex);
-                useCurrentInstanceTransform = true;
+                // It can be possible for an Element's Supercomponent to not be in a View.
+                // For example, if you isolate only the "Planting" category in Snowdon,
+                // some Elements have a Supercomponent from the "Site" class that will be missing.
+                if (!nodes.Contains(superComponent.UniqueId))
+                {
+                    Logger.Instance.Log("Cannot find supercomponent. Category is " + superComponent.Category.Name);
+                    xFormNode.Children.Add(nodes.CurrentIndex);
+                } else
+                {
+                    string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
+                    classMetadata["parent"] = superComponentClass;
 
-                var parentInstance = (Instance) superComponent;
-                parentTransformInverse = parentInstance.GetTransform().Inverse;
+                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
+                    if (parentNode.Children == null) parentNode.Children = new List<int>();
+                    parentNode.Children.Add(nodes.CurrentIndex);
+                    useCurrentInstanceTransform = true;
+
+                    var parentInstance = (Instance)superComponent;
+                    parentTransformInverse = parentInstance.GetTransform().Inverse;
+                }
             }
             else
             {
@@ -549,22 +562,15 @@ namespace CesiumIonRevitAddin.Gltf
 
             Logger.Instance.Log("Beginning OnInstanceBegin...");
 
-            Logger.Instance.Log("CurrentFullTransform: ");
-            Logger.Instance.Log(GetTransformDetails(CurrentFullTransform));
-
             stackInverse = transformStack.Peek().Inverse;
 
             // TODO. Note that currentInstanceTransform always seems to be the full transform stack.
             // Chase down an example of instance transforms that actually stack
             // Note that balustrades may be this example (instances of instances)
             currentInstanceTransform = instanceNode.GetTransform();
-            Logger.Instance.Log("  currentInstanceTransform: ");
-            Logger.Instance.Log("  " + GetTransformDetails(currentInstanceTransform));
 
             var transformationMultiply = CurrentFullTransform.Multiply(currentInstanceTransform);
             transformStack.Push(transformationMultiply);
-            Logger.Instance.Log("  CurrentFullTransform (after pushing to stack): ");
-            Logger.Instance.Log("  " + GetTransformDetails(CurrentFullTransform));
 
             Logger.Instance.Log("...Ending OnInstanceBegin");
             return RenderNodeAction.Proceed;
@@ -584,7 +590,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             return transformDetails;
         }
-
 
         Autodesk.Revit.DB.Transform cachedTransform;
         public void OnInstanceEnd(InstanceNode node)
