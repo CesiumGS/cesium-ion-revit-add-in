@@ -47,6 +47,7 @@ namespace CesiumIonRevitAddin.Gltf
         Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
         GltfNode rootNode;
         GltfNode xFormNode;
+
         // readonly GltfVersion gltfVersion = new GltfVersion();
         // TODO: readonly?
         List<GltfAccessor> accessors = new List<GltfAccessor>();
@@ -94,8 +95,6 @@ namespace CesiumIonRevitAddin.Gltf
                 Directory.CreateDirectory(preferences.TempDirectory);
             }
 
-
-
             float scale = 0.3048f; // Decimal feet to meters
 
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
@@ -111,6 +110,8 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 Name = "xFormNode"
             };
+            // xFormNode is the only node that should not have EXT_structural_metadata or any other extensions
+            xFormNode.Extensions = null;
 
             // Add a transform that offsets the project to real coordinates
             if (preferences.SharedCoordinates)
