@@ -1,10 +1,14 @@
 [
   {
     "name": "Newtonsoft.Json",
-    "license": [
-      "MIT"
-    ],
+    "license": ["MIT"],
     "version": "13.0.3",
     "url": "https://github.com/JamesNK/Newtonsoft.Json"
-  }
+  },
+  {
+    "name": "Cesium Native ion Wrapper",
+    "license": ["Apache 2.0"],
+    "version": "Latest",
+    "url": "https://github.com/CesiumGS/cesium-native-ion-wrapper"
+  }  
 ]
