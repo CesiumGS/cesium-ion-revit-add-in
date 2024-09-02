@@ -24,28 +24,40 @@ Install [RevitLookup](https://github.com/jeremytammik/RevitLookup). This will al
 
 # Clone the Repo 
 
-It is recommended to clone the repo into the same parent directory as [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper). 
+The repository requires two additional repositories to be cloned alongside it.  Post build scripts will extract built files from these repositories and add them to the Revit Add-in build folder.
 
-(It isn't necessary to clone or build the [cesium-native-ion-wrapper](https://github.com/CesiumGS/cesium-native-ion-wrapper) repo. As an alternative, you can download the latest wrapper release and place the contents in `cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\Debug`.
-The build process for the Revit Addin simply looks in this relative folder and copies the contents over to bundle the addin.)
-
-After changing to the appropriate directory, run the following:
+You should clone the following repositories into the same parent folder
 ```
-git clone git@github.com:CesiumGS/cesium-ion-revit-add-in.git
+git clone --recurse-submodules git@github.com:CesiumGS/cesium-ion-revit-add-in.git
 ```
-After cloning, your directory should have these two folders in it:
+```
+git clone --recurse-submodules git@github.com:CesiumGS/cesium-native-ion-wrapper.git
+```
+```
+git clone --recurse-submodules -b web-ifc git@github.com:CesiumGS/tilers.git
+```
 
-![image](https://github.com/user-attachments/assets/5e47a21b-a4e5-4173-9fb5-d4f927875d9a)
+After cloning, your folder structure should look like this
 
-With the addin repo cloned, open `CesiumIonRevitAddin.sln` and build. The addin DLL and all files from the Native wrapper will be in `cesium-ion-revit-add-in\CesiumIonRevitAddin\bin\Debug`
+![image](https://github.com/user-attachments/assets/4cbb7a1b-7e75-4806-bacd-4b826f349653)
 
-# Referencing the Design Tiler
+Alternatively, you can place pre-built versions of `cesium-native-ion-wrapper` and `tilers` at the following locations.  The post build scripts will look for files in these locations and copy them across to the add-in
 
-The addin currently uses the Design Tiler to produce .3dtiles files at the end of the export process.
+- Cesium Native Ion Wrapper Debug - `cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\Debug`
+- Cesium Native Ion Wrapper Release - `cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\Release`
+- Tilers Debug - `tilers\build\bin\Debug`
+- Tilers Release - `tilers\build\bin\Release`
 
-The addin expects the tiler to be present in `CesiumIonRevitAddin\bin\Debug\Tiler\tilers.exe` or `CesiumIonRevitAddin\bin\Release\Tiler\tilers.exe`
+# Building the Repo
 
-You will need to clone, build and place the Design Tiler at one of these locations.
+`cesium-ion-revit-add-in` and `tilers` must be built first.  Build them by following their respective build documentation, and choose the same build target (eg. Debug, Release) that you're using for `cesium-ion-revit-add-in`
+
+With the addin repo cloned, open `cesium-ion-revit-add-in\CesiumIonRevitAddin.sln` and build. The addin DLL and all files from the Native wrapper will be in `cesium-ion-revit-add-in\CesiumIonRevitAddin\bin\Debug` or `cesium-ion-revit-add-in\CesiumIonRevitAddin\bin\Release` depending on build configuration.
+
+A successful build will see `tilers` (green) and `cesium-ion-revit-add-in` (orange) content alongside the add-in .dll
+
+![image](https://github.com/user-attachments/assets/de6480d4-3714-49c5-be1e-629fe6a2aa46)
+
 
 # Developing
 
