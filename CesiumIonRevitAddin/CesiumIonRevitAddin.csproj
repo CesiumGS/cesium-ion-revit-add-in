@@ -134,6 +134,7 @@
   <PropertyGroup>
     <PostBuildEvent>xcopy /Y /I "$(SolutionDir)\..\cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\$(Configuration)\*.dll" "$(TargetDir)"
 xcopy /Y /I "$(SolutionDir)\..\cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\$(Configuration)\*.pdb" "$(TargetDir)"
-xcopy /Y /I /S "$(SolutionDir)\..\tilers\build\bin\$(Configuration)\*.*" "$(TargetDir)tiler\"</PostBuildEvent>
+xcopy /Y /I /S "$(SolutionDir)\..\tilers\build\bin\$(Configuration)\*.*" "$(TargetDir)tiler\"
+xcopy /Y /I "$(SolutionDir)\..\tilers\ThirdParty.json" "$(TargetDir)tiler\"</PostBuildEvent>
   </PropertyGroup>
 </Project>
