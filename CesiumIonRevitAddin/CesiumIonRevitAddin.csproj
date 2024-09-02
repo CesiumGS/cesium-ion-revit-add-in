@@ -136,6 +136,7 @@
 xcopy /Y /I "$(SolutionDir)\..\cesium-native-ion-wrapper\build\CesiumNativeIonWrapper\$(Configuration)\*.pdb" "$(TargetDir)"
 xcopy /Y /I /S "$(SolutionDir)\..\tilers\build\bin\$(Configuration)\*.*" "$(TargetDir)tiler\"
 xcopy /Y /I "$(SolutionDir)\..\tilers\ThirdParty.json" "$(TargetDir)tiler\"
-xcopy /Y /I "$(SolutionDir)\CesiumIonRevitAddin\CesiumIonRevit.addin" "$(TargetDir)..\"</PostBuildEvent>
+xcopy /Y /I "$(SolutionDir)\CesiumIonRevitAddin\CesiumIonRevit.addin" "$(TargetDir)..\"
+xcopy /Y /I "$(SolutionDir)\ThirdParty.json" "$(TargetDir)"</PostBuildEvent>
   </PropertyGroup>
 </Project>
