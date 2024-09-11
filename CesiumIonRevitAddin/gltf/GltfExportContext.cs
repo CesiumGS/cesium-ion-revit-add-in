@@ -76,6 +76,8 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Enabled = verboseLog;
             cancelation = false;
 
+            Logger.Instance.Log("Beginning export.");
+
             Reset();
 
             // Create the glTF temp export directory
@@ -197,7 +199,6 @@ namespace CesiumIonRevitAddin.Gltf
                     else
                     {
                         // no mapped ForgeTypeId
-                        Logger.Instance.Log("no mapped ForgeTypeId: " + definition.Name);
                         continue;
                     }
 
@@ -257,8 +258,6 @@ namespace CesiumIonRevitAddin.Gltf
             extensionsUsed.Add("EXT_structural_metadata");
             extensions.Add("EXT_structural_metadata", extStructuralMetadataSchema);
 
-            Logger.Instance.Log("Finishing Start");
-
             return true;
         }
 
@@ -289,6 +288,7 @@ namespace CesiumIonRevitAddin.Gltf
             // TODO: remove GltfVersion
             FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
                 scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
+            Logger.Instance.Log("Completed model export.");
 
             // Write out the json for the tiler
             TilerExportUtils.WriteTilerJson(preferences);
@@ -305,7 +305,9 @@ namespace CesiumIonRevitAddin.Gltf
 
             // Remove the temp glTF directory
             if (!preferences.KeepGltf)
+            {
                 Directory.Delete(preferences.TempDirectory, true);
+            }
         }
 
         public bool IsCanceled()
@@ -345,7 +347,7 @@ namespace CesiumIonRevitAddin.Gltf
                 linkTransformation = linkInstance.GetTransform();
             }
 
-            Logger.Instance.Log("Starting OnElementBegin: " + element.Name);
+            Logger.Instance.Log("Processing element " + element.Name);
 
             var newNode = new GltfNode();
             // TODO: needed?
@@ -398,7 +400,6 @@ namespace CesiumIonRevitAddin.Gltf
                 // some Elements have a Supercomponent from the "Site" class that will be missing.
                 if (!nodes.Contains(superComponent.UniqueId))
                 {
-                    Logger.Instance.Log("Cannot find supercomponent. Category is " + superComponent.Category.Name);
                     xFormNode.Children.Add(nodes.CurrentIndex);
                 }
                 else
@@ -444,8 +445,6 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnElementEnd(ElementId elementId)
         {
-            Logger.Instance.Log("Starting OnElementEnd: " + element.Name);
-
             if (skipElementFlag ||
                 currentVertices == null ||
                 currentVertices.List.Count == 0 ||
@@ -538,8 +537,6 @@ namespace CesiumIonRevitAddin.Gltf
                 meshes.CurrentItem.Name = newMesh.Name;
                 geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
             }
-
-            Logger.Instance.Log("...Ended OnElementEnd: " + element.Name);
         }
 
         int instanceStackDepth = 0;
@@ -551,8 +548,6 @@ namespace CesiumIonRevitAddin.Gltf
         {
             instanceStackDepth++;
 
-            Logger.Instance.Log("Beginning OnInstanceBegin...");
-
             stackInverse = transformStack.Peek().Inverse;
 
             // TODO. Note that currentInstanceTransform always seems to be the full transform stack.
@@ -563,7 +558,6 @@ namespace CesiumIonRevitAddin.Gltf
             var transformationMultiply = CurrentFullTransform.Multiply(currentInstanceTransform);
             transformStack.Push(transformationMultiply);
 
-            Logger.Instance.Log("...Ending OnInstanceBegin");
             return RenderNodeAction.Proceed;
         }
 
@@ -585,7 +579,6 @@ namespace CesiumIonRevitAddin.Gltf
         Autodesk.Revit.DB.Transform cachedTransform;
         public void OnInstanceEnd(InstanceNode node)
         {
-            Logger.Instance.Log("Beginning OnInstanceEnd");
             instanceStackDepth--;
 
             // Note: This method is invoked even for instances that were skipped.
@@ -611,27 +604,12 @@ namespace CesiumIonRevitAddin.Gltf
                 {
                     if (!currentInstanceTransform.IsIdentity)
                     {
-                        Logger.Instance.Log("node has non-root parent.");
-
-                        Logger.Instance.Log("currentInstanceTransform:");
-                        Logger.Instance.Log(GetTransformDetails(currentInstanceTransform));
-
-                        Logger.Instance.Log("parentTransformInverse:");
-                        Logger.Instance.Log(GetTransformDetails(parentTransformInverse));
-
                         var outgoingMatrix = parentTransformInverse * currentInstanceTransform;
-
-                        Logger.Instance.Log("outgoingMatrix:");
-                        Logger.Instance.Log(GetTransformDetails(outgoingMatrix));
-
                         currentNode.Matrix = TransformToList(outgoingMatrix);
                     }
                 }
                 else
                 {
-                    Logger.Instance.Log("Writing transform:");
-                    Logger.Instance.Log(GetTransformDetails(transform));
-
                     currentNode.Matrix = TransformToList(transform);
                 }
             }
@@ -653,8 +631,6 @@ namespace CesiumIonRevitAddin.Gltf
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
         {
-            Logger.Instance.Log("Beginning OnLinkBegin");
-
             if (!preferences.Links)
                 return RenderNodeAction.Skip;
 
@@ -694,8 +670,6 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnRPC(RPCNode node)
         {
-            Logger.Instance.Log("Beginning OnRPC...");
-
             List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
 
             if (meshes.Count == 0)
@@ -738,7 +712,6 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
             }
-            Logger.Instance.Log("...Finishing OnRPC");
         }
 
         public void OnLight(LightNode node)
@@ -749,8 +722,6 @@ namespace CesiumIonRevitAddin.Gltf
         bool khrTextureTransformAdded;
         public void OnMaterial(MaterialNode materialNode)
         {
-            Logger.Instance.Log("Starting OnMaterial...");
-
             materialHasTexture = false;
             if (preferences.Materials)
             {
@@ -764,8 +735,6 @@ namespace CesiumIonRevitAddin.Gltf
                     khrTextureTransformAdded = true;
                 }
             }
-
-            Logger.Instance.Log("...Ending OnMaterial: " + materialNode.NodeName);
         }
 
         public class SerializableTransform
@@ -814,7 +783,6 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
-            Logger.Instance.Log("Starting OnPolymesh...");
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = polymeshTopology.GetPoints();
@@ -873,9 +841,6 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             if (materialHasTexture) GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
-
-
-            Logger.Instance.Log("...Ending OnPolymesh");
         }
 
         RenderNodeAction IExportContext.OnViewBegin(ViewNode node)

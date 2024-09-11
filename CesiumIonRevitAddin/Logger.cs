@@ -8,7 +8,7 @@ namespace CesiumIonRevitAddin
     {
         static Logger instance = null;
         static readonly object LogMutex = new object();
-        private StreamWriter logFile;
+        private readonly StreamWriter logFile;
         private static bool enabled = true;
 
         public static bool Enabled
@@ -20,8 +20,6 @@ namespace CesiumIonRevitAddin
         private Logger()
         {
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string addinLogFolderPath = Path.Combine(Util.GetAddinUserDataFolder(), "Logs");
             Directory.CreateDirectory(addinLogFolderPath);
             string logFilePath = Path.Combine(addinLogFolderPath, $"CesiumIonRevitAddinLog_{timestamp}.txt");

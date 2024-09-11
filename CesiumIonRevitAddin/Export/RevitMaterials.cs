@@ -80,7 +80,6 @@ namespace CesiumIonRevitAddin.Export
                 {
                     schema = baseSchema.Value;
                 }
-                Logger.Instance.Log("Material schema: " + schema);
             }
         }
 
@@ -131,7 +130,6 @@ namespace CesiumIonRevitAddin.Export
                 if (Logger.Enabled)
                 {
                     var materialName = material.Name;
-                    Logger.Instance.Log("Starting Export: " + materialName);
                 }
 
                 string materialGltfName = Utils.Util.GetGltfName(material.Name);
@@ -598,11 +596,9 @@ namespace CesiumIonRevitAddin.Export
             }
 
             var propertySchema = new Dictionary<string, object>();
-            // DEBUG: "Image" parameter triggered this. Why?
-            // 
+            // TODO: "Image" parameter triggered this. Why?
             if (classSchemaProperties.ContainsKey(gltfPropertyName))
             {
-                Logger.Instance.Log("Error: class schema properties already contains property " + gltfPropertyName);
                 return;
             }
             classSchemaProperties.Add(gltfPropertyName, propertySchema);
