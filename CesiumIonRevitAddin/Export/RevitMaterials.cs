@@ -9,8 +9,6 @@ using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
-
-
     public class MaterialCacheDTO
     {
         public MaterialCacheDTO(string materialName, string uniqueId)
@@ -33,7 +31,7 @@ namespace CesiumIonRevitAddin.Export
         /// <summary>
         /// Container for material names (Local cache to avoid Revit API I/O)
         /// </summary>
-        static Dictionary<ElementId, MaterialCacheDTO> MaterialNameContainer = new Dictionary<ElementId, MaterialCacheDTO>();
+        static readonly Dictionary<ElementId, MaterialCacheDTO> MaterialNameContainer = new Dictionary<ElementId, MaterialCacheDTO>();
 
         enum GltfBitmapType
         {
@@ -70,7 +68,6 @@ namespace CesiumIonRevitAddin.Export
             if (document.GetElement(id) is Material targetMaterial)
             {
                 ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
-
                 AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
                 Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
 
@@ -80,10 +77,10 @@ namespace CesiumIonRevitAddin.Export
                 {
                     schema = baseSchema.Value;
                 }
+                Logger.Instance.Log("Material schema: " + schema);
             }
         }
 
-        static bool invalidMaterial = false;
         public const string INVALID_MATERIAL = "INVALID_MATERIAL";
         public static void Export(MaterialNode materialNode,
             Document doc,
@@ -101,19 +98,12 @@ namespace CesiumIonRevitAddin.Export
             // materials with invalid Ids
             if (id == ElementId.InvalidElementId)
             {
-                invalidMaterial = true;
                 materials.AddOrUpdateCurrentMaterial(INVALID_MATERIAL, new GltfMaterial { Name = "Revit Invalid Material" }, false);
                 return;
             }
-            invalidMaterial = false;
-
-            System.Diagnostics.Debug.WriteLine("Starting material export...");
-
-            LogMaterialSchemaStats(materialNode, doc);
 
             string uniqueId;
-            GltfMaterial gltfMaterial;
-            if (materialIdDictionary.TryGetValue(id, out gltfMaterial))
+            if (materialIdDictionary.TryGetValue(id, out GltfMaterial gltfMaterial))
             {
                 Element materialElement = doc.GetElement(materialNode.MaterialId);
                 gltfMaterial.Name = materialElement.Name;
@@ -126,11 +116,6 @@ namespace CesiumIonRevitAddin.Export
                 float opacity = ONEINTVALUE - (float)materialNode.Transparency;
 
                 if (!(doc.GetElement(materialNode.MaterialId) is Material material)) return;
-
-                if (Logger.Enabled)
-                {
-                    var materialName = material.Name;
-                }
 
                 string materialGltfName = Utils.Util.GetGltfName(material.Name);
                 gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
@@ -301,38 +286,6 @@ namespace CesiumIonRevitAddin.Export
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
         static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
         {
-            AssetProperty baseColorProperty_ = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
-            if (baseColorProperty_ == null)
-            {
-                System.Diagnostics.Debug.WriteLine("is null");
-            }
-            else
-            {
-                Asset connectedProperty_ = baseColorProperty_.GetSingleConnectedAsset();
-                if (connectedProperty_ == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("is null");
-                }
-                else
-                {
-                    var scaleX = connectedProperty_.FindByName(UnifiedBitmap.TextureRealWorldScaleX);
-                    if (scaleX == null)
-                    {
-                        System.Diagnostics.Debug.WriteLine("is null");
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine("is not null");
-                        AssetPropertyDistance assetPropertyDistance = (AssetPropertyDistance)scaleX;
-                        var x = assetPropertyDistance.Value;
-                        System.Diagnostics.Debug.WriteLine("x is " + x);
-                    }
-                }
-            }
-
-
-
-
             var bitmapInfoCollection = new List<BitmapInfo>();
 
             // AssetProperty baseColorProperty = renderingAsset.FindByName("opaque_albedo");

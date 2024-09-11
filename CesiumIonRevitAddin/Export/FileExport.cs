@@ -23,11 +23,6 @@ namespace CesiumIonRevitAddin.Gltf
             IndexedDictionary<GltfTexture> textures,
             IndexedDictionary<GltfSampler> samplers)
         {
-            // TODO: needed? create extensions schema
-
-            // DEBUG
-            int bufferByteLength = buffers[0].ByteLength;
-
             BufferConfig.Run(bufferViews, buffers, Path.GetFileName(preferences.BinPath));
             BinFile.Create(preferences.BinPath, binaryData, preferences.Normals, false);
 

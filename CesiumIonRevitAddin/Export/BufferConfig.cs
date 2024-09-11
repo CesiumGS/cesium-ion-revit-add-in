@@ -27,10 +27,11 @@ namespace CesiumIonRevitAddin.Export
                 }
             }
 
-            var buffer = new GltfBuffer();
-
-            buffer.Uri = bufferUri;
-            buffer.ByteLength = bytePosition;
+            var buffer = new GltfBuffer
+            {
+                Uri = bufferUri,
+                ByteLength = bytePosition
+            };
             buffers.Clear();
             buffers.Add(buffer);
         }

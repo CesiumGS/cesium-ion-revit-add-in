@@ -79,7 +79,7 @@
             this.crsInput.Name = "crsInput";
             this.crsInput.Size = new System.Drawing.Size(100, 20);
             this.crsInput.TabIndex = 2;
-            this.crsInput.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.crsInput_KeyPress);
+            this.crsInput.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.CrsInput_KeyPress);
             // 
             // internalOrigin
             // 
@@ -102,7 +102,7 @@
             this.sharedCoordinates.TabStop = true;
             this.sharedCoordinates.Text = "Shared Coordinates";
             this.sharedCoordinates.UseVisualStyleBackColor = true;
-            this.sharedCoordinates.CheckedChanged += new System.EventHandler(this.sharedCoordinates_CheckedChanged);
+            this.sharedCoordinates.CheckedChanged += new System.EventHandler(this.SharedCoordinates_CheckedChanged);
             // 
             // groupBox1
             // 
@@ -164,7 +164,7 @@
             this.textures.TabIndex = 2;
             this.textures.Text = "Textures";
             this.textures.UseVisualStyleBackColor = true;
-            this.textures.CheckedChanged += new System.EventHandler(this.textures_CheckedChanged);
+            this.textures.CheckedChanged += new System.EventHandler(this.Textures_CheckedChanged);
             // 
             // materials
             // 
@@ -175,7 +175,7 @@
             this.materials.TabIndex = 1;
             this.materials.Text = "Materials";
             this.materials.UseVisualStyleBackColor = true;
-            this.materials.CheckedChanged += new System.EventHandler(this.materials_CheckedChanged);
+            this.materials.CheckedChanged += new System.EventHandler(this.Materials_CheckedChanged);
             // 
             // instancing
             // 
@@ -207,7 +207,7 @@
             this.exportButton.TabIndex = 3;
             this.exportButton.Text = "Save";
             this.exportButton.UseVisualStyleBackColor = true;
-            this.exportButton.Click += new System.EventHandler(this.exportButton_Click);
+            this.exportButton.Click += new System.EventHandler(this.ExportButton_Click);
             // 
             // ExportDialog
             // 

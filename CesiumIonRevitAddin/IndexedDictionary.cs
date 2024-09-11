@@ -101,7 +101,7 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         readonly Dictionary<string, int> dict = new Dictionary<string, int>();
-        Dictionary<string, T> output = new Dictionary<string, T>();
+        readonly Dictionary<string, T> output = new Dictionary<string, T>();
 
         int GetIndexFromUUID(string uuid)
         {

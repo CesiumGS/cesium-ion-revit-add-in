@@ -32,9 +32,8 @@ namespace CesiumIonRevitAddin.Forms
 
         Preferences preferences;
 
-        private void exportButton_Click(object sender, EventArgs e)
+        private void ExportButton_Click(object sender, EventArgs e)
         {
-
             this.preferences.SharedCoordinates = sharedCoordinates.Checked;
             this.preferences.TrueNorth = sharedCoordinates.Checked; // For now, true north only be used with shared coordinates
             this.preferences.Instancing = instancing.Checked;
@@ -44,17 +43,16 @@ namespace CesiumIonRevitAddin.Forms
             this.preferences.Links = links.Checked;
             this.preferences.MaxTextureSize = int.Parse(maxTextureSize.Text);
 
-
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
 
-        private void sharedCoordinates_CheckedChanged(object sender, EventArgs e)
+        private void SharedCoordinates_CheckedChanged(object sender, EventArgs e)
         {
             crsInput.Enabled = sharedCoordinates.Checked;
         }
 
-        private void crsInput_KeyPress(object sender, KeyPressEventArgs e)
+        private void CrsInput_KeyPress(object sender, KeyPressEventArgs e)
         {
             if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && e.KeyChar != '+')
             {
@@ -62,12 +60,12 @@ namespace CesiumIonRevitAddin.Forms
             }
         }
 
-        private void textures_CheckedChanged(object sender, EventArgs e)
+        private void Textures_CheckedChanged(object sender, EventArgs e)
         {
             maxTextureSize.Enabled = textures.Checked;
         }
 
-        private void materials_CheckedChanged(object sender, EventArgs e)
+        private void Materials_CheckedChanged(object sender, EventArgs e)
         {
             textures.Enabled = materials.Checked;
             maxTextureSize.Enabled = textures.Checked && materials.Checked;
