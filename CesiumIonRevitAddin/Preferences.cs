@@ -34,10 +34,7 @@ namespace CesiumIonRevitAddin
         public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.3dtiles";
         public string OutputDirectory
         {
-            get
-            {
-                return Path.GetDirectoryName(OutputPath);
-            }
+            get => Path.GetDirectoryName(OutputPath);
         }
         public string OutputFilename
         {
@@ -69,17 +66,11 @@ namespace CesiumIonRevitAddin
         }
         public string GltfPath
         {
-            get
-            {
-                return Path.Combine(TempDirectory, "tileset.gltf");
-            }
+            get => Path.Combine(TempDirectory, "tileset.gltf");
         }
         public string Temp3DTilesPath
         {
-            get
-            {
-                return Path.Combine(TempDirectory, OutputFilename);
-            }
+            get => Path.Combine(TempDirectory, OutputFilename);
         }
 
         public string ToJson()
@@ -87,10 +78,7 @@ namespace CesiumIonRevitAddin
             return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
 
-        public static Preferences FromJson(string json)
-        {
-            return JsonConvert.DeserializeObject<Preferences>(json);
-        }
+        public static Preferences FromJson(string json) => JsonConvert.DeserializeObject<Preferences>(json);
 
         public void SaveToFile(string filePath)
         {

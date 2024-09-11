@@ -46,8 +46,10 @@ namespace CesiumIonRevitAddin
 
             ContextualHelp contexHelp = new Autodesk.Revit.UI.ContextualHelp(Autodesk.Revit.UI.ContextualHelpType.Url, "www.cesium.com");
             PushButtonData pushButtonData =
-                new Autodesk.Revit.UI.PushButtonData("push Button Name", "Export to 3D Tiles", addInPath, "CesiumIonRevitAddin.ExportCommand");
-            pushButtonData.LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
+                new Autodesk.Revit.UI.PushButtonData("push Button Name", "Export to 3D Tiles", addInPath, "CesiumIonRevitAddin.ExportCommand")
+                {
+                    LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute))
+                };
             pushButtonData.SetContextualHelp(contexHelp);
             pushButtonData.ToolTip = "Exports the current 3D View into a 3D Tiles tileset";
             // TODO: Add LongDescription if needed
@@ -73,7 +75,7 @@ namespace CesiumIonRevitAddin
             */
 
             // look for RibbonPanel, or create it if not already created
-            Autodesk.Revit.UI.RibbonPanel panelAbout = null;
+            RibbonPanel panelAbout = null;
             foreach (var existingPanel in application.GetRibbonPanels())
             {
                 if (existingPanel.Name.Equals("About"))
@@ -99,10 +101,7 @@ namespace CesiumIonRevitAddin
             return Result.Succeeded;
         }
 
-        public Result OnShutdown(UIControlledApplication application)
-        {
-            return Result.Succeeded;
-        }
+        public Result OnShutdown(UIControlledApplication application) => Result.Succeeded;
 
         private void CreateRibbonTab(UIControlledApplication application, string ribbonTabName)
         {
@@ -115,7 +114,6 @@ namespace CesiumIonRevitAddin
             }
         }
     }
-
 
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -179,11 +177,11 @@ namespace CesiumIonRevitAddin
             }
 
             var ctx = new GltfExportContext(exportView.Document, preferences);
-            CustomExporter exporter = new Autodesk.Revit.DB.CustomExporter(exportView.Document, ctx);
+            CustomExporter exporter = new CustomExporter(exportView.Document, ctx);
 
             if (ctx == null || exporter == null)
             {
-                Autodesk.Revit.UI.TaskDialog.Show("Error", "Failed to initialize export context or exporter.");
+                TaskDialog.Show("Error", "Failed to initialize export context or exporter.");
                 return Result.Failed;
             }
 
@@ -195,7 +193,7 @@ namespace CesiumIonRevitAddin
             if (exportView.Document.PathName != "")
                 preferences.SaveToFile(preferencesPath);
 
-            Autodesk.Revit.UI.TaskDialog.Show("Export Complete", "View exported to 3D Tiles");
+            TaskDialog.Show("Export Complete", "View exported to 3D Tiles");
 
             return Result.Succeeded;
         }
@@ -257,7 +255,7 @@ namespace CesiumIonRevitAddin
             catch (Exception ex)
             {
                 message = ex.Message;
-                Autodesk.Revit.UI.TaskDialog.Show("Error", message);
+                TaskDialog.Show("Error", message);
                 return Result.Failed;
             }
         }

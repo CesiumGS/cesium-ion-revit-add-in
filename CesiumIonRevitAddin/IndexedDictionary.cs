@@ -115,7 +115,7 @@ namespace CesiumIonRevitAddin.Gltf
                 Autodesk.Revit.UI.TaskDialog.Show("IndexedDictionary.h", "Specified item could not be found.");
             }
 
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 // TODO: handle error better
                 Autodesk.Revit.UI.TaskDialog.Show("IndexedDictionary.h", "Error getting the specified item: " + ex.Message);
