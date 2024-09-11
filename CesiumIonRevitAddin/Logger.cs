@@ -1,7 +1,6 @@
 ﻿using CesiumIonRevitAddin.Utils;
 using System;
 using System.IO;
-using System.Threading;
 
 namespace CesiumIonRevitAddin
 {
@@ -53,7 +52,7 @@ namespace CesiumIonRevitAddin
 
             lock (LogMutex)
             {
-                var now = DateTime.Now;
+                DateTime now = DateTime.Now;
                 var timeStr = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 logFile.WriteLine($"{timeStr}: {message}");
             }

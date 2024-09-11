@@ -1,14 +1,14 @@
-﻿using System.Collections.Generic;
-using Autodesk.Revit.DB;
+﻿using Autodesk.Revit.DB;
 using CesiumIonRevitAddin.Utils;
+using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Gltf
 {
     using ClassesType = Dictionary<string, object>;
     using ClassType = Dictionary<string, object>;
-    using SchemaType = Dictionary<string, object>;
-    using PropertyType = Dictionary<string, object>;
     using PropertiesType = Dictionary<string, object>;
+    using PropertyType = Dictionary<string, object>;
+    using SchemaType = Dictionary<string, object>;
 
     internal class GltfExtStructuralMetadataExtensionSchema : GltfExtensionSchema
     {
@@ -57,12 +57,12 @@ namespace CesiumIonRevitAddin.Gltf
         public ClassType GetClass(string gltfClassName)
         {
             var classes = GetClasses();
-            return classes.ContainsKey(gltfClassName) ? (ClassType) classes[gltfClassName] : null;
+            return classes.ContainsKey(gltfClassName) ? (ClassType)classes[gltfClassName] : null;
         }
 
         public ClassesType GetClasses()
         {
-            return (ClassesType) schema["classes"];
+            return (ClassesType)schema["classes"];
         }
 
         public PropertiesType GetProperties(ClassType class_)
@@ -71,7 +71,7 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 class_.Add("properties", new PropertiesType());
             }
-            return (PropertiesType) class_["properties"];
+            return (PropertiesType)class_["properties"];
         }
 
         public bool HasProperties(ClassType class_)
@@ -116,7 +116,8 @@ namespace CesiumIonRevitAddin.Gltf
             ClassType class_ = GetClass(gltfClassName);
             PropertiesType schemaProperties = GetProperties(class_);
 
-            foreach (Parameter parameter in parameterSet) {
+            foreach (Parameter parameter in parameterSet)
+            {
                 string gltfPropertyName = Util.GetGltfName(parameter.Definition.Name);
 
                 // do not add the parameter if the parent category has it
@@ -126,7 +127,7 @@ namespace CesiumIonRevitAddin.Gltf
                 if (!schemaProperties.ContainsKey(gltfPropertyName))
                 {
                     schemaProperties.Add(gltfPropertyName, new PropertyType());
-                    var schemaProperty = (PropertyType) schemaProperties[gltfPropertyName];
+                    var schemaProperty = (PropertyType)schemaProperties[gltfPropertyName];
 
                     // name
                     schemaProperty.Add("name", parameter.Definition.Name);

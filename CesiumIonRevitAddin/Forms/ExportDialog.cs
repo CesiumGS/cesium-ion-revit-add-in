@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CesiumIonRevitAddin.Forms
@@ -41,7 +34,7 @@ namespace CesiumIonRevitAddin.Forms
 
         private void exportButton_Click(object sender, EventArgs e)
         {
-            
+
             this.preferences.SharedCoordinates = sharedCoordinates.Checked;
             this.preferences.TrueNorth = sharedCoordinates.Checked; // For now, true north only be used with shared coordinates
             this.preferences.Instancing = instancing.Checked;

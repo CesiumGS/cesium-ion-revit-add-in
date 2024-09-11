@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-    
+
 namespace CesiumIonRevitAddin.Gltf
 {
     // appended to nodes

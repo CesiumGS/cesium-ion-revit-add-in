@@ -1,9 +1,9 @@
 ﻿using Autodesk.Revit.DB;
 using CesiumIonRevitAddin.Gltf;
 using System;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Drawing;
 
 namespace CesiumIonRevitAddin.Utils
 {

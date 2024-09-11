@@ -1,9 +1,5 @@
-﻿using Autodesk.Revit.DB.Mechanical;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -114,18 +110,18 @@ namespace CesiumIonRevitAddin.Gltf
                 return dict[uuid]; // ignore Intellisense
             }
             catch (KeyNotFoundException)
-			{
+            {
                 // TODO: handle error better
                 Autodesk.Revit.UI.TaskDialog.Show("IndexedDictionary.h", "Specified item could not be found.");
             }
 
             catch (System.Exception ex)
-			{
+            {
                 // TODO: handle error better
                 Autodesk.Revit.UI.TaskDialog.Show("IndexedDictionary.h", "Error getting the specified item: " + ex.Message);
             }
 
             return -1;
-            }
         }
+    }
 }

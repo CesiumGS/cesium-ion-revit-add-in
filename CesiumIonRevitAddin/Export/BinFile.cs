@@ -8,8 +8,7 @@ namespace CesiumIonRevitAddin.Export
     {
         public static void Create(string filename, List<GltfBinaryData> binaryFileData, bool exportNormals, bool exportBatchId)
         {
-
-            using (var f = File.Create(filename))
+            using (FileStream f = File.Create(filename))
             {
                 using (var writer = new BinaryWriter(new BufferedStream(f), System.Text.Encoding.Default))
                 {

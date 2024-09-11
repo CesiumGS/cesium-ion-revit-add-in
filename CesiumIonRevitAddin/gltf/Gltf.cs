@@ -29,18 +29,18 @@ namespace CesiumIonRevitAddin.Gltf
     internal struct Gltf
     {
         public List<string> extensionsUsed;
-		public GltfVersion asset;
-		public List<GltfScene> scenes;
-		public List<GltfNode> nodes;
-		public List<GltfMesh> meshes;
-		public List<GltfBuffer> buffers;
-		public List<GltfBufferView> bufferViews;
-		public List<GltfAccessor> accessors;
-		public List<GltfMaterial> materials;
+        public GltfVersion asset;
+        public List<GltfScene> scenes;
+        public List<GltfNode> nodes;
+        public List<GltfMesh> meshes;
+        public List<GltfBuffer> buffers;
+        public List<GltfBufferView> bufferViews;
+        public List<GltfAccessor> accessors;
+        public List<GltfMaterial> materials;
         public List<GltfTexture> textures;
         public List<GltfImage> images;
         public List<GltfSampler> samplers;
-		public Dictionary<string, GltfExtensionSchema> extensions;
+        public Dictionary<string, GltfExtensionSchema> extensions;
 
         public Gltf(Dictionary<string, GltfExtensionSchema> extensions) : this()
         {

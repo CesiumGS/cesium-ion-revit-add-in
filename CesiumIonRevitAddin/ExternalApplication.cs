@@ -1,20 +1,16 @@
 ﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using Autodesk.Windows;
+using CesiumIonRevitAddin.Forms;
+using CesiumIonRevitAddin.Gltf;
+using System;
 using System.Collections.Generic;
-using System.Windows.Media.Imaging;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Xml.Linq;
-using CesiumIonRevitAddin.Gltf;
-
 using System.Runtime.InteropServices;
-using CesiumIonRevitAddin.Forms;
 using System.Windows.Forms;
-using CesiumIonRevitAddin.Utils;
-using System.Diagnostics;
-using System;
+using System.Windows.Media.Imaging;
 
 namespace CesiumIonRevitAddin
 {
@@ -133,7 +129,7 @@ namespace CesiumIonRevitAddin
                 Autodesk.Revit.UI.TaskDialog.Show("Wrong View", "You must be in a 3D view to export");
                 return Result.Succeeded;
             }
-            View3D exportView = (View3D) view;
+            View3D exportView = (View3D)view;
 
             // Load preferences for this document, if it exists
             Preferences preferences;
@@ -159,7 +155,7 @@ namespace CesiumIonRevitAddin
             {
                 saveFileDialog.Filter = "3D Tiles (*.3dtiles)|*.3dtiles";
                 saveFileDialog.FilterIndex = 1;
-                
+
                 // Load the initial directory and filename from the preferences
                 if (existingPreferences)
                 {
@@ -232,7 +228,7 @@ namespace CesiumIonRevitAddin
     {
         [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern void upload();
-        
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             upload();

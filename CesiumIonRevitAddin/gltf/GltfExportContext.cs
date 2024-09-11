@@ -1,26 +1,15 @@
 ﻿using Autodesk.Revit.DB;
+using CesiumIonRevitAddin.Export;
+using CesiumIonRevitAddin.Model;
+using CesiumIonRevitAddin.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using CesiumIonRevitAddin.Utils;
-using CesiumIonRevitAddin.Model;
-using System.Windows.Controls;
-using Newtonsoft.Json;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Security.Policy;
-using System.Data.SqlClient;
-using System.Xml.Linq;
-using Autodesk.Revit.UI;
-using System.Reflection;
-using System.Threading;
-using CesiumIonRevitAddin.Export;
-using Autodesk.Revit.DB.Visual;
-using System.Linq;
-using static CesiumIonRevitAddin.Gltf.GltfExportContext;
 using System.Windows.Media.Media3D;
-using System.IO;
-using System.Net;
-using Autodesk.Revit.DB.Architecture;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -117,7 +106,7 @@ namespace CesiumIonRevitAddin.Gltf
             if (preferences.SharedCoordinates)
             {
                 XYZ projectOffset = GeometryUtils.GetProjectOffset(Doc) * scale;
-                
+
                 //TODO: Implement flip axis support here (not sure if we really need it?)
                 rootNode.Translation = new List<float>() { (float)projectOffset.X, (float)projectOffset.Z, -(float)projectOffset.Y };
             }
@@ -411,7 +400,8 @@ namespace CesiumIonRevitAddin.Gltf
                 {
                     Logger.Instance.Log("Cannot find supercomponent. Category is " + superComponent.Category.Name);
                     xFormNode.Children.Add(nodes.CurrentIndex);
-                } else
+                }
+                else
                 {
                     string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
                     classMetadata["parent"] = superComponentClass;
@@ -667,7 +657,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (!preferences.Links)
                 return RenderNodeAction.Skip;
-            
+
             isLink = true;
 
             documents.Add(node.GetDocument());
@@ -683,7 +673,7 @@ namespace CesiumIonRevitAddin.Gltf
         {
             if (!preferences.Links)
                 return;
-            
+
             isLink = false;
             // Note: This method is invoked even for instances that were skipped.
             transformStack.Pop();
@@ -705,7 +695,7 @@ namespace CesiumIonRevitAddin.Gltf
         public void OnRPC(RPCNode node)
         {
             Logger.Instance.Log("Beginning OnRPC...");
-            
+
             List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
 
             if (meshes.Count == 0)

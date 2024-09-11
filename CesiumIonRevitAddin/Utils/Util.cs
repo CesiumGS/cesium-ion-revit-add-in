@@ -1,12 +1,10 @@
 ﻿using Autodesk.Revit.DB;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Autodesk.Revit.DB.SpecTypeId;
 using System.Reflection;
+using System.Text;
 
 namespace CesiumIonRevitAddin.Utils
 {

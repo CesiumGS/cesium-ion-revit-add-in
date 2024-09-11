@@ -1,7 +1,6 @@
-﻿using System.IO;
+﻿using CesiumIonRevitAddin.Export;
 using System.Collections.Generic;
-using CesiumIonRevitAddin.Export;
-using Autodesk.Revit.DB.DirectContext3D;
+using System.IO;
 
 namespace CesiumIonRevitAddin.Gltf
 {

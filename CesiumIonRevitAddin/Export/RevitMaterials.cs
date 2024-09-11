@@ -2,11 +2,10 @@
 using Autodesk.Revit.DB.Visual;
 using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Utils;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Controls;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -151,7 +150,7 @@ namespace CesiumIonRevitAddin.Export
                     if (parameter.HasValue)
                     {
                         if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
-                        {                             
+                        {
                             gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
                             AddParameterToClassSchema(parameter, classSchema);
                         }
@@ -179,7 +178,7 @@ namespace CesiumIonRevitAddin.Export
                 SetGltfMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
 
                 var bitmapInfoCollection = GetBitmapInfo(doc, material);
-                
+
                 materialHasTexture = preferences.Textures && bitmapInfoCollection.Any();
                 if (materialHasTexture)
                 {
