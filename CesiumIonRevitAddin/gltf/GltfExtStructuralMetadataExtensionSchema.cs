@@ -122,7 +122,10 @@ namespace CesiumIonRevitAddin.Gltf
 
                 // do not add the parameter if the parent category has it
                 var categoryClass = GetClass(Util.GetGltfName(categoryName));
-                if (ClassHasProperty(categoryClass, gltfPropertyName)) continue;
+                if (ClassHasProperty(categoryClass, gltfPropertyName))
+                {
+                    continue;
+                }
 
                 if (!schemaProperties.ContainsKey(gltfPropertyName))
                 {
@@ -173,13 +176,16 @@ namespace CesiumIonRevitAddin.Gltf
 
         public bool ClassHasProperty(ClassType class_, string propertyGltfName)
         {
-            if (!HasProperties(class_)) return false; // TODO: empty "properties" should be handled better
+            if (!HasProperties(class_))
+            {
+                return false; // TODO: empty "properties" should be handled better
+            }
 
             var schemaProperties = GetProperties(class_);
             return schemaProperties.ContainsKey(propertyGltfName);
         }
 
-        static HashSet<string> requiredParameters;
+        private static readonly HashSet<string> requiredParameters;
         public static bool IsRequired(string categoryName)
         {
             // skip marking parameters as "required" for the present

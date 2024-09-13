@@ -134,9 +134,13 @@ namespace CesiumIonRevitAddin
             string preferencesPath = Preferences.GetPreferencesPathForProject(exportView.Document.PathName);
             bool existingPreferences = File.Exists(preferencesPath);
             if (existingPreferences && exportView.Document.PathName != "")
+            {
                 preferences = Preferences.LoadFromFile(preferencesPath);
+            }
             else
+            {
                 preferences = new Preferences();
+            }
 
             // Display the export preferences dialog
             using (ExportDialog exportDialog = new ExportDialog(ref preferences))
@@ -191,7 +195,9 @@ namespace CesiumIonRevitAddin
 
             // Write out the updated preferences for this document
             if (exportView.Document.PathName != "")
+            {
                 preferences.SaveToFile(preferencesPath);
+            }
 
             TaskDialog.Show("Export Complete", "View exported to 3D Tiles");
 

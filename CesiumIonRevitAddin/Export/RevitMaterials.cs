@@ -9,9 +9,9 @@ using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
-    public class MaterialCacheDTO
+    public class MaterialCacheDto
     {
-        public MaterialCacheDTO(string materialName, string uniqueId)
+        public MaterialCacheDto(string materialName, string uniqueId)
         {
             MaterialName = materialName;
             UniqueId = uniqueId;
@@ -23,17 +23,19 @@ namespace CesiumIonRevitAddin.Export
 
     internal class RevitMaterials
     {
-        const string BLEND = "BLEND";
-        const string OPAQUE = "OPAQUE";
-        const int ONEINTVALUE = 1;
-        const double magicNumber = 11.11;
+        private const string BLEND = "BLEND";
+        private const string OPAQUE = "OPAQUE";
+        private const int ONEINTVALUE = 1;
+        private const double magicNumber = 11.11; // Temporary number to make texture scaling close to real-world values until permanent fix is in
+        public const string INVALID_MATERIAL = "INVALID_MATERIAL";
+
 
         /// <summary>
         /// Container for material names (Local cache to avoid Revit API I/O)
         /// </summary>
-        static readonly Dictionary<ElementId, MaterialCacheDTO> MaterialNameContainer = new Dictionary<ElementId, MaterialCacheDTO>();
+        private static readonly Dictionary<ElementId, MaterialCacheDto> MaterialNameContainer = new Dictionary<ElementId, MaterialCacheDto>();
 
-        enum GltfBitmapType
+        private enum GltfBitmapType
         {
             baseColorTexture,
             metallicRoughnessTexture,
@@ -42,7 +44,7 @@ namespace CesiumIonRevitAddin.Export
             emissiveTexture
         }
 
-        struct BitmapInfo
+        private struct BitmapInfo
         {
             public readonly string AbsolutePath;
             public readonly GltfBitmapType GltfBitmapType;
@@ -61,7 +63,8 @@ namespace CesiumIonRevitAddin.Export
 
         public static Dictionary<ElementId, GltfMaterial> materialIdDictionary = new Dictionary<ElementId, GltfMaterial>();
 
-        static void LogMaterialSchemaStats(MaterialNode materialNode, Document document)
+        // For debug purposes, may have zero references
+        private static void LogMaterialSchemaStats(MaterialNode materialNode, Document document)
         {
             ElementId id = materialNode.MaterialId;
 
@@ -81,7 +84,6 @@ namespace CesiumIonRevitAddin.Export
             }
         }
 
-        public const string INVALID_MATERIAL = "INVALID_MATERIAL";
         public static void Export(MaterialNode materialNode,
             Document doc,
             IndexedDictionary<GltfMaterial> materials,
@@ -115,7 +117,10 @@ namespace CesiumIonRevitAddin.Export
                 gltfMaterial = new GltfMaterial();
                 float opacity = ONEINTVALUE - (float)materialNode.Transparency;
 
-                if (!(doc.GetElement(materialNode.MaterialId) is Material material)) return;
+                if (!(doc.GetElement(materialNode.MaterialId) is Material material))
+                {
+                    return;
+                }
 
                 string materialGltfName = Utils.Util.GetGltfName(material.Name);
                 gltfMaterial.Extensions.EXT_structural_metadata.Class = materialGltfName;
@@ -130,35 +135,32 @@ namespace CesiumIonRevitAddin.Export
 
                     string paramGltfName = Utils.Util.GetGltfName(paramName);
 
-                    if (parameter.HasValue)
+                    if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
                     {
-                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
-                        {
-                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
-                            AddParameterToClassSchema(parameter, classSchema);
-                        }
+                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
+                        AddParameterToClassSchema(parameter, classSchema);
                     }
                 }
 
                 AddMaterialRenderingPropertiesToSchema(material, doc, gltfMaterial, extStructuralMetadataExtensionSchema);
 
-                if (!MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDTO materialCacheDTO))
+                if (!MaterialNameContainer.ContainsKey(materialNode.MaterialId))
                 {
                     // construct a material from the node
-                    var materialElement = doc.GetElement(materialNode.MaterialId);
+                    Element materialElement = doc.GetElement(materialNode.MaterialId);
                     gltfMaterial.Name = materialElement.Name;
                     uniqueId = materialElement.UniqueId;
-                    MaterialNameContainer.Add(materialNode.MaterialId, new MaterialCacheDTO(materialElement.Name, materialElement.UniqueId));
+                    MaterialNameContainer.Add(materialNode.MaterialId, new MaterialCacheDto(materialElement.Name, materialElement.UniqueId));
                 }
                 else
                 {
-                    MaterialCacheDTO elementData = MaterialNameContainer[materialNode.MaterialId];
+                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
                     gltfMaterial.Name = elementData.MaterialName;
                     uniqueId = elementData.UniqueId;
                 }
 
-                var pbr = new GltfPbr();
-                SetGltfMaterialsProperties(materialNode, opacity, ref pbr, ref gltfMaterial);
+                var gltfPbr = new GltfPbr();
+                SetGltfMaterialsProperties(materialNode, opacity, ref gltfPbr, ref gltfMaterial);
 
                 var bitmapInfoCollection = GetBitmapInfo(doc, material);
 
@@ -239,7 +241,7 @@ namespace CesiumIonRevitAddin.Export
             System.Diagnostics.Debug.WriteLine("...Finishing material export");
         }
 
-        static List<BitmapInfo> GetBitmapInfo(Document document, Material material)
+        private static List<BitmapInfo> GetBitmapInfo(Document document, Material material)
         {
             var attachedBitmapInfo = new List<BitmapInfo>();
 
@@ -274,8 +276,7 @@ namespace CesiumIonRevitAddin.Export
                         attachedBitmapInfo = ParseSchemaHardwoodSchema(renderingAsset);
                         break;
                     default:
-                        // throw new System.Exception("unknown material schema type: " + schema);
-                        // TODO: write unknown schema to log file
+                        Logger.Instance.Log("skipping material processing of unknown material schema type: " + schema);
                         break;
                 }
             }
@@ -284,13 +285,15 @@ namespace CesiumIonRevitAddin.Export
         }
 
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
-        static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
+        private static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
         {
             var bitmapInfoCollection = new List<BitmapInfo>();
 
-            // AssetProperty baseColorProperty = renderingAsset.FindByName("opaque_albedo");
             AssetProperty baseColorProperty = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
-            if (baseColorProperty.NumberOfConnectedProperties < 1) return bitmapInfoCollection;
+            if (baseColorProperty.NumberOfConnectedProperties < 1)
+            {
+                return bitmapInfoCollection;
+            }
 
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
@@ -300,37 +303,35 @@ namespace CesiumIonRevitAddin.Export
             AddTextureTransformInfo(ref baseColor, connectedProperty);
 
             bitmapInfoCollection.Add(baseColor);
-
-            // TODO: add normal maps, roughness, etc.
 
             return bitmapInfoCollection;
         }
 
         // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Protein_Hardwood_Schema_html
-        static List<BitmapInfo> ParseSchemaHardwoodSchema(Asset renderingAsset)
+        private static List<BitmapInfo> ParseSchemaHardwoodSchema(Asset renderingAsset)
         {
             var bitmapInfoCollection = new List<BitmapInfo>();
 
-            // AssetProperty baseColorProperty = renderingAsset.FindByName("opaque_albedo");
             AssetProperty baseColorProperty = renderingAsset.FindByName(Hardwood.HardwoodColor);
-            if (baseColorProperty.NumberOfConnectedProperties < 1) return bitmapInfoCollection;
+            if (baseColorProperty.NumberOfConnectedProperties < 1)
+            {
+                return bitmapInfoCollection;
+            }
 
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
-            AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
-            var absolutePath = GetAbsoluteMaterialPath(path.Value);
-            BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
+            var path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+            string absolutePath = GetAbsoluteMaterialPath(path.Value);
+            var baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
 
             AddTextureTransformInfo(ref baseColor, connectedProperty);
 
             bitmapInfoCollection.Add(baseColor);
 
-            // TODO: add normal maps, roughness, etc.
-
             return bitmapInfoCollection;
         }
 
         // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
-        static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
+        private static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
             // TODO: magicNumber
             var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDistance;
@@ -346,38 +347,8 @@ namespace CesiumIonRevitAddin.Export
             bitmapInfo.Scale = new double[] { xScale == null ? 1.0 : 1.0 / xScale.Value * magicNumber, yScale == null ? 1.0 : 1.0 / yScale.Value * magicNumber };
         }
 
-        static GltfBitmapType? GetGltfBitmapType(AssetProperty assetProperty)
+        private static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
         {
-            if (assetProperty.Name == "surface_albedo")
-            {
-                return GltfBitmapType.baseColorTexture;
-            }
-
-            if (assetProperty.Name == "surface_roughness")
-            {
-                return GltfBitmapType.metallicRoughnessTexture;
-            }
-
-            return null;
-
-            // TODO: handle opacity
-            //if (assetProperty.Name == "opaque_albedo")
-            //{
-            //    return GltfBitmapType.???;
-            //}
-
-            // TODO: track down other strings for other glTF types:
-            // baseColorTexture
-            // metallicRoughnessTexture
-            // normalTexture
-            // occlusionTexture
-            // emissiveTexture
-
-        }
-
-        static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
-        {
-
             string[] allPaths = relativeOrAbsolutePath.Split('|');
             relativeOrAbsolutePath = allPaths[allPaths.Length - 1];
 
@@ -386,13 +357,15 @@ namespace CesiumIonRevitAddin.Export
                 return relativeOrAbsolutePath;
             }
 
+#pragma warning disable S1075
             string[] possibleBasePaths = {
                 @"C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures",
                 @"C:\Program Files\Common Files\Autodesk Shared\Materials\Textures",
                 GetAdditionalRenderAppearancePath()  // Paths from Revit.ini
             };
+#pragma warning restore S1075
 
-            foreach (var basePath in possibleBasePaths)
+            foreach (string basePath in possibleBasePaths)
             {
                 if (!string.IsNullOrEmpty(basePath))
                 {
@@ -407,15 +380,15 @@ namespace CesiumIonRevitAddin.Export
             return null;
         }
 
-        static string GetAdditionalRenderAppearancePath()
+        private static string GetAdditionalRenderAppearancePath()
         {
             // Path to Revit.ini file - adjust based on actual location and Revit version
+#pragma warning disable S1075
             string revitIniPath = @"C:\Users\[Username]\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2021\Revit.ini";
+#pragma warning restore S1075
             if (System.IO.File.Exists(revitIniPath))
             {
-                // Read the .ini file and extract the path
-                var lines = System.IO.File.ReadAllLines(revitIniPath);
-                foreach (var line in lines)
+                foreach (var line in File.ReadAllLines(revitIniPath))
                 {
                     if (line.StartsWith("AdditionalRenderAppearancePath="))
                     {
@@ -426,7 +399,7 @@ namespace CesiumIonRevitAddin.Export
             return null;
         }
 
-        static string GetParameterValueAsString(Parameter parameter)
+        private static string GetParameterValueAsString(Parameter parameter)
         {
             switch (parameter.StorageType)
             {
@@ -443,7 +416,7 @@ namespace CesiumIonRevitAddin.Export
             }
         }
 
-        static void AddMaterialRenderingPropertiesToSchema(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial,
+        private static void AddMaterialRenderingPropertiesToSchema(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial,
             GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema)
         {
             if (!(doc.GetElement(material.AppearanceAssetId) is AppearanceAssetElement assetElement))
@@ -533,7 +506,7 @@ namespace CesiumIonRevitAddin.Export
             System.Diagnostics.Debug.WriteLine("Finished adding properties");
         }
 
-        static void AddParameterToClassSchema(Parameter parameter, Dictionary<string, object> classSchema)
+        private static void AddParameterToClassSchema(Parameter parameter, Dictionary<string, object> classSchema)
         {
             var gltfPropertyName = Utils.Util.GetGltfName(parameter.Definition.Name);
 
@@ -581,15 +554,15 @@ namespace CesiumIonRevitAddin.Export
             propertySchema.Add("required", false);
         }
 
-        static void SetGltfMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)
+        private static void SetGltfMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)
         {
             pbr.BaseColorFactor = new List<float>(4) { node.Color.Red / 255f, node.Color.Green / 255f, node.Color.Blue / 255f, opacity };
             pbr.MetallicFactor = 0f;
-            pbr.RoughnessFactor = opacity != 1 ? 0.5f : 1f;
+            pbr.RoughnessFactor = opacity < 1f ? 0.5f : 1f;
             gltfMaterial.PbrMetallicRoughness = pbr;
 
             // TODO: Implement MASK alphamode for elements like leaves or wire fences
-            gltfMaterial.AlphaMode = opacity != 1 ? BLEND : OPAQUE;
+            gltfMaterial.AlphaMode = opacity < 1f ? BLEND : OPAQUE;
             gltfMaterial.AlphaCutoff = null;
         }
     }

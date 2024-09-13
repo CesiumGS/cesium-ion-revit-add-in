@@ -7,13 +7,13 @@ namespace CesiumIonRevitAddin.Utils
 {
     internal class GltfBinaryDataUtils
     {
-        const string VEC2_STR = "VEC2";
-        const string VEC3_STR = "VEC3";
-        const string POSITION_STR = "POSITION";
-        const string NORMAL_STR = "NORMALS";
-        const string TEXCOORD_STR = "TEXCOORD_0";
-        const string SCALAR_STR = "SCALAR";
-        const string FACE_STR = "FACE";
+        private const string VEC2_STR = "VEC2";
+        private const string VEC3_STR = "VEC3";
+        private const string POSITION_STR = "POSITION";
+        private const string NORMAL_STR = "NORMALS";
+        private const string TEXCOORD_STR = "TEXCOORD_0";
+        private const string SCALAR_STR = "SCALAR";
+        private const string FACE_STR = "FACE";
         // const string BATCH_ID_STR = "BATCH_ID";
 
         public static int ExportVertices(int bufferIdx, int byteOffset, GeometryDataObject geomData,
@@ -115,9 +115,15 @@ namespace CesiumIonRevitAddin.Utils
         public static int ExportTexCoords(int bufferIdx, int byteOffset, GeometryDataObject geometryDataObject, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
         {
             int texCoordsCount = geometryDataObject.TexCoords.Count;
-            if (texCoordsCount == 0) return byteOffset;
+            if (texCoordsCount == 0)
+            {
+                return byteOffset;
+            }
 
-            for (int i = 0; i < texCoordsCount; i++) binaryData.TexCoordBuffer.Add(Convert.ToSingle(geometryDataObject.TexCoords[i]));
+            for (int i = 0; i < texCoordsCount; i++)
+            {
+                binaryData.TexCoordBuffer.Add(Convert.ToSingle(geometryDataObject.TexCoords[i]));
+            }
 
             float[] maxMin = Util.GetVec2MinMax(binaryData.TexCoordBuffer);
 

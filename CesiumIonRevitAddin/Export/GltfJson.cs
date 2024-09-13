@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
-    internal class GltfJson
+    internal static class GltfJson
     {
         public static string Get(
             List<GltfScene> scenes,

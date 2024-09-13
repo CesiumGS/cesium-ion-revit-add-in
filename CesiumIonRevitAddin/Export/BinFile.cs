@@ -4,7 +4,7 @@ using System.IO;
 
 namespace CesiumIonRevitAddin.Export
 {
-    internal class BinFile
+    internal static class BinFile
     {
         public static void Create(string filename, List<GltfBinaryData> binaryFileData, bool exportNormals, bool exportBatchId)
         {
@@ -16,25 +16,25 @@ namespace CesiumIonRevitAddin.Export
                     {
                         for (int i = 0; i < binaryData.VertexBuffer.Count; i++)
                         {
-                            writer.Write((float)binaryData.VertexBuffer[i]);
+                            writer.Write(binaryData.VertexBuffer[i]);
                         }
 
                         if (exportNormals)
                         {
                             for (int i = 0; i < binaryData.NormalBuffer.Count; i++)
                             {
-                                writer.Write((float)binaryData.NormalBuffer[i]);
+                                writer.Write(binaryData.NormalBuffer[i]);
                             }
                         }
 
                         for (int i = 0; i < binaryData.TexCoordBuffer.Count; i++)
                         {
-                            writer.Write((float)binaryData.TexCoordBuffer[i]);
+                            writer.Write(binaryData.TexCoordBuffer[i]);
                         }
 
                         for (int i = 0; i < binaryData.IndexBuffer.Count; i++)
                         {
-                            writer.Write((int)binaryData.IndexBuffer[i]);
+                            writer.Write(binaryData.IndexBuffer[i]);
                         }
                     }
 

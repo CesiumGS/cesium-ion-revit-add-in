@@ -4,7 +4,7 @@ using System.IO;
 
 namespace CesiumIonRevitAddin.Gltf
 {
-    internal class FileExport
+    internal static class FileExport
     {
         public static void Run(
             Preferences preferences,

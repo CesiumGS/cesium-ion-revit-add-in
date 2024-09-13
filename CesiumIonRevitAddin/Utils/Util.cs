@@ -19,7 +19,11 @@ namespace CesiumIonRevitAddin.Utils
                 Char c = input[i];
                 if (Char.IsLetterOrDigit(c))
                 {
-                    if (i == 0) c = Char.ToLower(c);
+                    if (i == 0)
+                    {
+                        c = Char.ToLower(c);
+                    }
+
                     sb.Append(c);
                 }
             }
@@ -63,7 +67,11 @@ namespace CesiumIonRevitAddin.Utils
 
         public static int[] GetScalarMinMax(List<int> scalars)
         {
-            if (scalars == null || scalars.Count == 0) return null;
+            if (scalars == null || scalars.Count == 0)
+            {
+                return null;
+            }
+
             return new int[] { scalars.Min(), scalars.Max() };
         }
 

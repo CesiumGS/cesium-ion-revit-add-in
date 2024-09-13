@@ -12,9 +12,13 @@ namespace CesiumIonRevitAddin.Forms
 
             // Set the default UI state to match preferences
             if (this.preferences.SharedCoordinates)
+            {
                 sharedCoordinates.Checked = true;
+            }
             else
+            {
                 internalOrigin.Checked = true;
+            }
 
             crsInput.Enabled = sharedCoordinates.Checked;
             crsInput.Text = this.preferences.EpsgCode;
@@ -30,7 +34,7 @@ namespace CesiumIonRevitAddin.Forms
             textures.Enabled = materials.Checked;
         }
 
-        Preferences preferences;
+        private readonly Preferences preferences;
 
         private void ExportButton_Click(object sender, EventArgs e)
         {

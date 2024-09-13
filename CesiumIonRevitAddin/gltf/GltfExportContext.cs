@@ -15,41 +15,39 @@ namespace CesiumIonRevitAddin.Gltf
 {
     internal class GltfExportContext : IPhotoRenderContext
     {
-        const char UNDERSCORE = '_';
+        private const char UNDERSCORE = '_';
         private readonly bool verboseLog = true;
-        int instanceStackDepth = 0;
-        Autodesk.Revit.DB.Transform currentInstanceTransform = null;
-        Autodesk.Revit.DB.Transform parentTransformInverse = null;
-        readonly Preferences preferences;
+        private int instanceStackDepth = 0;
+        private Autodesk.Revit.DB.Transform parentTransformInverse = null;
+        private readonly Preferences preferences;
         private readonly View view;
-        Autodesk.Revit.DB.Element element;
-        readonly List<Document> documents = new List<Document>();
-        bool cancelation;
-        readonly Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
-        GltfNode rootNode;
-        GltfNode xFormNode;
-        readonly List<GltfAccessor> accessors = new List<GltfAccessor>();
-        readonly List<GltfBufferView> bufferViews = new List<GltfBufferView>();
-        readonly List<GltfBuffer> buffers = new List<GltfBuffer>();
-        readonly List<GltfBinaryData> binaryFileData = new List<GltfBinaryData>();
-        readonly List<GltfScene> scenes = new List<GltfScene>();
-        readonly IndexedDictionary<GltfNode> nodes = new IndexedDictionary<GltfNode>();
-        readonly IndexedDictionary<GltfMesh> meshes = new IndexedDictionary<GltfMesh>();
-        readonly IndexedDictionary<GltfMaterial> materials = new IndexedDictionary<GltfMaterial>();
-        readonly IndexedDictionary<GltfImage> images = new IndexedDictionary<GltfImage>();
-        readonly IndexedDictionary<GltfSampler> samplers = new IndexedDictionary<GltfSampler>();
-        readonly IndexedDictionary<GltfTexture> textures = new IndexedDictionary<GltfTexture>();
-        readonly List<string> extensionsUsed = new List<string>();
-        readonly Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
-        readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema = new GltfExtStructuralMetadataExtensionSchema();
-        Autodesk.Revit.DB.Transform cachedTransform;
-        bool khrTextureTransformAdded;
+        private Autodesk.Revit.DB.Element element;
+        private readonly List<Document> documents = new List<Document>();
+        private bool cancelation;
+        private readonly Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
+        private GltfNode xFormNode;
+        private readonly List<GltfAccessor> accessors = new List<GltfAccessor>();
+        private readonly List<GltfBufferView> bufferViews = new List<GltfBufferView>();
+        private readonly List<GltfBuffer> buffers = new List<GltfBuffer>();
+        private readonly List<GltfBinaryData> binaryFileData = new List<GltfBinaryData>();
+        private readonly List<GltfScene> scenes = new List<GltfScene>();
+        private readonly IndexedDictionary<GltfNode> nodes = new IndexedDictionary<GltfNode>();
+        private readonly IndexedDictionary<GltfMesh> meshes = new IndexedDictionary<GltfMesh>();
+        private readonly IndexedDictionary<GltfMaterial> materials = new IndexedDictionary<GltfMaterial>();
+        private readonly IndexedDictionary<GltfImage> images = new IndexedDictionary<GltfImage>();
+        private readonly IndexedDictionary<GltfSampler> samplers = new IndexedDictionary<GltfSampler>();
+        private readonly IndexedDictionary<GltfTexture> textures = new IndexedDictionary<GltfTexture>();
+        private readonly List<string> extensionsUsed = new List<string>();
+        private readonly Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
+        private readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema = new GltfExtStructuralMetadataExtensionSchema();
+        private Autodesk.Revit.DB.Transform cachedTransform;
+        private bool khrTextureTransformAdded;
         private bool skipElementFlag;
-        Autodesk.Revit.DB.Transform linkTransformation;
-        IndexedDictionary<GeometryDataObject> currentGeometry;
-        IndexedDictionary<VertexLookupIntObject> currentVertices;
-        readonly Dictionary<string, int> geometryDataObjectIndices = new Dictionary<string, int>();
-        bool materialHasTexture;
+        private Autodesk.Revit.DB.Transform linkTransformation;
+        private IndexedDictionary<GeometryDataObject> currentGeometry;
+        private IndexedDictionary<VertexLookupIntObject> currentVertices;
+        private readonly Dictionary<string, int> geometryDataObjectIndices = new Dictionary<string, int>();
+        private bool materialHasTexture;
 
         public GltfExportContext(Document doc, Preferences preferences)
         {
@@ -59,7 +57,7 @@ namespace CesiumIonRevitAddin.Gltf
             this.preferences = preferences;
         }
 
-        Document Doc
+        private Document Doc
         {
             get
             {
@@ -69,10 +67,7 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         // TODO: make export not a singleton and remove Reset()
-        void Reset()
-        {
-            RevitMaterials.materialIdDictionary.Clear();
-        }
+        private static void Reset() => RevitMaterials.materialIdDictionary.Clear();
 
         public bool Start()
         {
@@ -94,7 +89,7 @@ namespace CesiumIonRevitAddin.Gltf
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
 
             // Holds metadata along with georeference transforms
-            rootNode = new GltfNode
+            var rootNode = new GltfNode
             {
                 Name = "rootNode"
             };
@@ -131,9 +126,13 @@ namespace CesiumIonRevitAddin.Gltf
             // Orient node is used to rotate to the correct up axis
             Quaternion XFormNodeRotation;
             if (preferences.FlipAxis)
+            {
                 XFormNodeRotation = new Quaternion(new Vector3D(1, 0, 0), -90);
+            }
             else
+            {
                 XFormNodeRotation = Quaternion.Identity;
+            }
 
             xFormNode.Rotation = new List<double>() { XFormNodeRotation.X, XFormNodeRotation.Y, XFormNodeRotation.Z, XFormNodeRotation.W };
             xFormNode.Scale = new List<double>() { scale, scale, scale }; //Revit internal units are decimal feet - scale to meters
@@ -160,29 +159,23 @@ namespace CesiumIonRevitAddin.Gltf
             var iterator = bindingMap.ForwardIterator();
             while (iterator.MoveNext())
             {
-                var definition = iterator.Key;
-                // InstanceBinding and TypeBinding don't seem to have any additional members vs ELementBinding base class
+                Definition definition = iterator.Key;
+                // InstanceBinding and TypeBinding don't seem to have any additional members not provided by the ELementBinding base class
                 var elementBinding = (ElementBinding)iterator.Current;
 
-                // TODO: handle ExternalDefinition
                 if (definition is InternalDefinition internalDefinition)
                 {
-                    // TODO: keep?
-                    // gltfVersion.extras.Add(paramDefinitionName, categoryNames);
-
-                    var forgeTypeId = internalDefinition.GetDataType();
-                    // String^ glTFDataType = "";
-                    var isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
+                    ForgeTypeId forgeTypeId = internalDefinition.GetDataType();
+                    bool isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
 
                     var categoryGltfProperty = new Dictionary<string, Object>
                     {
                         { "name", definition.Name },
-                        { "required", false } // TODO: unsure if false
+                        { "required", false }
                     };
 
                     if (isMeasurable) // TODO: isMeasurable SHOULD equate to Revit's StorageType::Double
                     {
-                        //glTFDataType = "SCALAR:Double";
                         categoryGltfProperty.Add("type", "SCALAR");
                         categoryGltfProperty.Add("componentType", "FLOAT32");
                     }
@@ -201,21 +194,17 @@ namespace CesiumIonRevitAddin.Gltf
                         continue;
                     }
 
-                    var categories = elementBinding.Categories;
+                    CategorySet categories = elementBinding.Categories;
                     foreach (var obj in categories)
                     {
                         var category = (Category)obj;
                         var categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.Name);
-                        // categoryNames += category->Name + "; ";
 
                         extStructuralMetadataSchema.AddCategory(category.Name);
                         var class_ = extStructuralMetadataSchema.GetClass(categoryGltfName);
                         var schemaProperties = extStructuralMetadataSchema.GetProperties(class_);
                         schemaProperties.Add(CesiumIonRevitAddin.Utils.Util.GetGltfName(definition.Name), categoryGltfProperty);
                     }
-
-                    // TODO
-                    // gltfVersion.extras.Add(paramDefinitionName + "_glTFType", glTFDataType);
 
                     //// DEVEL
                     //if (UnitUtils::IsMeasurableSpec(forgeTypeId)) {
@@ -243,7 +232,6 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            // rootNode.Translation = new List<float> { 0, 0, 0 };
             rootNode.Children = new List<int>();
             xFormNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
@@ -260,10 +248,13 @@ namespace CesiumIonRevitAddin.Gltf
             return true;
         }
 
-        // Add information about the Revit (physical) property (via PropertyInfo) to glTF "properties"
-        void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
+        // Add information about the physical Revit building/property (via the project's PropertyInfo) to glTF "properties"
+        private void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
         {
-            if (propertyValue == "") return;
+            if (propertyValue == "")
+            {
+                return;
+            }
 
             // add to node
             var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
@@ -317,8 +308,8 @@ namespace CesiumIonRevitAddin.Gltf
         // Most instanced elements have this event stack order: OnElementBegin->OnInstanceBegin->(geometry/material events)->OnInstanceEnd->OnElementEnd
         // But some do this: OnElementBegin->OnInstanceBegin->->OnInstanceEnd->(geometry/material events)->OnElementEnd
         // This records if the latter has happened
-        bool onInstanceEndCompleted = false;
-        bool useCurrentInstanceTransform = false;
+        private bool onInstanceEndCompleted = false;
+        private bool useCurrentInstanceTransform = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             onInstanceEndCompleted = false;
@@ -407,7 +398,11 @@ namespace CesiumIonRevitAddin.Gltf
                     classMetadata["parent"] = superComponentClass;
 
                     GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
-                    if (parentNode.Children == null) parentNode.Children = new List<int>();
+                    if (parentNode.Children == null)
+                    {
+                        parentNode.Children = new List<int>();
+                    }
+
                     parentNode.Children.Add(nodes.CurrentIndex);
                     useCurrentInstanceTransform = true;
 
@@ -542,19 +537,18 @@ namespace CesiumIonRevitAddin.Gltf
         {
             instanceStackDepth++;
 
-            // TODO. Note that currentInstanceTransform always seems to be the full transform stack.
+            // TODO: Note that instanceNode.GetTransform() always seems to be the full transform stack.
             // Chase down an example of instance transforms that actually stack
             // Note that balustrades may be this example (instances of instances)
-            currentInstanceTransform = instanceNode.GetTransform();
 
-            var transformationMultiply = CurrentFullTransform.Multiply(currentInstanceTransform);
+            var transformationMultiply = CurrentFullTransform.Multiply(instanceNode.GetTransform());
             transformStack.Push(transformationMultiply);
 
             return RenderNodeAction.Proceed;
         }
 
         // for Debug logging purposes, so may have 0 references
-        string GetTransformDetails(Autodesk.Revit.DB.Transform transform)
+        private static string GetTransformDetails(Autodesk.Revit.DB.Transform transform)
         {
             var x = transform.BasisX;
             var y = transform.BasisY;
@@ -575,7 +569,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             // Note: This method is invoked even for instances that were skipped.
 
-
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
 
             if (!preferences.Instancing)
@@ -585,18 +578,22 @@ namespace CesiumIonRevitAddin.Gltf
 
             // do not write to the node if there is an instance stack
             // this happens with railings because the balusters are sub-instances of the railing instance
-            if (instanceStackDepth > 0) return;
+            if (instanceStackDepth > 0)
+            {
+                return;
+            }
+
             if (!transform.IsIdentity)
             {
 
                 var currentNode = nodes.CurrentItem;
 
-                currentInstanceTransform = node.GetTransform();
+                var currentNodeTransform = node.GetTransform();
                 if (useCurrentInstanceTransform) // for nodes with a non-root parent
                 {
-                    if (!currentInstanceTransform.IsIdentity)
+                    if (!currentNodeTransform.IsIdentity)
                     {
-                        var outgoingMatrix = parentTransformInverse * currentInstanceTransform;
+                        var outgoingMatrix = parentTransformInverse * currentNodeTransform;
                         currentNode.Matrix = TransformToList(outgoingMatrix);
                     }
                 }
@@ -610,7 +607,7 @@ namespace CesiumIonRevitAddin.Gltf
             onInstanceEndCompleted = true;
         }
 
-        List<double> TransformToList(Autodesk.Revit.DB.Transform transform)
+        private static List<double> TransformToList(Autodesk.Revit.DB.Transform transform)
         {
             return new List<double>
                         {
@@ -624,7 +621,9 @@ namespace CesiumIonRevitAddin.Gltf
         public RenderNodeAction OnLinkBegin(LinkNode node)
         {
             if (!preferences.Links)
+            {
                 return RenderNodeAction.Skip;
+            }
 
             documents.Add(node.GetDocument());
 
@@ -637,7 +636,9 @@ namespace CesiumIonRevitAddin.Gltf
         public void OnLinkEnd(LinkNode node)
         {
             if (!preferences.Links)
+            {
                 return;
+            }
 
             // Note: This method is invoked even for instances that were skipped.
             transformStack.Pop();
@@ -707,14 +708,17 @@ namespace CesiumIonRevitAddin.Gltf
             // this custom exporter is currently not exporting lights
         }
 
-        public void OnMaterial(MaterialNode materialNode)
+        public void OnMaterial(MaterialNode node)
         {
             materialHasTexture = false;
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataSchema, samplers, images, textures, ref materialHasTexture, preferences);
+                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadataSchema, samplers, images, textures, ref materialHasTexture, preferences);
 
-                if (!preferences.Textures) materialHasTexture = false;
+                if (!preferences.Textures)
+                {
+                    materialHasTexture = false;
+                }
 
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {
@@ -791,26 +795,6 @@ namespace CesiumIonRevitAddin.Gltf
                     pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
                 }
             }
-            //else // debug
-            //{
-            //    //pts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
-            //    //var serializableTransform = new SerializableTransform(CurrentTransform);
-            //    ////Logger.Instance.Log("Serialized transform applied to points:\n" + serializableTransform.ToString());
-            //    //Logger.Instance.Log("   Not applying any transformation to polymesh points");
-
-            //    //var serializableTransform = new SerializableTransform(CurrentTransform);
-            //    //Logger.Instance.Log("Serialized transform hypothetically applied to points:\n" + serializableTransform.ToString());
-            //    //var transformedPts = pts.Select(p => CurrentTransform.OfPoint(p)).ToList();
-            //    //var hypotheticalPoints = transformedPts.Select(p => new SerializablePoint(p)).ToList();
-            //    //string hypotheticalPointsSerialized = JsonConvert.SerializeObject(hypotheticalPoints, Formatting.Indented);
-            //    //Logger.Instance.Log("   polymeshTopology HYPOTHETICAL points going to the buffer:");
-            //    Logger.Instance.Log(hypotheticalPointsSerialized);
-            //}
-
-            //var serializablePoints = pts.Select(p => new SerializablePoint(p)).ToList();
-            //string serializedPoints = JsonConvert.SerializeObject(serializablePoints, Formatting.Indented);
-            //Logger.Instance.Log("   polymeshTopology points going to the buffer:");
-            //Logger.Instance.Log(serializedPoints);
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
@@ -827,7 +811,10 @@ namespace CesiumIonRevitAddin.Gltf
                 GltfExportUtils.AddNormals(preferences, CurrentFullTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
-            if (materialHasTexture) GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
+            if (materialHasTexture)
+            {
+                GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
+            }
         }
 
         RenderNodeAction IExportContext.OnViewBegin(ViewNode node)
@@ -841,7 +828,7 @@ namespace CesiumIonRevitAddin.Gltf
             // do nothing
         }
 
-        private string GetFamilyName(Element element)
+        private static string GetFamilyName(Element element)
         {
             if (element == null)
             {
@@ -866,10 +853,13 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        string GetTypeNameIfApplicable(ElementId elementId)
+        private string GetTypeNameIfApplicable(ElementId elementId)
         {
             var element = Doc.GetElement(elementId);
-            if (element == null) return "Element not found";
+            if (element == null)
+            {
+                return "Element not found";
+            }
 
             if (Doc.GetElement(element.GetTypeId()) is ElementType elementType)
             {
@@ -881,7 +871,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
+        private static object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
         {
             switch (parameter.StorageType)
             {
@@ -898,7 +888,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        Autodesk.Revit.DB.Transform CurrentFullTransform
+        private Autodesk.Revit.DB.Transform CurrentFullTransform
         {
             get
             {

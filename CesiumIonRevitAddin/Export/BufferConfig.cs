@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Export
 {
-    internal class BufferConfig
+    internal static class BufferConfig
     {
         public static void Run(List<GltfBufferView> bufferViews, List<GltfBuffer> buffers, string bufferUri)
         {

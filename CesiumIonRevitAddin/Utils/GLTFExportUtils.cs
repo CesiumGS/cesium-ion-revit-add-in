@@ -8,8 +8,8 @@ namespace CesiumIonRevitAddin.Utils
 {
     internal class GltfExportUtils
     {
-        const int DEF_COLOR = 250;
-        const string DEF_MATERIAL_NAME = "default";
+        private const int DEF_COLOR = 250;
+        private const string DEF_MATERIAL_NAME = "default";
         public static GltfMaterial GetGLTFMaterial(List<GltfMaterial> gltfMaterials, Material material, bool doubleSided)
         {
             // search for an already existing material
@@ -58,7 +58,7 @@ namespace CesiumIonRevitAddin.Utils
             return bufferData;
         }
 
-        static readonly string BIN = ".bin";
+        private static readonly string BIN = ".bin";
 
         public static void AddNormals(Preferences preferences, Autodesk.Revit.DB.Transform transform, PolymeshTopology polymeshTopology, List<double> normals)
         {

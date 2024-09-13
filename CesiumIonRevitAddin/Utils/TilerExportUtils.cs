@@ -80,7 +80,9 @@ namespace CesiumIonRevitAddin.Utils
             // Find the tiler executable
             string exePath = GetTilerLocation();
             if (!File.Exists(exePath))
+            {
                 throw new FileNotFoundException("Tiler executable not found at: " + exePath);
+            }
 
             // Define the arguments
             string arguments = $"--config \"{jsonPath}\"";

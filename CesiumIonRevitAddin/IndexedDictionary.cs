@@ -100,10 +100,10 @@ namespace CesiumIonRevitAddin.Gltf
             return false;
         }
 
-        readonly Dictionary<string, int> dict = new Dictionary<string, int>();
-        readonly Dictionary<string, T> output = new Dictionary<string, T>();
+        private readonly Dictionary<string, int> dict = new Dictionary<string, int>();
+        private readonly Dictionary<string, T> output = new Dictionary<string, T>();
 
-        int GetIndexFromUUID(string uuid)
+        private int GetIndexFromUUID(string uuid)
         {
             try
             {

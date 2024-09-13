@@ -6,8 +6,8 @@ namespace CesiumIonRevitAddin
 {
     internal class Logger
     {
-        static Logger instance = null;
-        static readonly object LogMutex = new object();
+        private static Logger instance = null;
+        private static readonly object LogMutex = new object();
         private readonly StreamWriter logFile;
         private static bool enabled = true;
 
@@ -46,7 +46,10 @@ namespace CesiumIonRevitAddin
 
         public void Log(string message)
         {
-            if (!enabled) return;
+            if (!enabled)
+            {
+                return;
+            }
 
             lock (LogMutex)
             {
