@@ -23,60 +23,26 @@ namespace CesiumIonRevitAddin
         public bool KeepGltf { get; } = false;
         public bool Export3DTilesDB { get; } = true;
 
-        // TODO: needed?
+#pragma warning disable S125
+        // If we need to support Revit from 2020 or earlier, you will likely need this.
         //#if REVIT2019 || REVIT2020\
         //        DisplayUnitType units;
         //#else
         //        ForgeTypeId units;
         //
         //#endif
+#pragma warning restore S125
 
         public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.3dtiles";
-        public string OutputDirectory
-        {
-            get => Path.GetDirectoryName(OutputPath);
-        }
-        public string OutputFilename
-        {
-            get
-            {
-                return Path.GetFileName(OutputPath);
-            }
-        }
-        public string TempDirectory
-        {
-            get
-            {
-                return Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(OutputPath) + "_temp");
-            }
-        }
-        public string JsonPath
-        {
-            get
-            {
-                return Path.Combine(TempDirectory, "tileset.json");
-            }
-        }
-        public string BinPath
-        {
-            get
-            {
-                return Path.Combine(TempDirectory, "tileset.bin");
-            }
-        }
-        public string GltfPath
-        {
-            get => Path.Combine(TempDirectory, "tileset.gltf");
-        }
-        public string Temp3DTilesPath
-        {
-            get => Path.Combine(TempDirectory, OutputFilename);
-        }
+        public string OutputDirectory => Path.GetDirectoryName(OutputPath);
+        public string OutputFilename => Path.GetFileName(OutputPath);
+        public string TempDirectory => Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(OutputPath) + "_temp");
+        public string JsonPath => Path.Combine(TempDirectory, "tileset.json");
+        public string BinPath => Path.Combine(TempDirectory, "tileset.bin");
+        public string GltfPath => Path.Combine(TempDirectory, "tileset.gltf");
+        public string Temp3DTilesPath => Path.Combine(TempDirectory, OutputFilename);
 
-        public string ToJson()
-        {
-            return JsonConvert.SerializeObject(this, Formatting.Indented);
-        }
+        public string ToJson() => JsonConvert.SerializeObject(this, Formatting.Indented);
 
         public static Preferences FromJson(string json) => JsonConvert.DeserializeObject<Preferences>(json);
 
@@ -86,19 +52,10 @@ namespace CesiumIonRevitAddin
             File.WriteAllText(filePath, ToJson());
         }
 
-        public static Preferences LoadFromFile(string filePath)
-        {
-            return FromJson(File.ReadAllText(filePath));
-        }
+        public static Preferences LoadFromFile(string filePath) => FromJson(File.ReadAllText(filePath));
 
-        public static string GetPreferencesFolder()
-        {
-            return Path.Combine(Util.GetAddinUserDataFolder(), "preferences");
-        }
+        public static string GetPreferencesFolder() => Path.Combine(Util.GetAddinUserDataFolder(), "preferences");
 
-        public static string GetPreferencesPathForProject(string projectPath)
-        {
-            return Path.Combine(GetPreferencesFolder(), Path.GetFileNameWithoutExtension(projectPath) + ".json");
-        }
+        public static string GetPreferencesPathForProject(string projectPath) => Path.Combine(GetPreferencesFolder(), Path.GetFileNameWithoutExtension(projectPath) + ".json");
     }
 }

@@ -2,7 +2,7 @@
 
 namespace CesiumIonRevitAddin.Transform
 {
-    internal class ModelRotation
+    internal static class ModelRotation
     {
         public static List<double> Get(bool flipAxis)
         {

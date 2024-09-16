@@ -17,10 +17,7 @@ namespace CesiumIonRevitAddin.Gltf
             get { return dict[CurrentKey]; }
         }
 
-        public T CurrentItem
-        {
-            get { return this.List[this.dict[this.CurrentKey]]; }
-        }
+        public T CurrentItem => this.List[this.dict[this.CurrentKey]];
 
         public T GetElement(string uuid)
         {

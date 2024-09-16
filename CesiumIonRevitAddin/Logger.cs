@@ -9,13 +9,8 @@ namespace CesiumIonRevitAddin
         private static Logger instance = null;
         private static readonly object LogMutex = new object();
         private readonly StreamWriter logFile;
-        private static bool enabled = true;
 
-        public static bool Enabled
-        {
-            get { return enabled; }
-            set { enabled = value; }
-        }
+        public static bool Enabled { get; set; } = true;
 
         private Logger()
         {
@@ -46,7 +41,7 @@ namespace CesiumIonRevitAddin
 
         public void Log(string message)
         {
-            if (!enabled)
+            if (!Enabled)
             {
                 return;
             }

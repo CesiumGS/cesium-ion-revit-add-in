@@ -213,14 +213,14 @@ namespace CesiumIonRevitAddin.Export
                                 TexCoord = 0
                             };
 
-                            KHRTextureTransform khrTextureTransformExtension;
+                            KhrTextureTransform khrTextureTransformExtension;
                             if (gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.TryGetValue("KHR_texture_transform", out var extension))
                             {
-                                khrTextureTransformExtension = (KHRTextureTransform)extension;
+                                khrTextureTransformExtension = (KhrTextureTransform)extension;
                             }
                             else
                             {
-                                khrTextureTransformExtension = new KHRTextureTransform();
+                                khrTextureTransformExtension = new KhrTextureTransform();
                                 gltfMaterial.PbrMetallicRoughness.BaseColorTexture.Extensions.Add("KHR_texture_transform", khrTextureTransformExtension);
                             }
                             khrTextureTransformExtension.Offset = bitmapInfo.Offset;
@@ -554,12 +554,12 @@ namespace CesiumIonRevitAddin.Export
             propertySchema.Add("required", false);
         }
 
-        private static void SetGltfMaterialsProperties(MaterialNode node, float opacity, ref GltfPbr pbr, ref GltfMaterial gltfMaterial)
+        private static void SetGltfMaterialsProperties(MaterialNode materialNode, float opacity, ref GltfPbr gltfPbr, ref GltfMaterial gltfMaterial)
         {
-            pbr.BaseColorFactor = new List<float>(4) { node.Color.Red / 255f, node.Color.Green / 255f, node.Color.Blue / 255f, opacity };
-            pbr.MetallicFactor = 0f;
-            pbr.RoughnessFactor = opacity < 1f ? 0.5f : 1f;
-            gltfMaterial.PbrMetallicRoughness = pbr;
+            gltfPbr.BaseColorFactor = new List<float>(4) { materialNode.Color.Red / 255f, materialNode.Color.Green / 255f, materialNode.Color.Blue / 255f, opacity };
+            gltfPbr.MetallicFactor = 0f;
+            gltfPbr.RoughnessFactor = opacity < 1f ? 0.5f : 1f;
+            gltfMaterial.PbrMetallicRoughness = gltfPbr;
 
             // TODO: Implement MASK alphamode for elements like leaves or wire fences
             gltfMaterial.AlphaMode = opacity < 1f ? BLEND : OPAQUE;

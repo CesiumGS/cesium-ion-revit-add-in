@@ -27,8 +27,8 @@ namespace CesiumIonRevitAddin
         {
             CreateRibbonTab(application, RIBBONTAB);
 
-            Autodesk.Revit.UI.RibbonPanel panel = null;
-            List<Autodesk.Revit.UI.RibbonPanel> ribbonPanels = application.GetRibbonPanels();
+            RibbonPanel panel = null;
+            List<RibbonPanel> ribbonPanels = application.GetRibbonPanels();
             foreach (var existingPanel in ribbonPanels)
             {
                 var name = existingPanel.Name;
@@ -56,6 +56,7 @@ namespace CesiumIonRevitAddin
             //pushButtonData.LongDescription = "Exports the current 3D View into a 3D Tiles tileset.";
             panel.AddItem(pushButtonData);
 
+#pragma warning disable S125
             /*
              * Remove for now until ion integration is complete
              * 
@@ -73,6 +74,7 @@ namespace CesiumIonRevitAddin
             uploadButton.LongDescription = "Upload to ion";
             panel.AddItem(uploadButton);
             */
+#pragma warning restore S125
 
             // look for RibbonPanel, or create it if not already created
             RibbonPanel panelAbout = null;
@@ -103,7 +105,7 @@ namespace CesiumIonRevitAddin
 
         public Result OnShutdown(UIControlledApplication application) => Result.Succeeded;
 
-        private void CreateRibbonTab(UIControlledApplication application, string ribbonTabName)
+        private static void CreateRibbonTab(UIControlledApplication application, string ribbonTabName)
         {
             Autodesk.Windows.RibbonControl ribbon = Autodesk.Windows.ComponentManager.Ribbon;
             var tab = ribbon.FindTab(ribbonTabName);
@@ -180,17 +182,13 @@ namespace CesiumIonRevitAddin
                 }
             }
 
-            var ctx = new GltfExportContext(exportView.Document, preferences);
-            CustomExporter exporter = new CustomExporter(exportView.Document, ctx);
-
-            if (ctx == null || exporter == null)
+            var exportContext = new GltfExportContext(exportView.Document, preferences);
+            var exporter = new CustomExporter(exportView.Document, exportContext)
             {
-                TaskDialog.Show("Error", "Failed to initialize export context or exporter.");
-                return Result.Failed;
-            }
+                ShouldStopOnError = false,
+                IncludeGeometricObjects = false
+            };
 
-            exporter.ShouldStopOnError = false;
-            exporter.IncludeGeometricObjects = false;
             exporter.Export(exportView);
 
             // Write out the updated preferences for this document

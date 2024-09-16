@@ -2,7 +2,7 @@
 
 namespace CesiumIonRevitAddin.Gltf
 {
-    internal class KHRTextureTransform
+    internal class KhrTextureTransform
     {
         [JsonProperty("offset")]
         public double[] Offset { get; set; } = new double[] { 0, 0 };

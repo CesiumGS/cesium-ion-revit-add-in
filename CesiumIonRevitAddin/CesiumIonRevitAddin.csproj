@@ -96,7 +96,7 @@
     <Compile Include="Gltf\GltfTexture.cs" />
     <Compile Include="Gltf\GltfTextureInfo.cs" />
     <Compile Include="Gltf\GltfVersion.cs" />
-    <Compile Include="Gltf\KHRTextureTransform.cs" />
+    <Compile Include="Gltf\KhrTextureTransform.cs" />
     <Compile Include="IndexedDictionary.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Model\GeometryDataObject.cs" />

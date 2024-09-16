@@ -10,10 +10,8 @@ namespace CesiumIonRevitAddin.Gltf
         [JsonProperty("mesh")]
         public int? Mesh { get; set; } = null;
 
-
         [JsonProperty("matrix")]
         public List<double> Matrix { get; set; }
-
 
         [JsonProperty("rotation")]
         public List<double> Rotation { get; set; }
@@ -28,6 +26,5 @@ namespace CesiumIonRevitAddin.Gltf
         public GltfExtras Extras { get; set; }
         [JsonProperty("extensions")]
         public GltfExtensions Extensions { get; set; } = new GltfExtensions();
-
     }
 }
