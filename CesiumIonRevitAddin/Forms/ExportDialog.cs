@@ -25,6 +25,7 @@ namespace CesiumIonRevitAddin.Forms
 
             instancing.Checked = this.preferences.Instancing;
             materials.Checked = this.preferences.Materials;
+            normals.Checked = this.preferences.Normals;
             textures.Checked = this.preferences.Textures;
             links.Checked = this.preferences.Links;
 
@@ -43,6 +44,7 @@ namespace CesiumIonRevitAddin.Forms
             this.preferences.Instancing = instancing.Checked;
             this.preferences.EpsgCode = crsInput.Text;
             this.preferences.Materials = materials.Checked;
+            this.preferences.Normals = normals.Checked;
             this.preferences.Textures = textures.Checked;
             this.preferences.Links = links.Checked;
             this.preferences.MaxTextureSize = int.Parse(maxTextureSize.Text);
