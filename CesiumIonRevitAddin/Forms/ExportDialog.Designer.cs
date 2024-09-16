@@ -114,8 +114,8 @@
             this.groupBox1.Controls.Add(this.maxTextureSizeLabel);
             this.groupBox1.Controls.Add(this.maxTextureSize);
             this.groupBox1.Controls.Add(this.links);
-            this.groupBox1.Controls.Add(this.textures);
             this.groupBox1.Controls.Add(this.materials);
+            this.groupBox1.Controls.Add(this.textures);
             this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
@@ -172,7 +172,7 @@
             // materials
             // 
             this.materials.AutoSize = true;
-            this.materials.Location = new System.Drawing.Point(6, 42);
+            this.materials.Location = new System.Drawing.Point(6, 65);
             this.materials.Name = "materials";
             this.materials.Size = new System.Drawing.Size(68, 17);
             this.materials.TabIndex = 1;
@@ -215,7 +215,7 @@
             // normals
             // 
             this.normals.AutoSize = true;
-            this.normals.Location = new System.Drawing.Point(6, 65);
+            this.normals.Location = new System.Drawing.Point(6, 42);
             this.normals.Name = "normals";
             this.normals.Size = new System.Drawing.Size(64, 17);
             this.normals.TabIndex = 6;
