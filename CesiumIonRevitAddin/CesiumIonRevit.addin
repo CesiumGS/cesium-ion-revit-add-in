@@ -2,7 +2,7 @@
 <RevitAddIns>
 	<AddIn Type="Application">
 		<Name>Cesium ion Revit Add-In</Name>
-		<Assembly>C:\p\cesium-ion-revit-add-in\CesiumIonRevitAddin\bin\Debug\CesiumIonRevitAddin\CesiumIonRevitAddin.dll</Assembly>
+		<Assembly>.\CesiumIonRevitAddin\CesiumIonRevitAddin.dll</Assembly>
 		<FullClassName>CesiumIonRevitAddin.ExternalApplication</FullClassName>
 		<Text>Cesium ion Revit Add-In</Text>
 		<Description>Cesium ion Revit Add-In</Description>
