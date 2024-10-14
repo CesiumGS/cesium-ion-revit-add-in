@@ -3,6 +3,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using CesiumIonRevitAddin.Forms;
 using CesiumIonRevitAddin.Gltf;
+using CesiumIonRevitAddin.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -190,6 +191,22 @@ namespace CesiumIonRevitAddin
             };
 
             exporter.Export(exportView);
+
+            // Execute the tiler
+            TilerExportUtils.RunTiler(preferences.JsonPath);
+
+            // Move the .3dtiles to the final location
+            if (preferences.Export3DTilesDB)
+            {
+                File.Copy(preferences.Temp3DTilesPath, preferences.OutputPath, overwrite: true);
+                File.Delete(preferences.Temp3DTilesPath);
+            }
+
+            // Remove the temp glTF directory
+            if (!preferences.KeepGltf)
+            {
+                Directory.Delete(preferences.TempDirectory, true);
+            }
 
             // Write out the updated preferences for this document
             if (exportView.Document.PathName != "")
