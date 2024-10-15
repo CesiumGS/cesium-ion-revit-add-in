@@ -1,16 +1,17 @@
 ﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using CesiumIonRevitAddin.Forms;
-using CesiumIonRevitAddin.Gltf;
+using CesiumIonRevitAddin.CesiumIonClient;
 using CesiumIonRevitAddin.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
+using System.Net.Sockets;
+using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
+using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace CesiumIonRevitAddin
@@ -120,79 +121,39 @@ namespace CesiumIonRevitAddin
 
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
-    public class ExportCommand : Autodesk.Revit.UI.IExternalCommand
+    public class ExportToDisk : Autodesk.Revit.UI.IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            var view = commandData.Application.ActiveUIDocument.Document.ActiveView;
-            if (view.GetType().Name != "View3D")
-            {
-                Autodesk.Revit.UI.TaskDialog.Show("Wrong View", "You must be in a 3D view to export");
-                return Result.Succeeded;
-            }
-            View3D exportView = (View3D)view;
+            Document doc = commandData.Application.ActiveUIDocument.Document;
 
-            // Load preferences for this document, if it exists
-            Preferences preferences;
-            string preferencesPath = Preferences.GetPreferencesPathForProject(exportView.Document.PathName);
-            bool existingPreferences = File.Exists(preferencesPath);
-            if (existingPreferences && exportView.Document.PathName != "")
-            {
-                preferences = Preferences.LoadFromFile(preferencesPath);
-            }
-            else
-            {
-                preferences = new Preferences();
-            }
+            // Get the export view
+            View3D exportView = IonExportUtils.GetExportView(doc.ActiveView);
+            if (exportView == null)
+                return Result.Cancelled;
 
-            // Display the export preferences dialog
-            using (ExportDialog exportDialog = new ExportDialog(ref preferences))
+            // Get export preferences from the user
+            Preferences preferences = IonExportUtils.GetUserPreferences(doc);
+            if (preferences == null)
+                return Result.Cancelled;
+
+            // Get the save location from the user
+            string savePath = IonExportUtils.GetSavePath(doc, preferences);
+            if (savePath == null)
+                return Result.Cancelled;
+
+            preferences.OutputPath = savePath;
+            preferences.ionExport = false;
+
+            // Export the intermediate format 
+            Result exportResult = IonExportUtils.ExportIntermediateFormat(exportView, preferences);
+            if (exportResult != Result.Succeeded)
             {
-                exportDialog.ShowDialog();
-                if (exportDialog.DialogResult != System.Windows.Forms.DialogResult.OK)
-                {
-                    return Result.Cancelled;
-                }
+                IonExportUtils.Cleanup(preferences);
+                return exportResult;
             }
 
-            // Display the Safe File Dialog
-            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
-            {
-                saveFileDialog.Filter = "3D Tiles (*.3dtiles)|*.3dtiles";
-                saveFileDialog.FilterIndex = 1;
-
-                // Load the initial directory and filename from the preferences
-                if (existingPreferences)
-                {
-                    saveFileDialog.FileName = preferences.OutputFilename;
-                    saveFileDialog.InitialDirectory = preferences.OutputDirectory;
-                }
-                else
-                {
-                    saveFileDialog.RestoreDirectory = true;
-                    saveFileDialog.FileName = Path.GetFileNameWithoutExtension(exportView.Document.PathName);
-                }
-
-                if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    preferences.OutputPath = saveFileDialog.FileName;
-                }
-                else
-                {
-                    return Result.Cancelled;
-                }
-            }
-
-            var exportContext = new GltfExportContext(exportView.Document, preferences);
-            var exporter = new CustomExporter(exportView.Document, exportContext)
-            {
-                ShouldStopOnError = false,
-                IncludeGeometricObjects = false
-            };
-
-            exporter.Export(exportView);
-
-            // Execute the tiler
+            // If we don't export to ion, we execute the tiler locally
             TilerExportUtils.RunTiler(preferences.JsonPath);
 
             // Move the .3dtiles to the final location
@@ -202,19 +163,106 @@ namespace CesiumIonRevitAddin
                 File.Delete(preferences.Temp3DTilesPath);
             }
 
-            // Remove the temp glTF directory
-            if (!preferences.KeepGltf)
-            {
-                Directory.Delete(preferences.TempDirectory, true);
-            }
+            // Clean up the export contents
+            IonExportUtils.Cleanup(preferences);
 
-            // Write out the updated preferences for this document
-            if (exportView.Document.PathName != "")
-            {
-                preferences.SaveToFile(preferencesPath);
-            }
+            // As the export has been successful, save out the changes
+            // TODO: Decide if this should happen in a failed export
+            IonExportUtils.SaveUserPreferences(doc, preferences);
 
             TaskDialog.Show("Export Complete", "View exported to 3D Tiles");
+
+            return Result.Succeeded;
+        }
+    }
+
+
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public class ExportToIon : Autodesk.Revit.UI.IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            if (!Connection.IsConnected())
+            {
+                TaskDialog.Show("Not Connected", "Please connect to Cesium ion before uploading");
+                return Result.Failed;
+            }
+
+            Document doc = commandData.Application.ActiveUIDocument.Document;
+
+            // Get the export view
+            View3D exportView = IonExportUtils.GetExportView(doc.ActiveView);
+            if (exportView == null)
+                return Result.Cancelled;
+
+            // Get export preferences from the user
+            Preferences preferences = IonExportUtils.GetUserPreferences(doc);
+            if (preferences == null)
+                return Result.Cancelled;
+
+            // Provide a spoof path for the export
+            preferences.OutputPath = Path.Combine(Path.GetTempPath(), "cesium", "ion_export.3dtiles");
+            preferences.ionExport = true;
+
+            // Export the intermediate format 
+            Result exportResult = IonExportUtils.ExportIntermediateFormat(exportView, preferences);
+            if (exportResult != Result.Succeeded)
+            {
+                IonExportUtils.Cleanup(preferences);
+                return exportResult;
+            }
+
+            // Zip the export before uploading
+            string zipPath = Path.Combine(Path.GetTempPath(), "cesium", "upload.zip");
+
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
+
+            // Specify the folder that you want to zip
+            string folderToZip = preferences.TempDirectory;
+
+            // Create a new zip file (overwrites if already exists)
+            using (ZipArchive archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+            {
+                // Get all files from the specified folder
+                foreach (string filePath in Directory.GetFiles(folderToZip))
+                {
+                    // Ignore tileset.json
+                    if (filePath.EndsWith("tileset.json"))
+                        continue;
+
+                    // Add each file to the zip archive
+                    archive.CreateEntryFromFile(filePath, Path.GetFileName(filePath));
+                }
+            }
+
+            // Clean up the export contents
+            IonExportUtils.Cleanup(preferences);
+
+            // Spawn the async task and wait for it to complete
+            try
+            {
+                Task uploadTask = Connection.Upload(zipPath, Path.GetFileName(exportView.Document.PathName), "desc", "attr", "GLTF", "3D_MODEL");
+
+                // Block the main thread until the async upload completes
+                uploadTask.Wait(); // or uploadTask.GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                TaskDialog.Show("Upload Error", $"An error occurred during upload: {ex.Message}");
+                return Result.Failed;
+            }
+
+            // Remove the zip
+            if (File.Exists(zipPath))
+                File.Delete(zipPath);
+
+            // As the export has been successful, save out the changes
+            // TODO: Decide if this should happen in a failed export
+            IonExportUtils.SaveUserPreferences(doc, preferences);
+
+            TaskDialog.Show("Export Complete", "View exported to Cesium ion");
 
             return Result.Succeeded;
         }
@@ -224,36 +272,48 @@ namespace CesiumIonRevitAddin
     [Regeneration(RegenerationOption.Manual)]
     public class ConnectToIon : Autodesk.Revit.UI.IExternalCommand
     {
-        [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void printLog();
-        [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void initializeAndAuthenticate();
-
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            // var ionConnectionForm = new IonConnectionForm();
-            // ionConnectionForm.ShowDialog();
-            // Autodesk.Revit.UI.TaskDialog.Show("xxxx", "Connecting to Cesium ion");
-            initializeAndAuthenticate();
-            // printLog();
+            Connect();
 
             return Result.Succeeded;
+        }
+
+        static async Task Connect()
+        {
+            // Get an available port
+            TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+
+            // TODO: Support Cesium ion self hosted
+            string remoteUrl = "https://cesium.com/ion/oauth";
+            string responseType = "code";
+            string clientID = "700";
+            string redirectUri = $"http://127.0.0.1:{port}/callback";
+            string scope = "assets:write";
+
+            // Call GetToken to start the OAuth flow
+            await CesiumIonClient.Connection.ConnectToIon(remoteUrl, responseType, clientID, redirectUri, scope);
+
+            Console.WriteLine("OAuth process completed. Check token file.");
         }
     }
 
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
-    public class UploadFile : Autodesk.Revit.UI.IExternalCommand
+    public class Disconnect : Autodesk.Revit.UI.IExternalCommand
     {
-        [DllImport("CesiumNativeIonWrapper.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void upload();
-
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            upload();
+            CesiumIonClient.Connection.Disconnect();
+
+            Debug.WriteLine("Signed out");
+
             return Result.Succeeded;
         }
-    };
+    }
 
     [Transaction(TransactionMode.Manual)]
     public class AboutUs : Autodesk.Revit.UI.IExternalCommand

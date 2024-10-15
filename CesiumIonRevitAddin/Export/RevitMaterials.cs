@@ -237,8 +237,6 @@ namespace CesiumIonRevitAddin.Export
             }
 
             materials.AddOrUpdateCurrentMaterial(uniqueId, gltfMaterial, false);
-
-            System.Diagnostics.Debug.WriteLine("...Finishing material export");
         }
 
         private static List<BitmapInfo> GetBitmapInfo(Document document, Material material)

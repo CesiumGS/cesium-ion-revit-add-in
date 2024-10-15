@@ -41,6 +41,7 @@ namespace CesiumIonRevitAddin
         public string BinPath => Path.Combine(TempDirectory, "tileset.bin");
         public string GltfPath => Path.Combine(TempDirectory, "tileset.gltf");
         public string Temp3DTilesPath => Path.Combine(TempDirectory, OutputFilename);
+        public bool ionExport { get; set; } = false;
 
         public string ToJson() => JsonConvert.SerializeObject(this, Formatting.Indented);
 
