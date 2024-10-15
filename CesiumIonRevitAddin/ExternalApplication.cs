@@ -290,8 +290,8 @@ namespace CesiumIonRevitAddin
             // TODO: Support Cesium ion self hosted
             string remoteUrl = "https://cesium.com/ion/oauth";
             string responseType = "code";
-            string clientID = "700";
-            string redirectUri = $"http://127.0.0.1:{port}/callback";
+            string clientID = "847";
+            string redirectUri = $"http://127.0.0.1:{port}/cesium-ion-revit-addin/oauth2/callback";
             string scope = "assets:write";
 
             // Call GetToken to start the OAuth flow
