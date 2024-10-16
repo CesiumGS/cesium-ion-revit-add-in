@@ -15,6 +15,8 @@ using Newtonsoft.Json.Linq;
 using System.IO;
 using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
+using System.Threading;
+using System.Net.Sockets;
 
 namespace CesiumIonRevitAddin.CesiumIonClient
 {
@@ -41,10 +43,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
     static public class Connection
     {
         private static readonly HttpClient client = new HttpClient();
+        private static string ionServer;
+        private static string apiServer;
         private static string clientID;
         private static string redirectUri;
         private static string localUrl = Path.Combine(Util.GetAddinUserDataFolder(), "ion_token.json");
         private static string codeVerifier;
+        
         public static void Disconnect()
         {
             // Remove the token from the file system
@@ -54,9 +59,23 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             }
         }
 
-        public static async Task ConnectToIon(string remoteUrl, string responseType, string clientID, string redirectUri, string scope)
+        public static async Task<bool> ConnectToIon(string remoteUrl, string apiUrl, string responseType, string clientID, string redirectUri, string scope)
         {
-            Connection.redirectUri = redirectUri;
+            Connection.ionServer = remoteUrl;
+            Connection.apiServer = apiUrl;
+
+            // Use a randomly available port for the redirect URI
+            TcpListener portListener = new TcpListener(IPAddress.Loopback, 0);
+            portListener.Start();
+            int port = ((IPEndPoint)portListener.LocalEndpoint).Port;
+            portListener.Stop();
+
+            UriBuilder uriBuilder = new UriBuilder(new Uri(redirectUri))
+            {
+                Port = port // Set the new port
+            };
+                                    
+            Connection.redirectUri = uriBuilder.Uri.ToString();
             Connection.clientID = clientID;
             SHA256 encrypter = SHA256.Create();
             codeVerifier = RandomString.GetUniqueString(32);
@@ -64,12 +83,15 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             var encoded = Convert.ToBase64String(hashed);
             string codeChallenge = encoded.Replace("=", "").Replace('+', '-').Replace('/', '_');
 
-            UriBuilder uriBuilder = new UriBuilder(remoteUrl);
+            uriBuilder = new UriBuilder(remoteUrl)
+            { 
+                Path = "oauth" 
+            };
 
             var queryParams = HttpUtility.ParseQueryString(string.Empty);
             queryParams["response_type"] = responseType;
             queryParams["client_id"] = clientID;
-            queryParams["redirect_uri"] = redirectUri;
+            queryParams["redirect_uri"] = Connection.redirectUri;
             queryParams["scope"] = scope;
             queryParams["code_challenge"] = codeChallenge;
             queryParams["code_challenge_method"] = "S256";
@@ -78,24 +100,24 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             Uri finalUri = uriBuilder.Uri;
 
             // Start the listen server so we can capture the response from the browser login
-            Task thread = Task.Factory.StartNew(() => StartListenServer());
+            Task<bool> listenTask = Task.Run(() => StartListenServer(TimeSpan.FromSeconds(300)));
 
             // Load the browser to the login page
             OpenBrowser(finalUri.ToString());
-            await thread;
+            return await listenTask;
         }
 
-        private static async void StartListenServer()
+        private static async Task<bool> StartListenServer(TimeSpan timeout)
         {
+            bool success = false;
+            CancellationTokenSource cts = new CancellationTokenSource();
+            cts.CancelAfter(timeout);
+
             try
             {
                 Uri uri = new Uri(redirectUri);
-
-                // HttpListener requires the URL to end with a trailing slash
-                // We listen at the base url and manually check the path
-
-                // Extract the base URL (scheme + hostname + port) and ensure it ends with '/'
-                string baseUri = uri.GetLeftPart(UriPartial.Authority) + "/";
+                
+                string baseUri = $"{uri.Scheme}://{uri.Host}:{uri.Port}/"; 
 
                 // Extract the path from the redirectUri
                 string callbackPath = uri.AbsolutePath;
@@ -106,46 +128,61 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                     listener.Start();
                     Debug.WriteLine("Listening for OAuth callback on " + baseUri);
 
-                    // This blocks until the listener receives a request
-                    HttpListenerContext context = listener.GetContext();
+                    Task<HttpListenerContext> getContextTask = listener.GetContextAsync();
 
-                    // Check if the request is for the specified callback path
-                    if (context.Request.Url.AbsolutePath == callbackPath)
+                    // Wait for either the context or timeout
+                    Task completedTask = await Task.WhenAny(getContextTask, Task.Delay(timeout, cts.Token));
+
+                    if (completedTask == getContextTask)
                     {
+                        HttpListenerContext context = await getContextTask;
 
-                        // Extract the code from the query string
-                        string query = context.Request.Url.Query;
-
-                        // Send a response to the browser so the user knows the request was received
-                        // TODO: Make this nicer...
-                        string responseString = "<html><body>Authorization successful! You may close this window.</body></html>";
-                        byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-                        context.Response.ContentLength64 = buffer.Length;
-                        context.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                        context.Response.OutputStream.Close();
-
-                        // Process the query string to extract the authorization code and state
-                        if (!string.IsNullOrEmpty(query) && query.Contains("code="))
+                        // Check if the request is for the specified callback path
+                        if (context.Request.Url.AbsolutePath == callbackPath)
                         {
-                            Debug.WriteLine("Authorization code received.");
+                            // Extract the code from the query string
+                            string query = context.Request.Url.Query;
 
-                            // Now pass the query string to your RequestToken method
-                            Task<bool> tokenRequest = RequestToken(query);
-                            tokenRequest.Wait();
+                            // Send a response to the browser so the user knows the request was received
+                            string responseString = "<html><body>Authorization successful! You may close this window.</body></html>";
+                            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                            context.Response.ContentLength64 = buffer.Length;
+                            context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                            context.Response.OutputStream.Close();
 
-                            if (tokenRequest.Result)
-                                Debug.WriteLine("Token request successful. Access token saved.");
+                            // Process the query string to extract the authorization code and state
+                            if (!string.IsNullOrEmpty(query) && query.Contains("code="))
+                            {
+                                Debug.WriteLine("Authorization code received.");
+
+                                // Now pass the query string to your RequestToken method
+                                Task<bool> tokenRequest = RequestToken(query);
+                                tokenRequest.Wait();
+
+                                if (tokenRequest.Result)
+                                {
+                                    Debug.WriteLine("Token request successful. Access token saved.");
+                                    success = true;
+                                }
+                                else
+                                {
+                                    Debug.WriteLine("Token request failed.");
+                                }
+                            }
                             else
-                                Debug.WriteLine("Token request failed.");
+                            {
+                                Debug.WriteLine("No authorization code received.");
+                            }
                         }
                         else
                         {
-                            Debug.WriteLine("No authorization code received.");
+                            Debug.WriteLine($"Received request on a different path: {context.Request.Url.AbsolutePath}");
                         }
                     }
                     else
                     {
-                        Debug.WriteLine($"Received request on a different path: {context.Request.Url.AbsolutePath}");
+                        // Timeout occurred
+                        Debug.WriteLine("Timeout waiting for OAuth callback.");
                     }
 
                     listener.Stop();
@@ -155,11 +192,17 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             {
                 Debug.WriteLine("HttpListener exception: " + e.Message);
             }
+            catch (TaskCanceledException)
+            {
+                Debug.WriteLine("The operation was canceled due to timeout.");
+            }
             catch (Exception e)
             {
                 Debug.WriteLine("General exception: " + e.Message);
             }
+            return success;
         }
+
 
         public static async Task Upload(string filePath, string name, string description, string attribution, string type, string sourceType)
         {
@@ -193,10 +236,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
             client.DefaultRequestHeaders.Add("json", "true");
 
-            Uri requestUri = new Uri("https://api.cesium.com/v1/assets");
+            UriBuilder uriBuilder = new UriBuilder(GetApiUrl())
+            {
+                Path = "v1/assets"
+            };
 
             // Post the asset to the Cesium ion API
-            using (HttpResponseMessage responseMessage = await client.PostAsync(requestUri, POSTContent))
+            using (HttpResponseMessage responseMessage = await client.PostAsync(uriBuilder.Uri, POSTContent))
             {
                 if (responseMessage.IsSuccessStatusCode)
                 {
@@ -248,8 +294,14 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                             string id = (string)uploadLocation["prefix"];
                             id = id.Substring(id.IndexOf("/"));
 
+
+                            uriBuilder = new UriBuilder(GetIonUrl())
+                            {
+                                Path = "assets" + id
+                            };
+
                             // Open the browser to the asset page
-                            OpenBrowser(@"https://cesium.com/ion/assets" + id);
+                            OpenBrowser(uriBuilder.Uri.ToString());
                         }
                     }
                     catch (Exception e)
@@ -267,9 +319,29 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         public static string GetAccessToken()
         {
+            return GetSavedJsonValue("access_token");
+        }
+
+        public static string GetApiUrl()
+        {
+            return GetSavedJsonValue("api_url");
+        }
+
+        public static string GetIonUrl()
+        {
+            return GetSavedJsonValue("ion_url");
+        }
+
+        public static bool IsConnected()
+        {
+            return GetAccessToken() != null;
+        }
+
+        private static string GetSavedJsonValue(string key)
+        {
             if (!File.Exists(localUrl))
             {
-                return null; 
+                return null;
             }
 
             try
@@ -278,13 +350,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
                 var jsonObject = JObject.Parse(jsonContent);
 
-                if (jsonObject.TryGetValue("access_token", out var token))
+                if (jsonObject.TryGetValue(key, out var token))
                 {
                     return token.ToString(); // Return the access token as a string
                 }
                 else
                 {
-                    Debug.WriteLine("Token not found in JSON.");
+                    Debug.WriteLine($"{key} not found in JSON.");
                     return null;
                 }
             }
@@ -298,11 +370,6 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 Debug.WriteLine("An unexpected error occurred: " + ex.Message);
                 return null;
             }
-        }
-
-        public static bool IsConnected()
-        {
-            return GetAccessToken() != null;
         }
 
         private static void OpenBrowser(string url)
@@ -348,7 +415,10 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             string code = queryParams["code"];
             string state = queryParams["state"];
 
-            Uri tokenUri = new Uri("https://api.cesium.com/oauth/token");
+
+            UriBuilder uriBuilder = new UriBuilder(apiServer);
+            uriBuilder.Path = Path.Combine(uriBuilder.Path.TrimEnd('/'), "oauth/token/");
+            
             Dictionary<string, string> parameters = new Dictionary<string, string>
         {
             { "grant_type", "authorization_code" },
@@ -359,11 +429,15 @@ namespace CesiumIonRevitAddin.CesiumIonClient
         };
             var POSTContent = new FormUrlEncodedContent(parameters);
 
-            Debug.WriteLine("POSTContent: " + POSTContent.ToString());
-
-            using (HttpResponseMessage responseMessageToken = await client.PostAsync(tokenUri, POSTContent).ConfigureAwait(false))
+            using (HttpResponseMessage responseMessageToken = await client.PostAsync(uriBuilder.Uri, POSTContent).ConfigureAwait(false))
             {
                 string contentToken = await responseMessageToken.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                // Add the current API url to the JSON
+                JObject jsonObject = JObject.Parse(contentToken);
+                jsonObject["api_url"] = Connection.apiServer;
+                jsonObject["ion_url"] = Connection.ionServer;
+                contentToken = jsonObject.ToString();
 
                 if (responseMessageToken.IsSuccessStatusCode)
                 {
@@ -372,7 +446,6 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 }
                 System.IO.File.WriteAllText(localUrl, contentToken);
 
-                Debug.WriteLine(contentToken);
             }
             return false;
         }

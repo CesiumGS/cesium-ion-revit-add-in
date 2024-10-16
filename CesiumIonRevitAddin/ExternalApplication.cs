@@ -13,6 +13,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
+using CesiumIonRevitAddin.Forms;
 
 namespace CesiumIonRevitAddin
 {
@@ -274,30 +275,12 @@ namespace CesiumIonRevitAddin
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            Connect();
+            using (IonConnectDialog ionConnectDialog = new IonConnectDialog())
+            {
+                ionConnectDialog.ShowDialog();
+            }
 
             return Result.Succeeded;
-        }
-
-        static async Task Connect()
-        {
-            // Get an available port
-            TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
-            listener.Start();
-            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-
-            // TODO: Support Cesium ion self hosted
-            string remoteUrl = "https://cesium.com/ion/oauth";
-            string responseType = "code";
-            string clientID = "847";
-            string redirectUri = $"http://127.0.0.1:{port}/cesium-ion-revit-addin/oauth2/callback";
-            string scope = "assets:write";
-
-            // Call GetToken to start the OAuth flow
-            await CesiumIonClient.Connection.ConnectToIon(remoteUrl, responseType, clientID, redirectUri, scope);
-
-            Console.WriteLine("OAuth process completed. Check token file.");
         }
     }
 

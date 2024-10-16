@@ -85,6 +85,12 @@
     <Compile Include="Forms\ExportDialog.Designer.cs">
       <DependentUpon>ExportDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\IonConnectDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\IonConnectDialog.Designer.cs">
+      <DependentUpon>IonConnectDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Gltf\ExtStructuralMetadata.cs" />
     <Compile Include="Export\FileExport.cs" />
     <Compile Include="Gltf\Gltf.cs" />
@@ -142,6 +148,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Forms\ExportDialog.resx">
       <DependentUpon>ExportDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\IonConnectDialog.resx">
+      <DependentUpon>IonConnectDialog.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
