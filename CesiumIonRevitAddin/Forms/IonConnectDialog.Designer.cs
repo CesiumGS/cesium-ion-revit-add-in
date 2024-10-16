@@ -234,6 +234,7 @@
             this.Name = "IonConnectDialog";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Connect to Cesium ion";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.IonConnectDialog_FormClosing);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
             this.groupBox1.ResumeLayout(false);

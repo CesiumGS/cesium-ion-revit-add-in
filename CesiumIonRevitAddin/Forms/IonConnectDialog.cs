@@ -12,15 +12,25 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
 using Autodesk.Revit.UI;
+using System.Threading;
 
 namespace CesiumIonRevitAddin.Forms
 {
     public partial class IonConnectDialog : Form
     {
+        private CancellationTokenSource cts;
+        private int port;
+
         public IonConnectDialog()
         {
             InitializeComponent();
             setTextFieldsEnabled(selfHostedRadioBtn.Checked);
+
+            // Use a randomly available port for the redirect URI
+            TcpListener portListener = new TcpListener(IPAddress.Loopback, 0);
+            portListener.Start();
+            port = ((IPEndPoint)portListener.LocalEndpoint).Port;
+            portListener.Stop();
         }
 
         private async void connectBtn_Click(object sender, EventArgs e)
@@ -41,15 +51,35 @@ namespace CesiumIonRevitAddin.Forms
                 redirectUrl = redirectUrlText.Text;
             }
 
-            // TODO: Handle use cases of multiple connection button clicks and unfinished tasks
-            bool success = await Connection.ConnectToIon(ionServerUrl, apiServerUrl, responseType, clientID, redirectUrl, scope);
+            UriBuilder uriBuilder = new UriBuilder(new Uri(redirectUrl))
+            {
+                Port = port
+            };
+            redirectUrl = uriBuilder.Uri.ToString();
 
-            if (success)
-                TaskDialog.Show("Connected", "Successfully connected to Cesium ion");
-            else
-                TaskDialog.Show("Connection Failed", "Could not connect to Cesium ion");
+            // Cancel the existing connection if another is started
+            if (cts != null)
+                cts.Cancel();
 
-            this.Close();
+            cts = new CancellationTokenSource();
+
+            ConnectionResult result = await Connection.ConnectToIon(ionServerUrl, apiServerUrl, responseType, clientID, redirectUrl, scope, cts.Token);
+
+            if (result.Status == ConnectionStatus.Success)
+            {
+                TaskDialog.Show("Connected", result.Message);
+                this.Close();
+            }
+            else if (result.Status == ConnectionStatus.Failure)
+            {
+                TaskDialog.Show("Connection Failed", result.Message);
+            }
+            else if (result.Status == ConnectionStatus.Cancelled)
+            {
+                // Do nothing
+            }
+            
+            
         }
 
         private void selfHostedRadioBtn_CheckedChanged(object sender, EventArgs e)
@@ -68,6 +98,13 @@ namespace CesiumIonRevitAddin.Forms
         private void cancelBtn_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void IonConnectDialog_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            // Cancel any existing connection task that hasn't completed
+            if (cts != null)
+                cts.Cancel();
         }
     }
 }

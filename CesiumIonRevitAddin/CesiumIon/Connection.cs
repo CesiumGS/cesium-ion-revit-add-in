@@ -20,6 +20,24 @@ using System.Net.Sockets;
 
 namespace CesiumIonRevitAddin.CesiumIonClient
 {
+    public enum ConnectionStatus
+    {
+        Success,
+        Failure,
+        Cancelled
+    }
+    public class ConnectionResult
+    {
+        public ConnectionStatus Status { get; set; }
+        public string Message { get; set; }
+
+        public ConnectionResult(ConnectionStatus status, string message)
+        {
+            Status = status;
+            Message = message;
+        }
+    }
+
     public static class RandomString
     {
         private static readonly char[] chars =
@@ -40,7 +58,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
         }
     }
 
-    static public class Connection
+    public static class Connection
     {
         private static readonly HttpClient client = new HttpClient();
         private static string ionServer;
@@ -59,33 +77,23 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             }
         }
 
-        public static async Task<bool> ConnectToIon(string remoteUrl, string apiUrl, string responseType, string clientID, string redirectUri, string scope)
+        public static async Task<ConnectionResult> ConnectToIon(string remoteUrl, string apiUrl, string responseType, string clientID, string redirectUri, string scope, CancellationToken cancellationToken)
         {
             Connection.ionServer = remoteUrl;
             Connection.apiServer = apiUrl;
-
-            // Use a randomly available port for the redirect URI
-            TcpListener portListener = new TcpListener(IPAddress.Loopback, 0);
-            portListener.Start();
-            int port = ((IPEndPoint)portListener.LocalEndpoint).Port;
-            portListener.Stop();
-
-            UriBuilder uriBuilder = new UriBuilder(new Uri(redirectUri))
-            {
-                Port = port // Set the new port
-            };
-                                    
-            Connection.redirectUri = uriBuilder.Uri.ToString();
+            Connection.redirectUri = redirectUri;
             Connection.clientID = clientID;
+
+            // Code challenge generation
             SHA256 encrypter = SHA256.Create();
             codeVerifier = RandomString.GetUniqueString(32);
             var hashed = encrypter.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
             var encoded = Convert.ToBase64String(hashed);
             string codeChallenge = encoded.Replace("=", "").Replace('+', '-').Replace('/', '_');
 
-            uriBuilder = new UriBuilder(remoteUrl)
-            { 
-                Path = "oauth" 
+            UriBuilder uriBuilder = new UriBuilder(remoteUrl)
+            {
+                Path = "oauth"
             };
 
             var queryParams = HttpUtility.ParseQueryString(string.Empty);
@@ -99,27 +107,32 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
             Uri finalUri = uriBuilder.Uri;
 
-            // Start the listen server so we can capture the response from the browser login
-            Task<bool> listenTask = Task.Run(() => StartListenServer(TimeSpan.FromSeconds(300)));
+            // Start the listen server with cancellation support
+            Task<ConnectionResult> listenTask = Task.Run(() => StartListenServer(cancellationToken), cancellationToken);
 
             // Load the browser to the login page
             OpenBrowser(finalUri.ToString());
-            return await listenTask;
+
+            try
+            {
+                // Wait for either the listening task to complete or for cancellation
+                return await listenTask;
+            }
+            catch (OperationCanceledException)
+            {
+                return new ConnectionResult(ConnectionStatus.Cancelled, "Connection cancelled by the user");
+            }
         }
 
-        private static async Task<bool> StartListenServer(TimeSpan timeout)
+
+        private static async Task<ConnectionResult> StartListenServer(CancellationToken cancellationToken)
         {
             bool success = false;
-            CancellationTokenSource cts = new CancellationTokenSource();
-            cts.CancelAfter(timeout);
 
             try
             {
                 Uri uri = new Uri(redirectUri);
-                
-                string baseUri = $"{uri.Scheme}://{uri.Host}:{uri.Port}/"; 
-
-                // Extract the path from the redirectUri
+                string baseUri = $"{uri.Scheme}://{uri.Host}:{uri.Port}/";
                 string callbackPath = uri.AbsolutePath;
 
                 using (HttpListener listener = new HttpListener())
@@ -128,10 +141,17 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                     listener.Start();
                     Debug.WriteLine("Listening for OAuth callback on " + baseUri);
 
+                    // Wait for a request or cancellation
                     Task<HttpListenerContext> getContextTask = listener.GetContextAsync();
+                    Task completedTask = await Task.WhenAny(getContextTask, Task.Delay(-1, cancellationToken));
 
-                    // Wait for either the context or timeout
-                    Task completedTask = await Task.WhenAny(getContextTask, Task.Delay(timeout, cts.Token));
+                    // Check if the task completed due to cancellation
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        Debug.WriteLine("StartListenServer operation was cancelled.");
+                        listener.Stop();
+                        return new ConnectionResult(ConnectionStatus.Cancelled, "StartListenServer operation was cancelled");
+                    }
 
                     if (completedTask == getContextTask)
                     {
@@ -155,7 +175,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                             {
                                 Debug.WriteLine("Authorization code received.");
 
-                                // Now pass the query string to your RequestToken method
+                                // Pass the query string to your RequestToken method
                                 Task<bool> tokenRequest = RequestToken(query);
                                 tokenRequest.Wait();
 
@@ -179,12 +199,6 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                             Debug.WriteLine($"Received request on a different path: {context.Request.Url.AbsolutePath}");
                         }
                     }
-                    else
-                    {
-                        // Timeout occurred
-                        Debug.WriteLine("Timeout waiting for OAuth callback.");
-                    }
-
                     listener.Stop();
                 }
             }
@@ -192,15 +206,24 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             {
                 Debug.WriteLine("HttpListener exception: " + e.Message);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
-                Debug.WriteLine("The operation was canceled due to timeout.");
+                Debug.WriteLine("StartListenServer operation was cancelled.");
             }
             catch (Exception e)
             {
                 Debug.WriteLine("General exception: " + e.Message);
             }
-            return success;
+
+            if (success)
+            {
+                return new ConnectionResult(ConnectionStatus.Success, "Successfully connected to Cesium ion");
+            }
+            else
+            {
+                return new ConnectionResult(ConnectionStatus.Failure, "Failed to connect to Cesium ion");
+            }
+            
         }
 
 
