@@ -16,7 +16,6 @@ using System.IO;
 using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
 using System.Threading;
-using System.Net.Sockets;
 
 namespace CesiumIonRevitAddin.CesiumIonClient
 {
@@ -67,7 +66,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
         private static string redirectUri;
         private static string localUrl = Path.Combine(Util.GetAddinUserDataFolder(), "ion_token.json");
         private static string codeVerifier;
-        
+
         public static void Disconnect()
         {
             // Remove the token from the file system
@@ -123,7 +122,6 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 return new ConnectionResult(ConnectionStatus.Cancelled, "Connection cancelled by the user");
             }
         }
-
 
         private static async Task<ConnectionResult> StartListenServer(CancellationToken cancellationToken)
         {
@@ -223,16 +221,15 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             {
                 return new ConnectionResult(ConnectionStatus.Failure, "Failed to connect to Cesium ion");
             }
-            
+
         }
 
-
-        public static async Task Upload(string filePath, string name, string description, string attribution, string type, string sourceType)
+        public static async Task<ConnectionResult> Upload(string filePath, string name, string description, string attribution, string type, string sourceType, IProgress<double> progress = null)
         {
             description = description.Replace("__\\n__", "\n");
             attribution = attribution.Replace("__\\n__", "\n");
 
-            // TODO: Support the design tiler options
+            // Prepare the content to send to the API
             var content = new JObject
             {
                 { "name", name },
@@ -248,12 +245,12 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             };
 
             var POSTContent = new StringContent(content.ToString(), Encoding.UTF8, "application/json");
-            
+
             string token = GetAccessToken();
             if (token == null)
             {
                 Debug.WriteLine("No access token found.");
-                return;
+                return new ConnectionResult(ConnectionStatus.Failure, "No access token found.");
             }
 
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
@@ -264,79 +261,81 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 Path = "v1/assets"
             };
 
-            // Post the asset to the Cesium ion API
-            using (HttpResponseMessage responseMessage = await client.PostAsync(uriBuilder.Uri, POSTContent))
+            try
             {
-                if (responseMessage.IsSuccessStatusCode)
+                // Post the asset to the Cesium ion API
+                using (HttpResponseMessage responseMessage = await client.PostAsync(uriBuilder.Uri, POSTContent))
                 {
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        string error = await responseMessage.Content.ReadAsStringAsync();
+                        Debug.WriteLine("Error: " + error);
+                        return new ConnectionResult(ConnectionStatus.Failure, $"API Error: {error}");
+                    }
+
                     // Get the information to prepare for upload to S3
                     string responseContent = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
                     JObject responseJson = JObject.Parse(responseContent);
                     JObject uploadLocation = responseJson["uploadLocation"] as JObject;
                     JObject onComplete = responseJson["onComplete"] as JObject;
-                    try
-                    {
-                        // Prepare the S3 Client and upload
-                        SessionAWSCredentials credentials = new SessionAWSCredentials(
-                            (string)uploadLocation["accessKey"],
-                            (string)uploadLocation["secretAccessKey"],
-                            (string)uploadLocation["sessionToken"]);
 
-                        using (var s3Client = new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1))
-                        using (var fileTransferUtility = new TransferUtility(s3Client))
+                    // Prepare the S3 Client and upload
+                    SessionAWSCredentials credentials = new SessionAWSCredentials(
+                        (string)uploadLocation["accessKey"],
+                        (string)uploadLocation["secretAccessKey"],
+                        (string)uploadLocation["sessionToken"]);
+
+                    using (var s3Client = new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1))
+                    using (var fileTransferUtility = new TransferUtility(s3Client))
+                    {
+                        var uploadRequest = new TransferUtilityUploadRequest
                         {
-                            var uploadRequest = new TransferUtilityUploadRequest
-                            {
-                                FilePath = filePath,
-                                BucketName = uploadLocation["bucket"].ToString(),
-                                Key = uploadLocation["prefix"].ToString() + Path.GetFileName(filePath)
-                            };
+                            FilePath = filePath,
+                            BucketName = uploadLocation["bucket"].ToString(),
+                            Key = uploadLocation["prefix"].ToString() + Path.GetFileName(filePath)
+                        };
 
-                            long totalBytes = -1;
+                        // Track the total file size
+                        long totalBytes = new FileInfo(filePath).Length;
 
-                            void writeProgress(long current, long total)
-                            {
-                                if (totalBytes < 0) totalBytes = total;
-                                Debug.WriteLine($"{current}/{total}");
-                            }
-
-                            EventHandler<UploadProgressArgs> uploadEventHandler = (sender, args) =>
-                                writeProgress(args.TransferredBytes, args.TotalBytes);
-
-                            uploadRequest.UploadProgressEvent += uploadEventHandler;
-
-                            await fileTransferUtility.UploadAsync(uploadRequest);
-
-                            uploadRequest.UploadProgressEvent -= uploadEventHandler;
-                            writeProgress(totalBytes, totalBytes);
-
-                            var completeContent = new StringContent(onComplete["fields"].ToString(), Encoding.UTF8, "application/json");
-
-                            // Tell the ion API that the upload is complete
-                            await client.PostAsync((string)onComplete["url"], completeContent);
-                            string id = (string)uploadLocation["prefix"];
-                            id = id.Substring(id.IndexOf("/"));
-
-
-                            uriBuilder = new UriBuilder(GetIonUrl())
-                            {
-                                Path = "assets" + id
-                            };
-
-                            // Open the browser to the asset page
-                            OpenBrowser(uriBuilder.Uri.ToString());
+                        // Event handler to show upload progress
+                        void UploadProgressHandler(object sender, UploadProgressArgs e)
+                        {
+                            double percentComplete = (double)e.TransferredBytes / totalBytes * 100;
+                            // Report progress to the caller (if provided)
+                            progress?.Report(percentComplete);
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine($"Error encountered on server. Message: '{e.Message}' when writing an object");
+
+                        // Attach the progress event handler
+                        uploadRequest.UploadProgressEvent += UploadProgressHandler;
+
+                        // Perform the upload
+                        await fileTransferUtility.UploadAsync(uploadRequest);
+
+                        // Detach the event handler after upload is complete
+                        uploadRequest.UploadProgressEvent -= UploadProgressHandler;
+
+                        // Report 100% completion at the end
+                        progress?.Report(100);
+
+                        // Notify the API that the upload is complete
+                        var completeContent = new StringContent(onComplete["fields"].ToString(), Encoding.UTF8, "application/json");
+                        await client.PostAsync((string)onComplete["url"], completeContent);
+
+                        // Construct the asset ID and open the asset in a browser
+                        string id = (string)uploadLocation["prefix"];
+                        id = id.Substring(id.IndexOf("/"));
+                        uriBuilder = new UriBuilder(GetIonUrl()) { Path = "assets" + id };
+
+                        // Return success
+                        return new ConnectionResult(ConnectionStatus.Success, uriBuilder.Uri.ToString());
                     }
                 }
-                else
-                {
-                    string error = await responseMessage.Content.ReadAsStringAsync();
-                    Debug.WriteLine("Error: " + error);
-                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"Error encountered during upload: {e.Message}");
+                return new ConnectionResult(ConnectionStatus.Failure, $"Error: {e.Message}");
             }
         }
 
@@ -395,7 +394,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             }
         }
 
-        private static void OpenBrowser(string url)
+        public static void OpenBrowser(string url)
         {
             try
             {
@@ -404,7 +403,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                     var psi = new ProcessStartInfo
                     {
                         FileName = url,
-                        UseShellExecute = true 
+                        UseShellExecute = true
                     };
                     Process.Start(psi);
                 }
@@ -428,7 +427,6 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             }
         }
 
-
         private static async Task<bool> RequestToken(string query)
         {
             // Use HttpUtility.ParseQueryString to parse the query string
@@ -441,7 +439,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
             UriBuilder uriBuilder = new UriBuilder(apiServer);
             uriBuilder.Path = Path.Combine(uriBuilder.Path.TrimEnd('/'), "oauth/token/");
-            
+
             Dictionary<string, string> parameters = new Dictionary<string, string>
         {
             { "grant_type", "authorization_code" },

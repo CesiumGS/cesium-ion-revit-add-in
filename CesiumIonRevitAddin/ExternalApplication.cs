@@ -22,92 +22,128 @@ namespace CesiumIonRevitAddin
     public class ExternalApplication : IExternalApplication
     {
         private const string RIBBONTAB = "Cesium";
-        private const string RIBBONPANEL = "Export";
+        private const string CESIUM_ION_PANEL = "Cesium ion";
+        private const string TILES_PANEL = "3D Tiles";
+        private const string ABOUT_PANEL = "About";
+
         private static readonly string addInPath = Assembly.GetAssembly(typeof(ExternalApplication)).Location;
         private static readonly string buttonIconsFolder = Path.GetDirectoryName(addInPath) + "\\Images\\";
 
+        // Store an instance of ExternalApplication
+        private static ExternalApplication _instance;
+
+        // Declare the buttons to control their enabled/disabled state
+        private PushButton pushButtonConnect;
+        private PushButton pushButtonSignOut;
+        private PushButton pushButtonUpload;
+        private PushButton pushButtonExportDisk;
+        private PushButton pushButtonAbout;
+
         public Result OnStartup(UIControlledApplication application)
         {
+            // Store this instance in a static field
+            _instance = this;
+
+            // Create Ribbon Tab
             CreateRibbonTab(application, RIBBONTAB);
 
-            RibbonPanel panel = null;
-            List<RibbonPanel> ribbonPanels = application.GetRibbonPanels();
-            foreach (var existingPanel in ribbonPanels)
-            {
-                var name = existingPanel.Name;
-                if (name.Equals(RIBBONPANEL))
-                {
-                    panel = existingPanel;
-                    break;
-                }
-            }
+            // Create or find Cesium ion panel
+            RibbonPanel panelCesiumIon = FindOrCreatePanel(application, CESIUM_ION_PANEL);
 
-            if (panel == null)
-            {
-                panel = application.CreateRibbonPanel(RIBBONTAB, RIBBONPANEL);
-            }
-
-            ContextualHelp contexHelp = new Autodesk.Revit.UI.ContextualHelp(Autodesk.Revit.UI.ContextualHelpType.Url, "www.cesium.com");
-            PushButtonData pushButtonData =
-                new Autodesk.Revit.UI.PushButtonData("push Button Name", "Export to 3D Tiles", addInPath, "CesiumIonRevitAddin.ExportCommand")
+            // Create Connect button
+            PushButtonData pushButtonDataConnect =
+                new PushButtonData("ConnectToIon", "Connect", addInPath, "CesiumIonRevitAddin.ConnectToIon")
                 {
-                    LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute))
+                    LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute))
                 };
-            pushButtonData.SetContextualHelp(contexHelp);
-            pushButtonData.ToolTip = "Exports the current 3D View into a 3D Tiles tileset";
-            // TODO: Add LongDescription if needed
-            //pushButtonData.LongDescription = "Exports the current 3D View into a 3D Tiles tileset.";
-            panel.AddItem(pushButtonData);
+            pushButtonDataConnect.ToolTip = "Connects to Cesium ion";
+            pushButtonConnect = panelCesiumIon.AddItem(pushButtonDataConnect) as PushButton;
 
-#pragma warning disable S125
-            /*
-             * Remove for now until ion integration is complete
-             * 
-            var ionConnectionButton = new PushButtonData("ion Connection", "ion Connection", addInPath, "CesiumIonRevitAddin.ConnectToIon");
-            ionConnectionButton.LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
-            ionConnectionButton.ToolTip = "Connect to ion";
-            ionConnectionButton.SetContextualHelp(contexHelp);
-            ionConnectionButton.LongDescription = "Connect to ion";
-            panel.AddItem(ionConnectionButton);
-
-            var uploadButton = new PushButtonData("Upload File", "Upload File", addInPath, "CesiumIonRevitAddin.UploadFile");
-            uploadButton.LargeImage = new BitmapImage(new System.Uri(Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
-            uploadButton.ToolTip = "Upload file to ion";
-            uploadButton.SetContextualHelp(contexHelp);
-            uploadButton.LongDescription = "Upload to ion";
-            panel.AddItem(uploadButton);
-            */
-#pragma warning restore S125
-
-            // look for RibbonPanel, or create it if not already created
-            RibbonPanel panelAbout = null;
-            foreach (var existingPanel in application.GetRibbonPanels())
-            {
-                if (existingPanel.Name.Equals("About"))
+            // Create Sign Out button
+            PushButtonData pushButtonDataSignOut =
+                new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
                 {
-                    panelAbout = existingPanel;
-                    break;
-                }
-            }
+                    LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute))
+                };
+            pushButtonDataSignOut.ToolTip = "Signs out from Cesium ion";
+            pushButtonSignOut = panelCesiumIon.AddItem(pushButtonDataSignOut) as PushButton;
 
-            if (panelAbout == null)
+            // Create or find 3D Tiles panel
+            RibbonPanel panel3DTiles = FindOrCreatePanel(application, TILES_PANEL);
+
+            // Create Upload button
+            PushButtonData pushButtonDataUpload =
+                new PushButtonData("ExportToIon", "Upload", addInPath, "CesiumIonRevitAddin.ExportToIon")
+                {
+                    LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute))
+                };
+            pushButtonDataUpload.ToolTip = "Uploads the current 3D View to Cesium ion";
+            pushButtonUpload = panel3DTiles.AddItem(pushButtonDataUpload) as PushButton;
+
+            // Create Export to Disk button
+            PushButtonData pushButtonDataExportDisk =
+                new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
+                {
+                    LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute))
+                };
+            pushButtonDataExportDisk.ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk";
+            pushButtonExportDisk = panel3DTiles.AddItem(pushButtonDataExportDisk) as PushButton;
+
+            // Create or find About panel
+            RibbonPanel panelAbout = FindOrCreatePanel(application, ABOUT_PANEL);
+
+            // Create About button
+            PushButtonData pushButtonDataAbout = new PushButtonData("About", "About", addInPath, "CesiumIonRevitAddin.AboutUs")
             {
-                panelAbout = application.CreateRibbonPanel(RIBBONTAB, "About");
-            }
+                LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute))
+            };
+            pushButtonDataAbout.ToolTip = "Find out more about Cesium and 3D Tiles";
+            pushButtonAbout = panelAbout.AddItem(pushButtonDataAbout) as PushButton;
 
-            var pushDataButtonAbout = new PushButtonData("About", "About", addInPath, "CesiumIonRevitAddin.AboutUs");
-            pushDataButtonAbout.LargeImage = new BitmapImage(new System.Uri(System.IO.Path.Combine(buttonIconsFolder, "logo.png"), System.UriKind.Absolute));
-            pushDataButtonAbout.ToolTip = "Find out more about Cesium and 3D Tiles";
-            pushDataButtonAbout.SetContextualHelp(contexHelp);
-            // TODO: Add LongDescription if needed
-            //pushDataButtonAbout.LongDescription = "Find out more about Cesium and 3D Tiles";
-            panelAbout.AddItem(pushDataButtonAbout);
+            // Initially update button states based on connection status
+            UpdateButtonStates();
 
             return Result.Succeeded;
         }
 
-        public Result OnShutdown(UIControlledApplication application) => Result.Succeeded;
+        public Result OnShutdown(UIControlledApplication application)
+        {
+            return Result.Succeeded;
+        }
 
+        // Method to enable/disable buttons based on connection status
+        public void UpdateButtonStates()
+        {
+            bool isConnected = CesiumIonRevitAddin.CesiumIonClient.Connection.IsConnected();
+
+            pushButtonConnect.Enabled = !isConnected;      // Enable Connect if not connected
+            pushButtonSignOut.Enabled = isConnected;       // Enable Sign Out if connected
+            pushButtonUpload.Enabled = isConnected;        // Enable Upload if connected
+            pushButtonExportDisk.Enabled = isConnected;    // Enable Export to Disk if connected
+        }
+
+        // Static method to allow access to UpdateButtonStates from other commands
+        public static void RefreshButtonStates()
+        {
+            _instance?.UpdateButtonStates();
+        }
+
+        // Helper to find or create a panel by name
+        private RibbonPanel FindOrCreatePanel(UIControlledApplication application, string panelName)
+        {
+            var panels = application.GetRibbonPanels(RIBBONTAB);
+            foreach (var existingPanel in panels)
+            {
+                if (existingPanel.Name.Equals(panelName))
+                {
+                    return existingPanel;
+                }
+            }
+
+            return application.CreateRibbonPanel(RIBBONTAB, panelName);
+        }
+
+        // Helper to create the Ribbon Tab if it doesn't exist
         private static void CreateRibbonTab(UIControlledApplication application, string ribbonTabName)
         {
             Autodesk.Windows.RibbonControl ribbon = Autodesk.Windows.ComponentManager.Ribbon;
@@ -119,6 +155,10 @@ namespace CesiumIonRevitAddin
             }
         }
     }
+
+
+
+
 
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -241,18 +281,10 @@ namespace CesiumIonRevitAddin
             // Clean up the export contents
             IonExportUtils.Cleanup(preferences);
 
-            // Spawn the async task and wait for it to complete
-            try
+            // The upload dialog handles the upload process
+            using (IonUploadDialog ionUploadDialog = new IonUploadDialog(zipPath))
             {
-                Task uploadTask = Connection.Upload(zipPath, Path.GetFileName(exportView.Document.PathName), "desc", "attr", "GLTF", "3D_MODEL");
-
-                // Block the main thread until the async upload completes
-                uploadTask.Wait(); // or uploadTask.GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                TaskDialog.Show("Upload Error", $"An error occurred during upload: {ex.Message}");
-                return Result.Failed;
+                ionUploadDialog.ShowDialog();
             }
 
             // Remove the zip
@@ -262,8 +294,6 @@ namespace CesiumIonRevitAddin
             // As the export has been successful, save out the changes
             // TODO: Decide if this should happen in a failed export
             IonExportUtils.SaveUserPreferences(doc, preferences);
-
-            TaskDialog.Show("Export Complete", "View exported to Cesium ion");
 
             return Result.Succeeded;
         }
@@ -280,6 +310,9 @@ namespace CesiumIonRevitAddin
                 ionConnectDialog.ShowDialog();
             }
 
+            // Update button states after connecting
+            ExternalApplication.RefreshButtonStates();
+
             return Result.Succeeded;
         }
     }
@@ -292,7 +325,8 @@ namespace CesiumIonRevitAddin
         {
             CesiumIonClient.Connection.Disconnect();
 
-            Debug.WriteLine("Signed out");
+            // Update button states after disconnecting
+            ExternalApplication.RefreshButtonStates();
 
             return Result.Succeeded;
         }

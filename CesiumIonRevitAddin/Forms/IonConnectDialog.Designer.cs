@@ -52,7 +52,7 @@
             this.connectBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.connectBtn.AutoSize = true;
             this.connectBtn.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.connectBtn.Location = new System.Drawing.Point(287, 210);
+            this.connectBtn.Location = new System.Drawing.Point(309, 210);
             this.connectBtn.Name = "connectBtn";
             this.connectBtn.Size = new System.Drawing.Size(57, 23);
             this.connectBtn.TabIndex = 1;
@@ -65,7 +65,7 @@
             this.cancelBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelBtn.AutoSize = true;
             this.cancelBtn.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.cancelBtn.Location = new System.Drawing.Point(350, 210);
+            this.cancelBtn.Location = new System.Drawing.Point(372, 210);
             this.cancelBtn.Name = "cancelBtn";
             this.cancelBtn.Size = new System.Drawing.Size(50, 23);
             this.cancelBtn.TabIndex = 2;
@@ -120,7 +120,7 @@
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(376, 104);
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(398, 104);
             this.tableLayoutPanel1.TabIndex = 5;
             // 
             // apiLabel
@@ -165,7 +165,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.apiUrlText.Location = new System.Drawing.Point(75, 29);
             this.apiUrlText.Name = "apiUrlText";
-            this.apiUrlText.Size = new System.Drawing.Size(298, 20);
+            this.apiUrlText.Size = new System.Drawing.Size(320, 20);
             this.apiUrlText.TabIndex = 6;
             // 
             // clientLabel
@@ -186,7 +186,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ionUrlText.Location = new System.Drawing.Point(75, 3);
             this.ionUrlText.Name = "ionUrlText";
-            this.ionUrlText.Size = new System.Drawing.Size(298, 20);
+            this.ionUrlText.Size = new System.Drawing.Size(320, 20);
             this.ionUrlText.TabIndex = 3;
             // 
             // clientIDText
@@ -195,7 +195,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.clientIDText.Location = new System.Drawing.Point(75, 55);
             this.clientIDText.Name = "clientIDText";
-            this.clientIDText.Size = new System.Drawing.Size(298, 20);
+            this.clientIDText.Size = new System.Drawing.Size(320, 20);
             this.clientIDText.TabIndex = 4;
             // 
             // redirectUrlText
@@ -204,7 +204,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.redirectUrlText.Location = new System.Drawing.Point(75, 81);
             this.redirectUrlText.Name = "redirectUrlText";
-            this.redirectUrlText.Size = new System.Drawing.Size(298, 20);
+            this.redirectUrlText.Size = new System.Drawing.Size(320, 20);
             this.redirectUrlText.TabIndex = 5;
             // 
             // groupBox1
@@ -217,7 +217,7 @@
             this.groupBox1.Controls.Add(this.selfHostedRadioBtn);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(388, 188);
+            this.groupBox1.Size = new System.Drawing.Size(410, 188);
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Cesium ion Server";
@@ -226,7 +226,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(412, 245);
+            this.ClientSize = new System.Drawing.Size(434, 245);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.cancelBtn);
             this.Controls.Add(this.connectBtn);

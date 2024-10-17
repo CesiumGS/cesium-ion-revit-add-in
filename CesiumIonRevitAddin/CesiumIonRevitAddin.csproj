@@ -85,6 +85,12 @@
     <Compile Include="Forms\ExportDialog.Designer.cs">
       <DependentUpon>ExportDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\IonUploadDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\IonUploadDialog.Designer.cs">
+      <DependentUpon>IonUploadDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\IonConnectDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -151,6 +157,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\IonConnectDialog.resx">
       <DependentUpon>IonConnectDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\IonUploadDialog.resx">
+      <DependentUpon>IonUploadDialog.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
