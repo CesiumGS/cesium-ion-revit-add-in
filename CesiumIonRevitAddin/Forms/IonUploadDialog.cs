@@ -13,11 +13,17 @@ namespace CesiumIonRevitAddin.Forms
     {
         string assetUrl;
         string zipPath;
+        string assetName;
+        string assetDesc;
+        string inputCrs;
 
-        public IonUploadDialog(string zipPath)
+        public IonUploadDialog(string zipPath, string assetName, string assetDesc, string inputCrs)
         {
             InitializeComponent();
-            this.zipPath = zipPath; // Store the zip path
+            this.zipPath = zipPath; 
+            this.assetName = assetName;
+            this.assetDesc = assetDesc;
+            this.inputCrs = inputCrs;
 
             // Disable buttons until the upload is complete or fails
             openAssetBtn.Enabled = false;
@@ -39,12 +45,13 @@ namespace CesiumIonRevitAddin.Forms
             Task.Run(async () =>
             {
                 var result = await Connection.Upload(
-                    zipPath,
-                    Path.GetFileName(zipPath),
-                    "desc",
-                    "attr",
-                    "GLTF",
-                    "3D_MODEL",
+                    this.zipPath,
+                    this.assetName,
+                    this.assetDesc,
+                    "",
+                    "3DTILES",
+                    "BIM_CAD",
+                    this.inputCrs,
                     progressHandler);
 
                 // Invoke UI updates on the main thread

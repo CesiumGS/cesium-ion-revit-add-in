@@ -36,10 +36,10 @@ namespace CesiumIonRevitAddin.Forms
         private async void connectBtn_Click(object sender, EventArgs e)
         {
             // Standard Cesium ion OAuth2 parameters
-            string ionServerUrl = "https://ion.cesium.com/";
-            string apiServerUrl = "https://api.cesium.com/";
+            string ionServerUrl = "https://ion-development.cesium.com/";
+            string apiServerUrl = "https://api.ion-development.cesium.com/";
             string responseType = "code";
-            string clientID = "847";
+            string clientID = "15";
             string redirectUrl = "http://127.0.0.1/cesium-ion-revit-addin/oauth2/callback";
             string scope = "assets:write";
 

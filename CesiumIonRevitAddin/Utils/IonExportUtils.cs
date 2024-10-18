@@ -2,7 +2,12 @@
 using Autodesk.Revit.UI;
 using CesiumIonRevitAddin.Forms;
 using CesiumIonRevitAddin.Gltf;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 
 
@@ -99,6 +104,62 @@ namespace CesiumIonRevitAddin.Utils
             if (!preferences.KeepGltf)
             {
                 Directory.Delete(preferences.TempDirectory, true);
+            }
+        }
+
+        public static string GetProjectInformationAsString(Document doc)
+        {
+            Element projectInfoElement = doc.ProjectInformation;
+
+            if (projectInfoElement == null)
+                return "";
+
+            Dictionary<string, string> projectInfoDict = new Dictionary<string, string>();
+
+            // Loop through the parameters of the project information element
+            foreach (Parameter param in projectInfoElement.Parameters)
+            {
+                string paramName = param.Definition.Name;
+                string paramValue = GetParameterValue(param);
+
+                // Only add to dictionary if the value is not empty or null
+                if (!string.IsNullOrWhiteSpace(paramValue))
+                {
+                    projectInfoDict[paramName] = paramValue;
+                }
+            }
+
+            // Sort the dictionary by key
+            var sortedProjectInfo = projectInfoDict.OrderBy(kv => kv.Key);
+
+            StringBuilder projectInfoBuilder = new StringBuilder();
+
+            foreach (var kv in sortedProjectInfo)
+            {
+                projectInfoBuilder.AppendLine($"{kv.Key}: {kv.Value}");
+            }
+
+            // Return the formatted and sorted string
+            return projectInfoBuilder.ToString();
+        }
+
+        public static string GetParameterValue(Parameter param)
+        {
+            if (param == null)
+                return null;
+
+            switch (param.StorageType)
+            {
+                case StorageType.String:
+                    return param.AsString();
+                case StorageType.Integer:
+                    return param.AsInteger().ToString();
+                case StorageType.Double:
+                    return param.AsDouble().ToString();
+                case StorageType.ElementId:
+                    return param.AsElementId().Value.ToString();
+                default:
+                    return string.Empty;
             }
         }
     }
