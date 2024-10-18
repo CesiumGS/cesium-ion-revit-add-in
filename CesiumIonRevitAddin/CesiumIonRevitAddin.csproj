@@ -145,7 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Include all files in the Images directory -->
-    <Content Include="Images\**">
+    <Content Include="Images\**\*">
       <!-- Set the 'Copy to Output Directory' property for each file -->
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
