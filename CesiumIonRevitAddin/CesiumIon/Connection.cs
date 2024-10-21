@@ -462,7 +462,12 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             jsonObject["access_token"] = token;
             jsonObject["api_url"] = apiUrl;
             jsonObject["ion_url"] = ionUrl;
-            System.IO.File.WriteAllText(localUrl, jsonObject.ToString());
+            
+            // Encrypt the JSON string using DPAPI
+            byte[] encryptedData = ProtectedData.Protect(Encoding.UTF8.GetBytes(jsonObject.ToString()), null, DataProtectionScope.CurrentUser);
+
+            // Write the encrypted data to a file
+            File.WriteAllBytes(localUrl, encryptedData);
         }
 
         private static JObject ReadConnectionData()
@@ -474,8 +479,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
             try
             {
-                string jsonContent = File.ReadAllText(localUrl);
-                
+                byte[] encryptedData = File.ReadAllBytes(localUrl);
+
+                // Decrypt the data using DPAPI
+                byte[] decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
+
+                string jsonContent = Encoding.UTF8.GetString(decryptedData);
+
                 return JObject.Parse(jsonContent);
             }
             catch (JsonReaderException ex)
