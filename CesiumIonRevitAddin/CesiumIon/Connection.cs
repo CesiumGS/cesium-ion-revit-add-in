@@ -362,16 +362,12 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         private static string GetSavedJsonValue(string key)
         {
-            if (!File.Exists(localUrl))
-            {
-                return null;
-            }
-
             try
             {
-                string jsonContent = File.ReadAllText(localUrl);
+                var jsonObject = ReadConnectionData();
 
-                var jsonObject = JObject.Parse(jsonContent);
+                if (jsonObject == null)
+                    return null;
 
                 if (jsonObject.TryGetValue(key, out var token))
                 {
@@ -382,11 +378,6 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                     Debug.WriteLine($"{key} not found in JSON.");
                     return null;
                 }
-            }
-            catch (JsonReaderException ex)
-            {
-                Debug.WriteLine("Failed to parse JSON: " + ex.Message);
-                return null;
             }
             catch (Exception ex)
             {
@@ -454,23 +445,51 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             using (HttpResponseMessage responseMessageToken = await client.PostAsync(uriBuilder.Uri, POSTContent).ConfigureAwait(false))
             {
                 string contentToken = await responseMessageToken.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                // Add the current API url to the JSON
                 JObject jsonObject = JObject.Parse(contentToken);
-                jsonObject["api_url"] = Connection.apiServer;
-                jsonObject["ion_url"] = Connection.ionServer;
-                contentToken = jsonObject.ToString();
-
+                
                 if (responseMessageToken.IsSuccessStatusCode)
                 {
-                    System.IO.File.WriteAllText(localUrl, contentToken);
+                    WriteConnectionData(jsonObject["access_token"].ToString(), Connection.apiServer, Connection.ionServer);
                     return true;
                 }
-                System.IO.File.WriteAllText(localUrl, contentToken);
-
             }
             return false;
         }
+
+        private static void WriteConnectionData(string token, string apiUrl, string ionUrl)
+        {
+            JObject jsonObject = new JObject();
+            jsonObject["access_token"] = token;
+            jsonObject["api_url"] = apiUrl;
+            jsonObject["ion_url"] = ionUrl;
+            System.IO.File.WriteAllText(localUrl, jsonObject.ToString());
+        }
+
+        private static JObject ReadConnectionData()
+        {
+            if (!File.Exists(localUrl))
+            {
+                return null;
+            }
+
+            try
+            {
+                string jsonContent = File.ReadAllText(localUrl);
+                
+                return JObject.Parse(jsonContent);
+            }
+            catch (JsonReaderException ex)
+            {
+                Debug.WriteLine("Failed to parse JSON: " + ex.Message);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("An unexpected error occurred: " + ex.Message);
+                return null;
+            }
+        }
+
     }
 
 }
