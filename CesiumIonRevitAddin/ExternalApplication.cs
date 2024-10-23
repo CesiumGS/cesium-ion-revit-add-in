@@ -320,8 +320,10 @@ namespace CesiumIonRevitAddin
             string assetName = Path.GetFileName(doc.PathName);
             string assetDesc = IonExportUtils.GetProjectInformationAsString(doc);
 
+            string inputCrs = preferences.EpsgCode != "" ? $"EPSG:{preferences.EpsgCode}" : "";
+
             // The upload dialog handles the upload process
-            using (IonUploadDialog ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, $"EPSG:{preferences.EpsgCode}"))
+            using (IonUploadDialog ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs))
             {
                 ionUploadDialog.ShowDialog();
             }

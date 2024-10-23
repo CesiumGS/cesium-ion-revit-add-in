@@ -16,6 +16,7 @@ using System.IO;
 using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Net.Http.Headers;
 
 namespace CesiumIonRevitAddin.CesiumIonClient
 {
@@ -54,6 +55,36 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 result[i] = chars[data[i] % chars.Length];
 
             return new string(result);
+        }
+    }
+
+    public class StreamContentWithProgress : StreamContent
+    {
+        private readonly Stream _fileStream;
+        private readonly IProgress<double> _progress;
+        private long _totalBytes;
+        private long _bytesUploaded = 0;
+
+        public StreamContentWithProgress(Stream fileStream, IProgress<double> progress) : base(fileStream)
+        {
+            _fileStream = fileStream;
+            _progress = progress;
+            _totalBytes = fileStream.Length;
+        }
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        {
+            var buffer = new byte[81920]; // Default buffer size for stream read
+            int bytesRead;
+            while ((bytesRead = await _fileStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+            {
+                await stream.WriteAsync(buffer, 0, bytesRead);
+                _bytesUploaded += bytesRead;
+
+                // Calculate the progress and report it
+                double progressValue = (double)_bytesUploaded / _totalBytes * 100;
+                _progress?.Report(progressValue);
+            }
         }
     }
 
@@ -239,11 +270,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 {
                     "options", new JObject
                     {
-                        { "sourceType", sourceType },
-                        { "inputCrs", inputCrs }
+                        { "sourceType", sourceType }
                     }
                 }
             };
+
+            if (inputCrs != "")
+               content["options"]["inputCrs"] = inputCrs;
 
             var POSTContent = new StringContent(content.ToString(), Encoding.UTF8, "application/json");
 
@@ -279,58 +312,103 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                     JObject responseJson = JObject.Parse(responseContent);
                     JObject uploadLocation = responseJson["uploadLocation"] as JObject;
                     JObject onComplete = responseJson["onComplete"] as JObject;
+                    JObject assetMetadata = responseJson["assetMetadata"] as JObject;
+                    int assetId = (int)assetMetadata["id"];
 
-                    // Prepare the S3 Client and upload
-                    SessionAWSCredentials credentials = new SessionAWSCredentials(
-                        (string)uploadLocation["accessKey"],
-                        (string)uploadLocation["secretAccessKey"],
-                        (string)uploadLocation["sessionToken"]);
+                    // Construct the asset url
+                    uriBuilder = new UriBuilder(GetIonUrl()) { Path = "assets/" + assetId.ToString() };
 
-                    using (var s3Client = new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1))
-                    using (var fileTransferUtility = new TransferUtility(s3Client))
+                    if (uploadLocation.ContainsKey("bucket") && uploadLocation.ContainsKey("prefix"))
                     {
-                        var uploadRequest = new TransferUtilityUploadRequest
-                        {
-                            FilePath = filePath,
-                            BucketName = uploadLocation["bucket"].ToString(),
-                            Key = uploadLocation["prefix"].ToString() + Path.GetFileName(filePath)
-                        };
+                        // Prepare the S3 Client and upload
+                        SessionAWSCredentials credentials = new SessionAWSCredentials(
+                            (string)uploadLocation["accessKey"],
+                            (string)uploadLocation["secretAccessKey"],
+                            (string)uploadLocation["sessionToken"]);
 
-                        // Track the total file size
-                        long totalBytes = new FileInfo(filePath).Length;
-
-                        // Event handler to show upload progress
-                        void UploadProgressHandler(object sender, UploadProgressArgs e)
+                        using (var s3Client = new AmazonS3Client(credentials, Amazon.RegionEndpoint.USEast1))
+                        using (var fileTransferUtility = new TransferUtility(s3Client))
                         {
-                            double percentComplete = (double)e.TransferredBytes / totalBytes * 100;
-                            // Report progress to the caller (if provided)
-                            progress?.Report(percentComplete);
+                            var uploadRequest = new TransferUtilityUploadRequest
+                            {
+                                FilePath = filePath,
+                                BucketName = uploadLocation["bucket"].ToString(),
+                                Key = uploadLocation["prefix"].ToString() + Path.GetFileName(filePath)
+                            };
+
+                            // Track the total file size
+                            long totalBytes = new FileInfo(filePath).Length;
+
+                            // Event handler to show upload progress
+                            void UploadProgressHandler(object sender, UploadProgressArgs e)
+                            {
+                                double percentComplete = (double)e.TransferredBytes / totalBytes * 100;
+                                // Report progress to the caller (if provided)
+                                progress?.Report(percentComplete);
+                            }
+
+                            // Attach the progress event handler
+                            uploadRequest.UploadProgressEvent += UploadProgressHandler;
+
+                            // Perform the upload
+                            await fileTransferUtility.UploadAsync(uploadRequest);
+
+                            // Detach the event handler after upload is complete
+                            uploadRequest.UploadProgressEvent -= UploadProgressHandler;
                         }
-
-                        // Attach the progress event handler
-                        uploadRequest.UploadProgressEvent += UploadProgressHandler;
-
-                        // Perform the upload
-                        await fileTransferUtility.UploadAsync(uploadRequest);
-
-                        // Detach the event handler after upload is complete
-                        uploadRequest.UploadProgressEvent -= UploadProgressHandler;
-
-                        // Report 100% completion at the end
-                        progress?.Report(100);
-
-                        // Notify the API that the upload is complete
-                        var completeContent = new StringContent(onComplete["fields"].ToString(), Encoding.UTF8, "application/json");
-                        await client.PostAsync((string)onComplete["url"], completeContent);
-
-                        // Construct the asset ID and open the asset in a browser
-                        string id = (string)uploadLocation["prefix"];
-                        id = id.Substring(id.IndexOf("/"));
-                        uriBuilder = new UriBuilder(GetIonUrl()) { Path = "assets" + id };
-
-                        // Return success
-                        return new ConnectionResult(ConnectionStatus.Success, uriBuilder.Uri.ToString());
                     }
+                    else
+                    {
+                        // This is a regular HTTP upload to uploadLocation["endpoint"], used by Self Hosted
+                        if (uploadLocation.ContainsKey("endpoint"))
+                        {
+                            string endpoint = uploadLocation["endpoint"].ToString();
+
+                            // Prepare the HTTP client for uploading the file via a standard HTTP POST request
+                            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                            {
+                                // Create the MultipartFormDataContent to hold the file
+                                using (var formContent = new MultipartFormDataContent())
+                                {
+                                    // Add the file content to the multipart form
+                                    var fileContent = new StreamContentWithProgress(fileStream, progress);
+                                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                                    formContent.Add(fileContent, Path.GetFileName(filePath), Path.GetFileName(filePath));
+
+                                    // Send the POST request with the file to the HTTP endpoint
+                                    using (HttpResponseMessage uploadResponse = await client.PostAsync(endpoint, formContent))
+                                    {
+                                        if (!uploadResponse.IsSuccessStatusCode)
+                                        {
+                                            string error = await uploadResponse.Content.ReadAsStringAsync();
+                                            Debug.WriteLine("HTTP Upload Error: " + error);
+                                            return new ConnectionResult(ConnectionStatus.Failure, $"HTTP Upload Error: {error}");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            return new ConnectionResult(ConnectionStatus.Failure, "Upload endpoint not found in response.");
+                        }
+                    }
+
+                    // If we got this far, we have successfully uploaded the file
+                    progress?.Report(100);
+
+                    // Notify the API that the upload is complete
+                    var completeContent = new StringContent(onComplete["fields"].ToString(), Encoding.UTF8, "application/json");
+                    HttpResponseMessage completionResponse = await client.PostAsync((string)onComplete["url"], completeContent);
+
+                    if (!completionResponse.IsSuccessStatusCode)
+                    {
+                        string error = await completionResponse.Content.ReadAsStringAsync();
+                        return new ConnectionResult(ConnectionStatus.Failure, $"Completion notification failed: {completionResponse.StatusCode}");
+                    }
+
+                    // Return success after the upload and completion notification
+                    return new ConnectionResult(ConnectionStatus.Success, uriBuilder.Uri.ToString());
                 }
             }
             catch (Exception e)
