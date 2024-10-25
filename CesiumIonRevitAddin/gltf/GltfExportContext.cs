@@ -340,18 +340,6 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("Processing element " + element.Name);
 
             var newNode = new GltfNode();
-            // TODO: needed?
-            // GLTFExtras^ extras = gcnew GLTFExtras();
-            // TODO: maybe useful utils for descriptions, names, etc
-            //if (preferences->properties)
-            //{
-            //	newNode->name = Util::ElementDescription(element);
-            //	extras->uniqueId = element->UniqueId;
-            //	extras->parameters = Util::GetElementParameters(element, true);
-            //	extras->elementCategory = element->Category->Name;
-            //	extras->elementId = element->Id->IntegerValue;
-            //}
-            // newNode->extras = extras;
 
             // TODO: recheck if these are still needed
             var categoryName = element.Category != null ? element.Category.Name : "Undefined";
@@ -448,16 +436,16 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
-
-            // create a new mesh for the node (assuming 1 mesh per node w/ multiple primitives on mesh)
             var newMesh = new GltfMesh
             {
                 Name = element.Name,
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
+            int instanceIndex = -1;
+            string geometryDataObjectHash = "";
             var collectionToHash = new Dictionary<string, GeometryDataObject>(); // contains data that will be common across instances
-            // Add vertex data to currentGeometry for each geometry/material pairing
+
             foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
             {
                 GeometryDataObject geometryDataObject = currentGeometry.GetElement(kvp.Key);
@@ -469,20 +457,27 @@ namespace CesiumIonRevitAddin.Gltf
                     vertices.Add(p.Key.Z);
                 }
 
-                var materialKey = kvp.Key.Split('_')[1];
-                collectionToHash.Add(materialKey, geometryDataObject);
-
+                // also add materials to the hash to test for instancing since in glTF mesh primitives are tied to a material
+                if (preferences.Instancing)
+                {
+                    var materialKey = kvp.Key.Split('_')[1];
+                    collectionToHash.Add(materialKey, geometryDataObject);
+                }
             }
 
-            // hash
-            var geometryDataObjectHash = ComputeHash(collectionToHash);
-            if (geometryDataObjectIndices.TryGetValue(geometryDataObjectHash, out var index))
+            if (preferences.Instancing)
             {
-                nodes.CurrentItem.Mesh = index;
+                geometryDataObjectHash = ComputeHash(collectionToHash);
+                if (geometryDataObjectIndices.TryGetValue(geometryDataObjectHash, out var index))
+                {
+                    nodes.CurrentItem.Mesh = index;
+                    instanceIndex = index;
+                }
             }
-            else
+
+            if (instanceIndex == -1)
             {
-                // Convert currentGeometry objects into glTFMeshPrimitives
+                // add all mesh primitives
                 foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
                 {
                     var name = kvp.Key;
@@ -514,7 +509,6 @@ namespace CesiumIonRevitAddin.Gltf
                         var materialKey = kvp.Key.Split(UNDERSCORE)[1];
                         if (materials.Contains(materialKey))
                         {
-                            // var material = materials.GetIndexFromUuid(materialKey);
                             var material = materials.Dict[materialKey];
                             if (material.Name != RevitMaterials.INVALID_MATERIAL)
                             {
@@ -529,7 +523,10 @@ namespace CesiumIonRevitAddin.Gltf
                 meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
                 nodes.CurrentItem.Mesh = meshes.CurrentIndex;
                 meshes.CurrentItem.Name = newMesh.Name;
-                geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
+                if (preferences.Instancing)
+                {
+                    geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
+                }
             }
         }
 
