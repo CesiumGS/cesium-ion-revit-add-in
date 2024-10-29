@@ -64,7 +64,7 @@ namespace CesiumIonRevitAddin.Forms
                     }
                     else
                     {
-                        TaskDialog.Show("Upload failed", result.Message); // Now called on the UI thread
+                        Autodesk.Revit.UI.TaskDialog.Show("Upload failed", result.Message); // Now called on the UI thread
                         this.Close();
                     }
                 }));

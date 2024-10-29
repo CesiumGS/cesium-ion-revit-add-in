@@ -38,6 +38,6 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{1dd3ffa0-ad97-4e51-8fab-9a065c71ac64}*SharedItemsImports = 13
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{b0ed72c2-cd9a-4e86-a091-fa328b2f542c}*SharedItemsImports = 4
-		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{f2e68fa5-010e-4c3e-a861-3bbc3ab90e08}*SharedItemsImports = 4
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{f2e68fa5-010e-4c3e-a861-3bbc3ab90e08}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

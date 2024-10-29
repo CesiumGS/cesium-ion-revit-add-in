@@ -1,19 +1,38 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- PropertyGroup for centralized PostBuild commands -->
   <PropertyGroup>
-    <_CustomPostBuildEventCommands>
-      xcopy /Y /I /S "$(SolutionDir)\..\tilers\build\bin\$(Configuration)\*.*" "$(TargetDir)tiler\"
-      xcopy /Y /I "$(SolutionDir)\..\tilers\ThirdParty.json" "$(TargetDir)tiler\"
-      xcopy /Y /I /E "$(SolutionDir)\CesiumIonRevitAddin\Images\*" "$(TargetDir)Images\" 
-      xcopy /Y /I "$(SolutionDir)\CesiumIonRevitAddin\CesiumIonRevit.addin" "$(TargetDir)..\"
-      xcopy /Y /I "$(SolutionDir)\ThirdParty.json" "$(TargetDir)"
-    </_CustomPostBuildEventCommands>
+    <TilersBinSourceDir>$(SolutionDir)..\tilers\build\bin\$(Configuration)\</TilersBinSourceDir>
+    <TilersConfigSourceDir>$(SolutionDir)..\tilers\</TilersConfigSourceDir>
+    <ImagesSourceDir>$(SolutionDir)CesiumIonRevitAddin\Images\</ImagesSourceDir>
+    <AddinFileSource>$(SolutionDir)CesiumIonRevitAddin\CesiumIonRevit.addin</AddinFileSource>
+    <ThirdPartySource>$(SolutionDir)ThirdParty.json</ThirdPartySource>
   </PropertyGroup>
 
-  <!-- Custom PostBuildEvent target to avoid Visual Studio duplication -->
+  <ItemGroup>
+    <TilerBinFiles Include="$(TilersBinSourceDir)**\*.*" />
+    <TilerConfigFiles Include="$(TilersConfigSourceDir)ThirdParty.json" />
+    <ImageFiles Include="$(ImagesSourceDir)**\*.*" />
+    <AddinFile Include="$(AddinFileSource)" />
+    <ThirdPartyFile Include="$(ThirdPartySource)" />
+  </ItemGroup>
+
   <Target Name="CustomPostBuild" AfterTargets="Build">
-    <Exec Command="$(_CustomPostBuildEventCommands)" />
+    <Copy SourceFiles="@(TilerBinFiles)"
+          DestinationFolder="$(TargetDir)tiler\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+
+    <Copy SourceFiles="@(TilerConfigFiles)" 
+          DestinationFolder="$(TargetDir)tiler\" />
+
+    <Copy SourceFiles="@(ImageFiles)"
+          DestinationFolder="$(TargetDir)Images\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+
+    <Copy SourceFiles="@(AddinFile)" 
+          DestinationFolder="$(TargetDir)..\" />
+
+    <Copy SourceFiles="@(ThirdPartyFile)" 
+          DestinationFolder="$(TargetDir)\" />
   </Target>
 
 </Project>
