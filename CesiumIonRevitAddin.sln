@@ -3,12 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin", "CesiumIonRevitAddin\CesiumIonRevitAddin.csproj", "{B0ED72C2-CD9A-4E86-A091-FA328B2F542C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2024", "CesiumIonRevitAddin_2024\CesiumIonRevitAddin_2024.csproj", "{B0ED72C2-CD9A-4E86-A091-FA328B2F542C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B1184186-F266-4080-8E7F-42A0E8787AA2}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "CesiumIonRevitAddin", "CesiumIonRevitAddin\CesiumIonRevitAddin.shproj", "{1DD3FFA0-AD97-4E51-8FAB-9A065C71AC64}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,5 +28,9 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9935126A-47E0-4852-97AD-943EDFB38C2E}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{1dd3ffa0-ad97-4e51-8fab-9a065c71ac64}*SharedItemsImports = 13
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{b0ed72c2-cd9a-4e86-a091-fa328b2f542c}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal

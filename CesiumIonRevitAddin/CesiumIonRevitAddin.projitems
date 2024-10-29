@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>1dd3ffa0-ad97-4e51-8fab-9a065c71ac64</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>CesiumIonRevitAddin</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)CesiumIonRevit.addin" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CesiumIon\Connection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export\BinFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export\BufferConfig.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export\FileExport.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export\GltfJson.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export\RevitMaterials.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExternalApplication.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\ExportDialog.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\ExportDialog.Designer.cs">
+      <DependentUpon>ExportDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\IonConnectDialog.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\IonConnectDialog.Designer.cs">
+      <DependentUpon>IonConnectDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\IonUploadDialog.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Forms\IonUploadDialog.Designer.cs">
+      <DependentUpon>IonUploadDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\ExtStructuralMetadata.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\Gltf.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfAccessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfBinaryData.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfBuffer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfBufferView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExportContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtensionSchema.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtras.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtStructuralMetadataExtensionSchema.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfImage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfMaterial.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfMesh.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfMeshPrimitive.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfPbr.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfSampler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfTexture.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfTextureInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfVersion.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)gltf\KHRTextureTransform.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IndexedDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Logger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\GeometryDataObject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\PointIntObject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Model\VertexLookupIntObject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Preferences.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Transform\ModelRotation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\Collectors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\GeometryUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\GltfBinaryDataUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\GLTFExportUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\IonExportUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\MaterialUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\TilerExportUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\Util.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Forms\ExportDialog.resx">
+      <DependentUpon>ExportDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Forms\IonConnectDialog.resx">
+      <DependentUpon>IonConnectDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Forms\IonUploadDialog.resx">
+      <DependentUpon>IonUploadDialog.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)Images\cesium.ico" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\attribution.txt" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\book-open-reader-solid.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\cloud-arrow-up-solid.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\file-export-solid.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\handshake-solid.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\right-from-bracket-solid.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\right-to-bracket-solid.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\logo.png" />
+  </ItemGroup>
+</Project>
