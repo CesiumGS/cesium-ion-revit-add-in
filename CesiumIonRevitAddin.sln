@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "CesiumIonRevitAddin", "CesiumIonRevitAddin\CesiumIonRevitAddin.shproj", "{1DD3FFA0-AD97-4E51-8FAB-9A065C71AC64}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2025", "CesiumIonRevitAddin_2025\CesiumIonRevitAddin_2025.csproj", "{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,10 @@ Global
 		{B0ED72C2-CD9A-4E86-A091-FA328B2F542C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B0ED72C2-CD9A-4E86-A091-FA328B2F542C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B0ED72C2-CD9A-4E86-A091-FA328B2F542C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,5 +38,6 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{1dd3ffa0-ad97-4e51-8fab-9a065c71ac64}*SharedItemsImports = 13
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{b0ed72c2-cd9a-4e86-a091-fa328b2f542c}*SharedItemsImports = 4
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{f2e68fa5-010e-4c3e-a861-3bbc3ab90e08}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal
