@@ -165,7 +165,11 @@ namespace CesiumIonRevitAddin.Gltf
 
                 if (definition is InternalDefinition internalDefinition)
                 {
+#if REVIT2020 || REVIT2021
+                    continue; // Skip for older versions of Revit
+#else
                     ForgeTypeId forgeTypeId = internalDefinition.GetDataType();
+
                     bool isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
 
                     var categoryGltfProperty = new Dictionary<string, Object>
@@ -229,6 +233,8 @@ namespace CesiumIonRevitAddin.Gltf
 
                     // useful?
                     // internalDefinition->GetParameterTypeId();        }
+
+#endif
                 }
             }
 

@@ -12,7 +12,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "CesiumIonRevitAddin", "CesiumIonRevitAddin\CesiumIonRevitAddin.shproj", "{1DD3FFA0-AD97-4E51-8FAB-9A065C71AC64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2025", "CesiumIonRevitAddin_2025\CesiumIonRevitAddin_2025.csproj", "{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CesiumIonRevitAddin_2025", "CesiumIonRevitAddin_2025\CesiumIonRevitAddin_2025.csproj", "{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2023", "CesiumIonRevitAddin_2023\CesiumIonRevitAddin_2023.csproj", "{9AA1E96B-5910-40C0-A871-DDCF118474AB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2022", "CesiumIonRevitAddin_2022\CesiumIonRevitAddin_2022.csproj", "{C23BB660-F85F-44DC-872E-47BF1D476DFD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2021", "CesiumIonRevitAddin_2021\CesiumIonRevitAddin_2021.csproj", "{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2020", "CesiumIonRevitAddin_2020\CesiumIonRevitAddin_2020.csproj", "{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,6 +36,22 @@ Global
 		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2E68FA5-010E-4C3E-A861-3BBC3AB90E08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AA1E96B-5910-40C0-A871-DDCF118474AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AA1E96B-5910-40C0-A871-DDCF118474AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AA1E96B-5910-40C0-A871-DDCF118474AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AA1E96B-5910-40C0-A871-DDCF118474AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Release|Any CPU.Build.0 = Release|Any CPU
+		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,8 +60,12 @@ Global
 		SolutionGuid = {9935126A-47E0-4852-97AD-943EDFB38C2E}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{06c8dc3a-3cba-4eb7-aedd-6564fb887465}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{1dd3ffa0-ad97-4e51-8fab-9a065c71ac64}*SharedItemsImports = 13
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{675ceb4e-cae4-4e4a-98c4-2b8bb5a95452}*SharedItemsImports = 4
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{9aa1e96b-5910-40c0-a871-ddcf118474ab}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{b0ed72c2-cd9a-4e86-a091-fa328b2f542c}*SharedItemsImports = 4
+		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{c23bb660-f85f-44dc-872e-47bf1d476dfd}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{f2e68fa5-010e-4c3e-a861-3bbc3ab90e08}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal
