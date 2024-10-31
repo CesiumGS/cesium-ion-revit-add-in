@@ -1,5 +1,35 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <!-- Configure Debug -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\CesiumIonRevitAddin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+
+  <!-- Configure Release -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\CesiumIonRevitAddin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+      
+  <!-- Completely empty the current build folder -->
+  <Target Name="Cleanup" AfterTargets="Clean">
+    <PropertyGroup>
+      <CurrentOutputPath>$(BaseOutputPath)$(Configuration)\</CurrentOutputPath>
+    </PropertyGroup>
+    <RemoveDir Directories="$(CurrentOutputPath)" />
+  </Target>
+  
+  <!-- Register folders for copying post build -->
   <PropertyGroup>
     <TilersBinSourceDir>$(SolutionDir)..\tilers\build\bin\$(Configuration)\</TilersBinSourceDir>
     <TilersConfigSourceDir>$(SolutionDir)..\tilers\</TilersConfigSourceDir>
@@ -8,6 +38,7 @@
     <ThirdPartySource>$(SolutionDir)ThirdParty.json</ThirdPartySource>
   </PropertyGroup>
 
+  <!-- Register files for copying post build -->
   <ItemGroup>
     <TilerBinFiles Include="$(TilersBinSourceDir)**\*.*" />
     <TilerConfigFiles Include="$(TilersConfigSourceDir)ThirdParty.json" />
@@ -16,6 +47,7 @@
     <ThirdPartyFile Include="$(ThirdPartySource)" />
   </ItemGroup>
 
+  <!-- Copy files post build -->
   <Target Name="CustomPostBuild" AfterTargets="Build">
     <Copy SourceFiles="@(TilerBinFiles)"
           DestinationFolder="$(TargetDir)tiler\%(RecursiveDir)"
@@ -33,6 +65,19 @@
 
     <Copy SourceFiles="@(ThirdPartyFile)" 
           DestinationFolder="$(TargetDir)\" />
+  </Target>
+
+  <!-- Make sure third party PDB's and XML aren't included in release  -->
+  <Target Name="ExcludePdbFilesAfterCompile" BeforeTargets="Compile" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <ItemGroup>
+      <_FilteredContentWithTargetPath Include="@(ContentWithTargetPath)" Condition="'%(Extension)' == '.pdb'" />
+      <_FilteredContentWithTargetPath Include="@(ContentWithTargetPath)" Condition="'%(Extension)' == '.xml'" />
+      <ContentWithTargetPath Remove="@(_FilteredContentWithTargetPath)" />
+  
+      <_FilteredReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.pdb'" />
+      <_FilteredReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.xml'" />
+      <ReferenceCopyLocalPaths Remove="@(_FilteredReferenceCopyLocalPaths)" />
+    </ItemGroup>
   </Target>
 
 </Project>

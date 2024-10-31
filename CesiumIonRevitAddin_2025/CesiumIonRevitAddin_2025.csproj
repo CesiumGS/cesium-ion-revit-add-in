@@ -10,13 +10,13 @@
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
+  <!-- Import the shared build configuration -->
+  <Import Project="$(SolutionDir)\Build\CommonBuild.targets" />
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\Debug\CesiumIonRevitAddin\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;REVIT2025</DefineConstants>
+    <DefineConstants>$(DefineConstants);REVIT2025</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\Release\CesiumIonRevitAddin\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;REVIT2025</DefineConstants>
+    <DefineConstants>$(DefineConstants);REVIT2025</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
@@ -36,6 +36,4 @@
     <PackageReference Include="Revit_All_Main_Versions_API_x64" Version="2025.0.0" />
   </ItemGroup>
   <Import Project="..\CesiumIonRevitAddin\CesiumIonRevitAddin.projitems" Label="Shared" />
-    <!-- Import the shared build configuration -->
-  <Import Project="$(SolutionDir)\Build\CommonBuild.targets" />
 </Project>
