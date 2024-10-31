@@ -77,12 +77,14 @@ namespace CesiumIonRevitAddin
             };
             pushButtonDataUpload.ToolTip = "Uploads the current 3D View to Cesium ion";
 
+#if DEBUG
             // Create Export button
             PushButtonData pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute))
             };
             pushButtonDataExportDisk.ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk";
+#endif
 
             // Create Learn button
             PushButtonData pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
@@ -94,7 +96,7 @@ namespace CesiumIonRevitAddin
             // Create Help button
             PushButtonData pushButtonDataHelp = new PushButtonData("Help", "Help", addInPath, "CesiumIonRevitAddin.CommunityForum")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "handshake-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "circle-question.png"), UriKind.Absolute))
             };
             pushButtonDataHelp.ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum";
 
@@ -106,7 +108,9 @@ namespace CesiumIonRevitAddin
             pushButtonConnect = panelCesiumIon.AddItem(pushButtonDataConnect) as PushButton;
             pushButtonSignOut = panelCesiumIon.AddItem(pushButtonDataSignOut) as PushButton;
             pushButtonUpload = panel3DTiles.AddItem(pushButtonDataUpload) as PushButton;
+#if DEBUG
             pushButtonExportDisk = panel3DTiles.AddItem(pushButtonDataExportDisk) as PushButton;
+#endif
             pushButtonLearn = panelSupport.AddItem(pushButtonDataLearn) as PushButton;
             pushButtonHelp = panelSupport.AddItem(pushButtonDataHelp) as PushButton;
 
@@ -122,7 +126,9 @@ namespace CesiumIonRevitAddin
             pushButtonSignOutAddin = pullDownButtonCesium.AddPushButton(pushButtonDataSignOut);
             pullDownButtonCesium.AddSeparator();
             pushButtonUploadAddin = pullDownButtonCesium.AddPushButton(pushButtonDataUpload);
+#if DEBUG
             pushButtonExportDiskAddin = pullDownButtonCesium.AddPushButton(pushButtonDataExportDisk);
+#endif
             pullDownButtonCesium.AddSeparator();
             pushButtonLearnAddin = pullDownButtonCesium.AddPushButton(pushButtonDataLearn);
             pushButtonHelpAddin = pullDownButtonCesium.AddPushButton(pushButtonDataHelp);
@@ -148,14 +154,17 @@ namespace CesiumIonRevitAddin
             pushButtonSignOut.Enabled = isConnected;       // Enable Sign Out if connected
             pushButtonSignOut.Visible = isConnected;       // Show Sign Out if connected
             pushButtonUpload.Enabled = isConnected;        // Enable Upload if connected
-            pushButtonExportDisk.Enabled = isConnected;    // Enable Export to Disk if connected
 
             pushButtonConnectAddin.Enabled = !isConnected;      // Enable Connect if not connected
             pushButtonConnectAddin.Visible = !isConnected;      // Show Connect if not connected
             pushButtonSignOutAddin.Enabled = isConnected;       // Enable Sign Out if connected
             pushButtonSignOutAddin.Visible = isConnected;       // Show Sign Out if connected
             pushButtonUploadAddin.Enabled = isConnected;        // Enable Upload if connected
+
+#if DEBUG
+            pushButtonExportDisk.Enabled = isConnected;    // Enable Export to Disk if connected
             pushButtonExportDiskAddin.Enabled = isConnected;    // Enable Export to Disk if connected
+#endif
         }
 
         // Static method to allow access to UpdateButtonStates from other commands
@@ -192,10 +201,7 @@ namespace CesiumIonRevitAddin
         }
     }
 
-
-
-
-
+#if DEBUG
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public class ExportToDisk : Autodesk.Revit.UI.IExternalCommand
@@ -252,7 +258,7 @@ namespace CesiumIonRevitAddin
             return Result.Succeeded;
         }
     }
-
+#endif
 
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
