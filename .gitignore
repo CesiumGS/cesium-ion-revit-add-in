@@ -123,3 +123,6 @@ packages/*
 
 # Bundle Folder
 AddinBundle/CesiumIonRevitAddin.bundle/Contents/*
+
+# Documentation
+!/documentation/*
