@@ -5,7 +5,7 @@
 		<Assembly>.\CesiumIonRevitAddin\CesiumIonRevitAddin.dll</Assembly>
 		<FullClassName>CesiumIonRevitAddin.ExternalApplication</FullClassName>
 		<Text>Cesium ion Revit Add-In</Text>
-		<Description>Cesium ion Revit Add-In</Description>
+		<Description>Easily export Revit designs to Cesium Ion using the Cesium Ion Revit Add-in, which transforms your models into 3D Tiles for immersive visualizations and interactive geospatial experiences.</Description>
 		<VisibilityMode>AlwaysVisible</VisibilityMode>
 		<AddInId>502fe383-2648-4e98-adf8-5e6047f9dc35</AddInId>
 		<VendorId>CESIUM</VendorId>
