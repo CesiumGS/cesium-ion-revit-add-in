@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./Documentation/Resources/Cesium_Bentley_dark_color.png" width="50%" />
+  <img src="./Documentation/Resources/Cesium_Logo_Color.jpg" width="50%" />
 </p>
 
 #  Cesium ion Revit Add-in
@@ -12,7 +12,7 @@ Revit versions 2022 to 2025 are supported.
 
 Learn more at https://cesium.com.
 
-![KokuraCastle](./Documentation/Resources/SnowdonRevitIon.png)
+![Snowdon](./Documentation/Resources/SnowdonRevitIon.png)
 <p align="center">
     Snowdon Towers (left) loaded into Autodesk Revit and (right) fused with Cesium World Terrain and imagery in CesiumJS after being tiled with ion.
 </p>
