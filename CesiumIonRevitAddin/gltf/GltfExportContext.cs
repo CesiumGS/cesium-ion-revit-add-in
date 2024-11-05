@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Media.Media3D;
@@ -68,6 +69,24 @@ namespace CesiumIonRevitAddin.Gltf
 
         // TODO: make export not a singleton and remove Reset()
         private static void Reset() => RevitMaterials.materialIdDictionary.Clear();
+
+
+        // Classes like SpecTypeId.String contain Text, URI, and more.
+        // Rather than test for each individually, we get all properties of the class and check against those.
+        static bool IsSpecTypeMatch(ForgeTypeId forgeTypeId, Type specTypeClass)
+        {
+            if (!specTypeClass.IsClass)
+            {
+                throw new ArgumentException("The provided type must be a class containing ForgeTypeId properties.", nameof(specTypeClass));
+            }
+
+            // Retrieve all public static properties of type ForgeTypeId in the specified class
+            var specTypeIds = specTypeClass.GetProperties(BindingFlags.Public | BindingFlags.Static)
+                                           .Where(prop => prop.PropertyType == typeof(ForgeTypeId))
+                                           .Select(prop => (ForgeTypeId)prop.GetValue(null));
+
+            return specTypeIds.Contains(forgeTypeId);
+        }
 
         public bool Start()
         {
@@ -155,6 +174,9 @@ namespace CesiumIonRevitAddin.Gltf
             AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
             AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
 
+            // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
+            // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
+            // For each parameter, get all all the bound Categories and add them to the glTF schema.
             BindingMap bindingMap = Doc.ParameterBindings;
             var iterator = bindingMap.ForwardIterator();
             while (iterator.MoveNext())
@@ -174,16 +196,16 @@ namespace CesiumIonRevitAddin.Gltf
                         { "required", false }
                     };
 
-                    if (isMeasurable) // TODO: isMeasurable SHOULD equate to Revit's StorageType::Double
+                    if (isMeasurable) // TODO: Does isMeasurable equate to Revit's StorageType::Double?
                     {
                         categoryGltfProperty.Add("type", "SCALAR");
                         categoryGltfProperty.Add("componentType", "FLOAT32");
                     }
-                    else if (forgeTypeId == SpecTypeId.String.Text)
+                    else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.String)))
                     {
                         categoryGltfProperty.Add("type", "STRING");
                     }
-                    else if (forgeTypeId == SpecTypeId.Int.Integer)
+                    else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)))
                     {
                         categoryGltfProperty.Add("type", "SCALAR");
                         categoryGltfProperty.Add("componentType", "INT32");
@@ -191,6 +213,7 @@ namespace CesiumIonRevitAddin.Gltf
                     else
                     {
                         // no mapped ForgeTypeId
+                        // TODO: booleans are falling here
                         continue;
                     }
 
@@ -198,37 +221,20 @@ namespace CesiumIonRevitAddin.Gltf
                     foreach (var obj in categories)
                     {
                         var category = (Category)obj;
-                        var categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.Name);
-
-                        extStructuralMetadataSchema.AddCategory(category.Name);
-                        var class_ = extStructuralMetadataSchema.GetClass(categoryGltfName);
-                        var schemaProperties = extStructuralMetadataSchema.GetProperties(class_);
-                        schemaProperties.Add(CesiumIonRevitAddin.Utils.Util.GetGltfName(definition.Name), categoryGltfProperty);
+                        string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
+                        extStructuralMetadataSchema.AddCategory(categoryGltfName);
+                        var gltfClass = extStructuralMetadataSchema.GetClass(categoryGltfName);
+                        var schemaProperties = extStructuralMetadataSchema.GetProperties(gltfClass);
+                        string gltfDefinitionName = Util.GetGltfName(definition.Name);
+                        if (schemaProperties.ContainsKey(gltfDefinitionName))
+                        {
+                            // Duplicate keys can occur if a parameter shares a name.
+                            // This has happened before, though one was a shared and one a local parameter.
+                            // ID and the results of GetTypeId() (which is not the same) are the only guaranteed unique fields.
+                            gltfDefinitionName += "_" + internalDefinition.Id;
+                        }
+                        schemaProperties.Add(gltfDefinitionName, categoryGltfProperty);
                     }
-
-                    //// DEVEL
-                    //if (UnitUtils::IsMeasurableSpec(forgeTypeId)) {
-                    //	auto discipline = UnitUtils::GetDiscipline(forgeTypeId);
-                    //	gltfVersion.extras.Add(paramDefinitionName + "_discipline", discipline->TypeId);
-                    //	auto typeCatalog = UnitUtils::GetTypeCatalogStringForSpec(forgeTypeId);
-                    //	gltfVersion.extras.Add(paramDefinitionName + "_typeCatalog", typeCatalog);
-                    //}
-                    //auto isUnit = UnitUtils::IsUnit(forgeTypeId);
-                    //gltfVersion.extras.Add(paramDefinitionName + "_isUnit", isUnit);
-                    //auto isSymbol = UnitUtils::IsSymbol(forgeTypeId);
-                    //gltfVersion.extras.Add(paramDefinitionName + "_isSymbol", isSymbol);
-
-                    // https://forums.autodesk.com/t5/revit-api-forum/conversion-from-internal-to-revit-type-for-unittype/td-p/10452742
-                    // "For context, the ForgeTypeId properties directly in the SpecTypeId class identify the measurable data types, like SpecTypeId.Length or SpecTypeId.Mass. "
-                    // maybe use SpecTypeId comparisons to get data type
-                    //auto isSpec = SpecUtils::IsSpec(forgeTypeId); // "spec" is a unit. Maybe ship those with out units? (What about text?)
-                    //gltfVersion.extras.Add(paramDefinitionName + "_IsSpec", isSpec.ToString());
-
-                    //auto humanLabel = LabelUtils::GetLabelForSpec(forgeTypeId);
-                    //gltfVersion.extras.Add(paramDefinitionName + "_LabelUtils", humanLabel);
-
-                    // useful?
-                    // internalDefinition->GetParameterTypeId();        }
                 }
             }
 
