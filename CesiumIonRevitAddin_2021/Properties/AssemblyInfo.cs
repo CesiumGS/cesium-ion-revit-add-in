@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Cesium Ion Revit 2021 Add-in")]
-[assembly: AssemblyDescription("Easily export Revit designs to Cesium Ion using the Cesium Ion Revit Add-in, which transforms your models into 3D Tiles for immersive visualizations and interactive geospatial experiences.")]
+[assembly: AssemblyTitle("Cesium ion for Autodesk Revit 2021")]
+[assembly: AssemblyDescription("Easily export Revit designs to Cesium ion using Cesium ion for Autodesk Revit, which transforms your models into 3D Tiles for immersive visualizations and interactive geospatial experiences.")]
 
 #if DEBUG
 [assembly: AssemblyConfiguration("Debug")]
@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 #endif
 
 [assembly: AssemblyCompany("Cesium")]
-[assembly: AssemblyProduct("Cesium Ion Revit Add-in")]
+[assembly: AssemblyProduct("Cesium ion for Autodesk Revit")]
 [assembly: AssemblyCopyright("Copyright ©  2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
