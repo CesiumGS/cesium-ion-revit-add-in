@@ -287,6 +287,8 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 return new ConnectionResult(ConnectionStatus.Failure, "No access token found.");
             }
 
+            // Clear the headers each time
+            client.DefaultRequestHeaders.Clear();
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
             client.DefaultRequestHeaders.Add("json", "true");
 
