@@ -366,7 +366,7 @@ namespace CesiumIonRevitAddin.Export
                 System.IO.Path.Combine(programFilesPath, "Common Files", "Autodesk Shared", "Materials", "Textures")
             };
 
-            possibleBasePaths.AddRange(GetAdditionalRenderAppearancePath());
+            possibleBasePaths.AddRange(GetAdditionalRenderAppearancePaths());
 
             foreach (string basePath in possibleBasePaths)
             {
@@ -383,7 +383,7 @@ namespace CesiumIonRevitAddin.Export
             return null;
         }
 
-        private static List<string> GetAdditionalRenderAppearancePath()
+        private static List<string> GetAdditionalRenderAppearancePaths()
         {
             List<string> paths = new List<string>();
             string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -401,8 +401,7 @@ namespace CesiumIonRevitAddin.Export
                         // Look for the AdditionalRenderAppearancePath setting
                         if (line.StartsWith("AdditionalRenderAppearancePath="))
                         {
-                            string path = line.Split('=')[1].Trim();
-                            paths.Add(path);
+                            paths.Add(line.Split('=')[1].Trim());
                         }
                     }
                 }
