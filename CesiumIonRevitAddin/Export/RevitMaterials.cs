@@ -162,7 +162,7 @@ namespace CesiumIonRevitAddin.Export
                 var gltfPbr = new GltfPbr();
                 SetGltfMaterialsProperties(materialNode, opacity, ref gltfPbr, ref gltfMaterial);
 
-                var bitmapInfoCollection = GetBitmapInfo(doc, material);
+                List<BitmapInfo> bitmapInfoCollection = GetBitmapInfo(doc, material);
 
                 materialHasTexture = preferences.Textures && bitmapInfoCollection.Any();
                 if (materialHasTexture)
@@ -248,6 +248,10 @@ namespace CesiumIonRevitAddin.Export
             if (document.GetElement(material.Id) is Material targetMaterial)
             {
                 ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
+                // Some (physical) materials do not link to render materials (Appearances in Revit-speak).
+                // This has happened with structural elements.
+                // Exit if this is the case.
+                if (appearanceAssetId.Value == -1) return attachedBitmapInfo;
 
                 AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
                 Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
