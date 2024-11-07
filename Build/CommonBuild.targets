@@ -49,13 +49,6 @@
 
   <!-- Copy files post build -->
   <Target Name="CustomPostBuild" AfterTargets="Build">
-    <Copy SourceFiles="@(TilerBinFiles)"
-          DestinationFolder="$(TargetDir)tiler\%(RecursiveDir)"
-          SkipUnchangedFiles="true" />
-
-    <Copy SourceFiles="@(TilerConfigFiles)" 
-          DestinationFolder="$(TargetDir)tiler\" />
-
     <Copy SourceFiles="@(ImageFiles)"
           DestinationFolder="$(TargetDir)Images\%(RecursiveDir)"
           SkipUnchangedFiles="true" />
@@ -65,6 +58,16 @@
 
     <Copy SourceFiles="@(ThirdPartyFile)" 
           DestinationFolder="$(TargetDir)\" />
+  </Target>
+
+  <!-- Copy tiler files post build - debug only-->
+  <Target Name="CustomPostBuildTiler" AfterTargets="Build" Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Copy SourceFiles="@(TilerBinFiles)"
+          DestinationFolder="$(TargetDir)tiler\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+
+    <Copy SourceFiles="@(TilerConfigFiles)" 
+          DestinationFolder="$(TargetDir)tiler\" />
   </Target>
 
   <!-- Make sure third party PDB's and XML aren't included in release  -->
