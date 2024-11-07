@@ -287,7 +287,7 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("Completed model export.");
 
             // Write out the json for the tiler
-            TilerExportUtils.WriteTilerJson(preferences);
+            TilerExportUtils.WriteTilerJson(preferences); // no error
 
             // Execute the tiler
             TilerExportUtils.RunTiler(preferences.JsonPath);
@@ -343,7 +343,7 @@ namespace CesiumIonRevitAddin.Gltf
                 linkTransformation = linkInstance.GetTransform();
             }
 
-            Logger.Instance.Log("Processing element " + element.Name);
+            Logger.Instance.Log("Processing element " + element.Name + ", ID: " + element.Id.ToString());
 
             var newNode = new GltfNode();
 
@@ -439,6 +439,7 @@ namespace CesiumIonRevitAddin.Gltf
                 !Util.CanBeLockOrHidden(element, view))
             {
                 skipElementFlag = false;
+                Logger.Instance.Log("...Finished Processing element " + element.Name);
                 return;
             }
 
@@ -534,11 +535,14 @@ namespace CesiumIonRevitAddin.Gltf
                     geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
                 }
             }
+
+            element = Doc.GetElement(elementId);
+            Logger.Instance.Log("...Finished Processing element " + element.Name);
         }
 
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
-            instanceStackDepth++;
+            this.instanceStackDepth++;
 
             // TODO: Note that instanceNode.GetTransform() always seems to be the full transform stack.
             // Chase down an example of instance transforms that actually stack
@@ -629,10 +633,8 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             documents.Add(node.GetDocument());
-
             transformStack.Push(CurrentFullTransform.Multiply(linkTransformation));
 
-            // We can either skip this instance or proceed with rendering it.
             return RenderNodeAction.Proceed;
         }
 
@@ -662,6 +664,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnRPC(RPCNode node)
         {
+            Logger.Instance.Log("Starting OnRPC...");
+
             List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
 
             if (meshes.Count == 0)
@@ -704,6 +708,7 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
             }
+            Logger.Instance.Log("...Ftarting OnRPC.");
         }
 
         public void OnLight(LightNode node)
@@ -729,6 +734,7 @@ namespace CesiumIonRevitAddin.Gltf
                     khrTextureTransformAdded = true;
                 }
             }
+            Logger.Instance.Log("...Ending OnMaterial.");
         }
 
         public class SerializableTransform

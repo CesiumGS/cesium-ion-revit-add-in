@@ -302,6 +302,14 @@ namespace CesiumIonRevitAddin.Export
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
+            // It's possible for a bitmap object propery to have a path to a texture file, but that
+            // file is not on the disk. The can happen if the texture patch and the model is being exported
+            // on another machine that doesn't have the materials installed in that location. Test for this case.
+            if (absolutePath == null)
+            {
+                Logger.Instance.Log("Could not find the following texture: " + path.Value);
+                return bitmapInfoCollection;
+            }
             BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
 
             AddTextureTransformInfo(ref baseColor, connectedProperty);
@@ -325,6 +333,14 @@ namespace CesiumIonRevitAddin.Export
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
             var path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
             string absolutePath = GetAbsoluteMaterialPath(path.Value);
+            // It's possible for a bitmap object propery to have a path to a texture file, but that
+            // file is not on the disk. The can happen if the texture patch and the model is being exported
+            // on another machine that doesn't have the materials installed in that location. Test for this case.
+            if (absolutePath == null)
+            {
+                Logger.Instance.Log("Could not find the following texture: " + path.Value);
+                return bitmapInfoCollection;
+            }
             var baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
 
             AddTextureTransformInfo(ref baseColor, connectedProperty);
