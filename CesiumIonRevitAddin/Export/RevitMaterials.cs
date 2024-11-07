@@ -361,13 +361,16 @@ namespace CesiumIonRevitAddin.Export
                 return relativeOrAbsolutePath;
             }
 
-#pragma warning disable S1075
-            string[] possibleBasePaths = {
-                @"C:\Program Files (x86)\Common Files\Autodesk Shared\Materials\Textures",
-                @"C:\Program Files\Common Files\Autodesk Shared\Materials\Textures",
-                GetAdditionalRenderAppearancePath()  // Paths from Revit.ini
+            string programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string programFilesX86Path = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+
+            List<string> possibleBasePaths = new List<string>
+            {
+                System.IO.Path.Combine(programFilesX86Path, "Common Files", "Autodesk Shared", "Materials", "Textures"),
+                System.IO.Path.Combine(programFilesPath, "Common Files", "Autodesk Shared", "Materials", "Textures")
             };
-#pragma warning restore S1075
+
+            possibleBasePaths.AddRange(GetAdditionalRenderAppearancePaths());
 
             foreach (string basePath in possibleBasePaths)
             {
@@ -384,23 +387,31 @@ namespace CesiumIonRevitAddin.Export
             return null;
         }
 
-        private static string GetAdditionalRenderAppearancePath()
+        private static List<string> GetAdditionalRenderAppearancePaths()
         {
-            // Path to Revit.ini file - adjust based on actual location and Revit version
-#pragma warning disable S1075
-            string revitIniPath = @"C:\Users\[Username]\AppData\Roaming\Autodesk\Revit\Autodesk Revit 2021\Revit.ini";
-#pragma warning restore S1075
-            if (System.IO.File.Exists(revitIniPath))
+            List<string> paths = new List<string>();
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string revitBasePath = Path.Combine(appDataPath, "Autodesk", "Revit");
+
+            // Find all directories in the Revit Appdata folder that contain a Revit.ini file
+            foreach (var directory in Directory.GetDirectories(revitBasePath, "Autodesk Revit 20??"))
             {
-                foreach (var line in File.ReadAllLines(revitIniPath))
+                string revitIniPath = Path.Combine(directory, "Revit.ini");
+
+                if (File.Exists(revitIniPath))
                 {
-                    if (line.StartsWith("AdditionalRenderAppearancePath="))
+                    foreach (var line in File.ReadAllLines(revitIniPath))
                     {
-                        return line.Split('=')[1].Trim();
+                        // Look for the AdditionalRenderAppearancePath setting
+                        if (line.StartsWith("AdditionalRenderAppearancePath="))
+                        {
+                            paths.Add(line.Split('=')[1].Trim());
+                        }
                     }
                 }
             }
-            return null;
+
+            return paths;
         }
 
         private static string GetParameterValueAsString(Parameter parameter)
