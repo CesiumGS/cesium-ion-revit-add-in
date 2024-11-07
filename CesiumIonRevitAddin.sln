@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2021", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2020", "CesiumIonRevitAddin_2020\CesiumIonRevitAddin_2020.csproj", "{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateHelp", "GenerateHelp\GenerateHelp.csproj", "{4E152EF8-2B09-4F6F-8FB1-184921AE55C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,8 @@ Global
 		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E152EF8-2B09-4F6F-8FB1-184921AE55C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E152EF8-2B09-4F6F-8FB1-184921AE55C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
