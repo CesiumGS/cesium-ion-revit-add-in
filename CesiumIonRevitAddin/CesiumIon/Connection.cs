@@ -546,6 +546,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             // Encrypt the JSON string using DPAPI
             byte[] encryptedData = ProtectedData.Protect(Encoding.UTF8.GetBytes(jsonObject.ToString()), null, DataProtectionScope.CurrentUser);
 
+            // Check if the directory exists, if not, create it
+            string directoryPath = Path.GetDirectoryName(localUrl);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+            
             // Write the encrypted data to a file
             File.WriteAllBytes(localUrl, encryptedData);
         }
