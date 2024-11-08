@@ -3,7 +3,6 @@ using CesiumIonRevitAddin.Utils;
 using System;
 using System.IO;
 using System.Linq;
-using System.Windows.Forms;
 
 namespace CesiumIonRevitAddin
 {
@@ -65,12 +64,11 @@ namespace CesiumIonRevitAddin
 
             for (int i = 0; i < geometryDataObject.Vertices.Count; i += 3)
             {
-                sumX += geometryDataObject.Vertices[i];     // X component
-                sumY += geometryDataObject.Vertices[i + 1];  // Y component
-                sumZ += geometryDataObject.Vertices[i + 2];  // Z component
+                sumX += geometryDataObject.Vertices[i];
+                sumY += geometryDataObject.Vertices[i + 1];
+                sumZ += geometryDataObject.Vertices[i + 2];
             }
 
-            // Calculate the average for each component to get the centroid
             double centroidX = sumX / pointCount;
             double centroidY = sumY / pointCount;
             double centroidZ = sumZ / pointCount;
