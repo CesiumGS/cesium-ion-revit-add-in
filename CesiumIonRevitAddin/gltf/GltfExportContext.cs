@@ -708,7 +708,7 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
             }
-            Logger.Instance.Log("...Ftarting OnRPC.");
+            Logger.Instance.Log("...Ending OnRPC.");
         }
 
         public void OnLight(LightNode node)
