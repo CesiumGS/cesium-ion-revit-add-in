@@ -18,14 +18,18 @@ namespace CesiumIonRevitAddin.Gltf
     {
         private const char UNDERSCORE = '_';
         private readonly bool verboseLog = true;
-        private int instanceStackDepth = 0;
         private Autodesk.Revit.DB.Transform parentTransformInverse = null;
         private readonly Preferences preferences;
         private readonly View view;
         private Autodesk.Revit.DB.Element element;
         private readonly List<Document> documents = new List<Document>();
         private bool cancelation;
+        // We record instanceStackDepth separately from getting it via transformStack.Count because there are
+        // cases where OnInstanceBegin is immediately followed by OnInstanceEnd, then OnPolymesh is triggered.
+        // We detect and handle this case.
+        private int instanceStackDepth = 0;
         private readonly Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
+        private readonly Stack<Autodesk.Revit.DB.Transform> rawTransformStack = new Stack<Autodesk.Revit.DB.Transform>();
         private GltfNode xFormNode;
         private readonly List<GltfAccessor> accessors = new List<GltfAccessor>();
         private readonly List<GltfBufferView> bufferViews = new List<GltfBufferView>();
@@ -316,11 +320,13 @@ namespace CesiumIonRevitAddin.Gltf
         // This records if the latter has happened
         private bool onInstanceEndCompleted = false;
         private bool useCurrentInstanceTransform = false;
+        private bool shouldLogOnElementEnd = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             onInstanceEndCompleted = false;
             useCurrentInstanceTransform = false;
             parentTransformInverse = null;
+            shouldLogOnElementEnd = false;
 
             element = Doc.GetElement(elementId);
 
@@ -344,6 +350,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             Logger.Instance.Log("Processing element " + element.Name + ", ID: " + element.Id.ToString());
+            shouldLogOnElementEnd = true;
 
             var newNode = new GltfNode();
 
@@ -439,7 +446,10 @@ namespace CesiumIonRevitAddin.Gltf
                 !Util.CanBeLockOrHidden(element, view))
             {
                 skipElementFlag = false;
-                Logger.Instance.Log("...Finished Processing element " + element.Name);
+                if (shouldLogOnElementEnd)
+                {
+                    Logger.Instance.Log("...Finished Processing element " + element.Name);
+                }
                 return;
             }
 
@@ -490,13 +500,13 @@ namespace CesiumIonRevitAddin.Gltf
                     var name = kvp.Key;
                     var geometryDataObject = kvp.Value;
                     GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
-                        buffers,
-                        accessors,
-                        bufferViews,
-                        geometryDataObject,
-                        name,
-                        elementId.IntegerValue,
-                        preferences.Normals);
+                         buffers,
+                         accessors,
+                         bufferViews,
+                         geometryDataObject,
+                         name,
+                         elementId.IntegerValue,
+                         preferences.Normals);
 
                     binaryFileData.Add(elementBinaryData);
 
@@ -550,6 +560,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             var transformationMultiply = CurrentFullTransform.Multiply(instanceNode.GetTransform());
             transformStack.Push(transformationMultiply);
+            rawTransformStack.Push(instanceNode.GetTransform());
 
             return RenderNodeAction.Proceed;
         }
@@ -577,14 +588,15 @@ namespace CesiumIonRevitAddin.Gltf
             // Note: This method is invoked even for instances that were skipped.
 
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
+            rawTransformStack.Pop();
 
             if (!preferences.Instancing)
             {
                 return;
             }
 
-            // do not write to the node if there is an instance stack
-            // this happens with railings because the balusters are sub-instances of the railing instance
+            // Do not write to the node if there is an instance stack.
+            // This happens with railings because the balusters are sub-instances of the railing instance.
             if (instanceStackDepth > 0)
             {
                 return;
@@ -592,15 +604,14 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (!transform.IsIdentity)
             {
-
-                var currentNode = nodes.CurrentItem;
+                GltfNode currentNode = nodes.CurrentItem;
 
                 var currentNodeTransform = node.GetTransform();
                 if (useCurrentInstanceTransform) // for nodes with a non-root parent
                 {
                     if (!currentNodeTransform.IsIdentity)
                     {
-                        var outgoingMatrix = parentTransformInverse * currentNodeTransform;
+                        Autodesk.Revit.DB.Transform outgoingMatrix = parentTransformInverse * currentNodeTransform;
                         currentNode.Matrix = TransformToList(outgoingMatrix);
                     }
                 }
@@ -664,8 +675,6 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnRPC(RPCNode node)
         {
-            Logger.Instance.Log("Starting OnRPC...");
-
             List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
 
             if (meshes.Count == 0)
@@ -734,7 +743,6 @@ namespace CesiumIonRevitAddin.Gltf
                     khrTextureTransformAdded = true;
                 }
             }
-            Logger.Instance.Log("...Ending OnMaterial.");
         }
 
         public class SerializableTransform
@@ -796,12 +804,25 @@ namespace CesiumIonRevitAddin.Gltf
                 // i.e.: OnElementBegin->OnInstanceBegin->OnInstanceEnd->OnPolymesh
                 if (onInstanceEndCompleted && instanceStackDepth == 0)
                 {
-                    var inverse = cachedTransform.Inverse;
+                    Autodesk.Revit.DB.Transform inverse = cachedTransform.Inverse;
                     pts = pts.Select(p => inverse.OfPoint(p)).ToList();
                 }
-                else if (instanceStackDepth == 2)
+                // Transform stacks above 1 indicate a nested instance.
+                // This could be either from a nested instance in a single document. This has happened with part of a chair being an instance inside a chair instance.
+                // It would also be via a linked Revit document with its own transform stack.
+                // We need to multiply by everything except the transform deepest on the stack.
+                else if (rawTransformStack.Count == 2)
                 {
-                    pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
+                    pts = pts.Select(p => rawTransformStack.Peek().OfPoint(p)).ToList();
+                }
+                // Convert to a List so we can non-destructively multiply by everything except the base stack item.
+                else if (rawTransformStack.Count > 2)
+                {
+                    var rawTransformArray = rawTransformStack.ToArray();
+                    for (int i = 1; i < rawTransformArray.Length; i++)
+                    {
+                        pts = pts.Select(p => rawTransformArray[i].OfPoint(p)).ToList();
+                    }
                 }
             }
 
