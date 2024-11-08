@@ -783,13 +783,6 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        public static bool AreAlmostEqual(XYZ point1, XYZ point2, double tolerance = 1e-6)
-        {
-            return Math.Abs(point1.X - point2.X) < tolerance &&
-                   Math.Abs(point1.Y - point2.Y) < tolerance &&
-                   Math.Abs(point1.Z - point2.Z) < tolerance;
-        }
-
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
