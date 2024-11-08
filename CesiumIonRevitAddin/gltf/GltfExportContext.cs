@@ -320,11 +320,13 @@ namespace CesiumIonRevitAddin.Gltf
         // This records if the latter has happened
         private bool onInstanceEndCompleted = false;
         private bool useCurrentInstanceTransform = false;
+        private bool shouldLogOnElementEnd = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             onInstanceEndCompleted = false;
             useCurrentInstanceTransform = false;
             parentTransformInverse = null;
+            shouldLogOnElementEnd = false;
 
             element = Doc.GetElement(elementId);
 
@@ -348,6 +350,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             Logger.Instance.Log("Processing element " + element.Name + ", ID: " + element.Id.ToString());
+            shouldLogOnElementEnd = true;
 
             var newNode = new GltfNode();
 
@@ -443,7 +446,10 @@ namespace CesiumIonRevitAddin.Gltf
                 !Util.CanBeLockOrHidden(element, view))
             {
                 skipElementFlag = false;
-                Logger.Instance.Log("...Finished Processing element " + element.Name);
+                if (shouldLogOnElementEnd)
+                {
+                    Logger.Instance.Log("...Finished Processing element " + element.Name);
+                }
                 return;
             }
 
