@@ -162,7 +162,7 @@ namespace CesiumIonRevitAddin.Export
                 var gltfPbr = new GltfPbr();
                 SetGltfMaterialsProperties(materialNode, opacity, ref gltfPbr, ref gltfMaterial);
 
-                var bitmapInfoCollection = GetBitmapInfo(doc, material);
+                List<BitmapInfo> bitmapInfoCollection = GetBitmapInfo(doc, material);
 
                 materialHasTexture = preferences.Textures && bitmapInfoCollection.Any();
                 if (materialHasTexture)
@@ -248,6 +248,10 @@ namespace CesiumIonRevitAddin.Export
             if (document.GetElement(material.Id) is Material targetMaterial)
             {
                 ElementId appearanceAssetId = targetMaterial.AppearanceAssetId;
+                // Some (physical) materials do not link to render materials (Appearances in Revit-speak).
+                // This has happened with structural elements.
+                // Exit if this is the case.
+                if (appearanceAssetId.Value == -1) return attachedBitmapInfo;
 
                 AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
                 Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
@@ -298,6 +302,14 @@ namespace CesiumIonRevitAddin.Export
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
+            // It's possible for a bitmap object propery to have a path to a texture file, but that
+            // file is not on the disk. The can happen if the texture patch and the model is being exported
+            // on another machine that doesn't have the materials installed in that location. Test for this case.
+            if (absolutePath == null)
+            {
+                Logger.Instance.Log("Could not find the following texture: " + path.Value);
+                return bitmapInfoCollection;
+            }
             BitmapInfo baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
 
             AddTextureTransformInfo(ref baseColor, connectedProperty);
@@ -321,6 +333,14 @@ namespace CesiumIonRevitAddin.Export
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
             var path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
             string absolutePath = GetAbsoluteMaterialPath(path.Value);
+            // It's possible for a bitmap object propery to have a path to a texture file, but that
+            // file is not on the disk. The can happen if the texture patch and the model is being exported
+            // on another machine that doesn't have the materials installed in that location. Test for this case.
+            if (absolutePath == null)
+            {
+                Logger.Instance.Log("Could not find the following texture: " + path.Value);
+                return bitmapInfoCollection;
+            }
             var baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
 
             AddTextureTransformInfo(ref baseColor, connectedProperty);
