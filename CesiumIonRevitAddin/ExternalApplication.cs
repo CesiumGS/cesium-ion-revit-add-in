@@ -55,45 +55,45 @@ namespace CesiumIonRevitAddin
             // Create Connect button
             PushButtonData pushButtonDataConnect = new PushButtonData("ConnectToIon", "Connect", addInPath, "CesiumIonRevitAddin.ConnectToIon")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-to-bracket-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-to-bracket-solid.png"), UriKind.Absolute)),
+                ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted"
             };
-            pushButtonDataConnect.ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted";
             
             // Create Sign Out button
             PushButtonData pushButtonDataSignOut = new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-from-bracket-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-from-bracket-solid.png"), UriKind.Absolute)),
+                ToolTip = "Signs out from the current Cesium ion server"
             };
-            pushButtonDataSignOut.ToolTip = "Signs out from the current Cesium ion server";
-           
+            
             // Create Upload button
             PushButtonData pushButtonDataUpload = new PushButtonData("ExportToIon", "Upload", addInPath, "CesiumIonRevitAddin.ExportToIon")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "cloud-arrow-up-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "cloud-arrow-up-solid.png"), UriKind.Absolute)),
+                ToolTip = "Uploads the current 3D View to Cesium ion"
             };
-            pushButtonDataUpload.ToolTip = "Uploads the current 3D View to Cesium ion";
-
+            
             // Create Export button
             PushButtonData pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute)),
+                ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk"
             };
-            pushButtonDataExportDisk.ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk";
-
+            
             // Create Learn button
             PushButtonData pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "book-open-reader-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "book-open-reader-solid.png"), UriKind.Absolute)),
+                ToolTip = "Open Cesium tutorials and learning resources"
             };
-            pushButtonDataLearn.ToolTip = "Open Cesium tutorials and learning resources";
 
             // Create Help button
             PushButtonData pushButtonDataHelp = new PushButtonData("Help", "Help", addInPath, "CesiumIonRevitAddin.CommunityForum")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "handshake-solid.png"), UriKind.Absolute))
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "handshake-solid.png"), UriKind.Absolute)),
+                ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum"
             };
-            pushButtonDataHelp.ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum";
-
+            
             // Add to Cesium tab
             RibbonPanel panelCesiumIon = FindOrCreatePanel(application, CESIUM_ION_PANEL);
             RibbonPanel panel3DTiles = FindOrCreatePanel(application, TILES_PANEL);
