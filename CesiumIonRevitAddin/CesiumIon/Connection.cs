@@ -513,13 +513,13 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             uriBuilder.Path = Path.Combine(uriBuilder.Path.TrimEnd('/'), "oauth/token/");
 
             Dictionary<string, string> parameters = new Dictionary<string, string>
-        {
-            { "grant_type", "authorization_code" },
-            { "client_id", clientID },
-            { "code", code },
-            { "redirect_uri", redirectUri },
-            { "code_verifier", codeVerifier}
-        };
+            {
+                { "grant_type", "authorization_code" },
+                { "client_id", clientID },
+                { "code", code },
+                { "redirect_uri", redirectUri },
+                { "code_verifier", codeVerifier}
+            };
             var POSTContent = new FormUrlEncodedContent(parameters);
 
             using (HttpResponseMessage responseMessageToken = await client.PostAsync(uriBuilder.Uri, POSTContent).ConfigureAwait(false))
@@ -538,10 +538,12 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         private static void WriteConnectionData(string token, string apiUrl, string ionUrl)
         {
-            JObject jsonObject = new JObject();
-            jsonObject["access_token"] = token;
-            jsonObject["api_url"] = apiUrl;
-            jsonObject["ion_url"] = ionUrl;
+            var jsonObject = new JObject
+            {
+                ["access_token"] = token,
+                ["api_url"] = apiUrl,
+                ["ion_url"] = ionUrl
+            };
             
             // Encrypt the JSON string using DPAPI
             byte[] encryptedData = ProtectedData.Protect(Encoding.UTF8.GetBytes(jsonObject.ToString()), null, DataProtectionScope.CurrentUser);

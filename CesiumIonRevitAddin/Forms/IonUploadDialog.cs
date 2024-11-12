@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO;
 using CesiumIonRevitAddin.CesiumIonClient;
 using Autodesk.Revit.UI;
-using System.Diagnostics;
 
 
 namespace CesiumIonRevitAddin.Forms

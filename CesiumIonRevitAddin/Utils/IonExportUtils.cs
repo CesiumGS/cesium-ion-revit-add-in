@@ -2,8 +2,6 @@
 using Autodesk.Revit.UI;
 using CesiumIonRevitAddin.Forms;
 using CesiumIonRevitAddin.Gltf;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
