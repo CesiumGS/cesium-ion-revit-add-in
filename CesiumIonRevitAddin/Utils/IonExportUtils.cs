@@ -2,8 +2,6 @@
 using Autodesk.Revit.UI;
 using CesiumIonRevitAddin.Forms;
 using CesiumIonRevitAddin.Gltf;
-using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +11,7 @@ using System.Windows.Forms;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    public class IonExportUtils
+    internal static class IonExportUtils
     {
         public static Preferences GetUserPreferences(Document doc)
         {
