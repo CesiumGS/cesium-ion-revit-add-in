@@ -59,12 +59,12 @@ namespace CesiumIonRevitAddin.Forms
 
             if (result.Status == ConnectionStatus.Success)
             {
-                TaskDialog.Show("Connected", result.Message);
+                Autodesk.Revit.UI.TaskDialog.Show("Connected", result.Message);
                 this.Close();
             }
             else if (result.Status == ConnectionStatus.Failure)
             {
-                TaskDialog.Show("Connection Failed", result.Message);
+                Autodesk.Revit.UI.TaskDialog.Show("Connection Failed", result.Message);
             }
             else if (result.Status == ConnectionStatus.Cancelled)
             {

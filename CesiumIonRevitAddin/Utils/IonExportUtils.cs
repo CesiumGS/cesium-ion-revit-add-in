@@ -155,7 +155,7 @@ namespace CesiumIonRevitAddin.Utils
                 case StorageType.Double:
                     return param.AsDouble().ToString();
                 case StorageType.ElementId:
-                    return param.AsElementId().Value.ToString();
+                    return Util.GetElementIdAsLong(param.AsElementId()).ToString();
                 default:
                     return string.Empty;
             }

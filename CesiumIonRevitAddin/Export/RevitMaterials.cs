@@ -249,7 +249,8 @@ namespace CesiumIonRevitAddin.Export
                 // Some (physical) materials do not link to render materials (Appearances in Revit-speak).
                 // This has happened with structural elements.
                 // Exit if this is the case.
-                if (appearanceAssetId.Value == -1) return attachedBitmapInfo;
+
+                if (Util.GetElementIdAsLong(appearanceAssetId) == -1) return attachedBitmapInfo;
 
                 AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
                 Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
@@ -439,7 +440,7 @@ namespace CesiumIonRevitAddin.Export
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return parameter.AsElementId().IntegerValue.ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
                 default:
                     return "Unsupported type";
             }

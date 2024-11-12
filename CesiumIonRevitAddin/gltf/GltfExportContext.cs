@@ -75,6 +75,7 @@ namespace CesiumIonRevitAddin.Gltf
         private static void Reset() => RevitMaterials.materialIdDictionary.Clear();
 
 
+#if REVIT2022 || REVIT2023 || REVIT2024 || REVIT2025
         // Classes like SpecTypeId.String contain Text, URI, and more.
         // Rather than test for each individually, we get all properties of the class and check against those.
         static bool IsSpecTypeMatch(ForgeTypeId forgeTypeId, Type specTypeClass)
@@ -91,6 +92,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             return specTypeIds.Contains(forgeTypeId);
         }
+#endif
 
         public bool Start()
         {
@@ -181,6 +183,7 @@ namespace CesiumIonRevitAddin.Gltf
             // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
             // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
             // For each parameter, get all all the bound Categories and add them to the glTF schema.
+#if !REVIT2020 && !REVIT2021
             BindingMap bindingMap = Doc.ParameterBindings;
             var iterator = bindingMap.ForwardIterator();
             while (iterator.MoveNext())
@@ -225,7 +228,11 @@ namespace CesiumIonRevitAddin.Gltf
                     foreach (var obj in categories)
                     {
                         var category = (Category)obj;
+#if REVIT2022
+                        string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(((BuiltInCategory)category.Id.IntegerValue).ToString());
+#else
                         string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
+#endif
                         extStructuralMetadataSchema.AddCategory(categoryGltfName);
                         var gltfClass = extStructuralMetadataSchema.GetClass(categoryGltfName);
                         var schemaProperties = extStructuralMetadataSchema.GetProperties(gltfClass);
@@ -239,9 +246,10 @@ namespace CesiumIonRevitAddin.Gltf
                         }
                         schemaProperties.Add(gltfDefinitionName, categoryGltfProperty);
                     }
+
                 }
             }
-
+#endif
             rootNode.Children = new List<int>();
             xFormNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
@@ -347,7 +355,7 @@ namespace CesiumIonRevitAddin.Gltf
                 );
 
             newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
-            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
+            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
 
             // create a glTF property from any remaining Revit parameter not explicitly added above
             var parameterSet = element.Parameters;
@@ -489,7 +497,7 @@ namespace CesiumIonRevitAddin.Gltf
                          bufferViews,
                          geometryDataObject,
                          name,
-                         elementId.IntegerValue,
+                         (int)Util.GetElementIdAsLong(elementId),
                          preferences.Normals);
 
                     binaryFileData.Add(elementBinaryData);
@@ -896,7 +904,7 @@ namespace CesiumIonRevitAddin.Gltf
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return parameter.AsElementId().IntegerValue.ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
                 default:
                     return null;
             }

@@ -120,3 +120,9 @@ _ReSharper.*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
 packages/*
+
+# Bundle Folder
+AddinBundle/CesiumIonRevitAddin.bundle/Contents/*
+
+# Documentation
+!/documentation/*

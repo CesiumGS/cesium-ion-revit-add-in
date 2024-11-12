@@ -93,5 +93,14 @@ namespace CesiumIonRevitAddin.Utils
 
             return addinDirectory;
         }
+
+        public static long GetElementIdAsLong(ElementId elementId)
+        {
+#if REVIT2020 || REVIT2021 || REVIT2022 || REVIT2023
+            return (long)elementId.IntegerValue;
+#else
+            return elementId.Value;
+#endif
+        }
     }
 }
