@@ -291,23 +291,7 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("Completed model export.");
 
             // Write out the json for the tiler
-            TilerExportUtils.WriteTilerJson(preferences); // no error
-
-            // Execute the tiler
-            TilerExportUtils.RunTiler(preferences.JsonPath);
-
-            // Move the .3dtiles to the final location
-            if (preferences.Export3DTilesDB)
-            {
-                File.Copy(preferences.Temp3DTilesPath, preferences.OutputPath, overwrite: true);
-                File.Delete(preferences.Temp3DTilesPath);
-            }
-
-            // Remove the temp glTF directory
-            if (!preferences.KeepGltf)
-            {
-                Directory.Delete(preferences.TempDirectory, true);
-            }
+            TilerExportUtils.WriteTilerJson(preferences);
         }
 
         public bool IsCanceled()

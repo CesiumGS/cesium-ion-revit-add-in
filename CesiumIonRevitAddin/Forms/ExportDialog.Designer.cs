@@ -35,15 +35,15 @@
             this.internalOrigin = new System.Windows.Forms.RadioButton();
             this.sharedCoordinates = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.normals = new System.Windows.Forms.CheckBox();
             this.maxTextureSizeLabel = new System.Windows.Forms.Label();
             this.maxTextureSize = new System.Windows.Forms.ComboBox();
             this.links = new System.Windows.Forms.CheckBox();
-            this.textures = new System.Windows.Forms.CheckBox();
             this.materials = new System.Windows.Forms.CheckBox();
+            this.textures = new System.Windows.Forms.CheckBox();
             this.instancing = new System.Windows.Forms.CheckBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
-            this.normals = new System.Windows.Forms.CheckBox();
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -58,7 +58,7 @@
             this.Georeferencing.Controls.Add(this.sharedCoordinates);
             this.Georeferencing.Location = new System.Drawing.Point(12, 12);
             this.Georeferencing.Name = "Georeferencing";
-            this.Georeferencing.Size = new System.Drawing.Size(309, 80);
+            this.Georeferencing.Size = new System.Drawing.Size(310, 80);
             this.Georeferencing.TabIndex = 0;
             this.Georeferencing.TabStop = false;
             this.Georeferencing.Text = "Georeferencing";
@@ -67,7 +67,7 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(161, 22);
+            this.label1.Location = new System.Drawing.Point(162, 22);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(36, 13);
             this.label1.TabIndex = 3;
@@ -76,7 +76,7 @@
             // crsInput
             // 
             this.crsInput.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.crsInput.Location = new System.Drawing.Point(203, 19);
+            this.crsInput.Location = new System.Drawing.Point(204, 19);
             this.crsInput.Name = "crsInput";
             this.crsInput.Size = new System.Drawing.Size(100, 20);
             this.crsInput.TabIndex = 2;
@@ -119,16 +119,26 @@
             this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(309, 147);
+            this.groupBox1.Size = new System.Drawing.Size(310, 147);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
+            // 
+            // normals
+            // 
+            this.normals.AutoSize = true;
+            this.normals.Location = new System.Drawing.Point(6, 42);
+            this.normals.Name = "normals";
+            this.normals.Size = new System.Drawing.Size(64, 17);
+            this.normals.TabIndex = 6;
+            this.normals.Text = "Normals";
+            this.normals.UseVisualStyleBackColor = true;
             // 
             // maxTextureSizeLabel
             // 
             this.maxTextureSizeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.maxTextureSizeLabel.AutoSize = true;
-            this.maxTextureSizeLabel.Location = new System.Drawing.Point(147, 89);
+            this.maxTextureSizeLabel.Location = new System.Drawing.Point(148, 89);
             this.maxTextureSizeLabel.Name = "maxTextureSizeLabel";
             this.maxTextureSizeLabel.Size = new System.Drawing.Size(50, 13);
             this.maxTextureSizeLabel.TabIndex = 5;
@@ -143,7 +153,7 @@
             "4096",
             "2048",
             "1024"});
-            this.maxTextureSize.Location = new System.Drawing.Point(203, 86);
+            this.maxTextureSize.Location = new System.Drawing.Point(204, 86);
             this.maxTextureSize.Name = "maxTextureSize";
             this.maxTextureSize.Size = new System.Drawing.Size(100, 21);
             this.maxTextureSize.TabIndex = 4;
@@ -158,17 +168,6 @@
             this.links.Text = "Revit Links";
             this.links.UseVisualStyleBackColor = true;
             // 
-            // textures
-            // 
-            this.textures.AutoSize = true;
-            this.textures.Location = new System.Drawing.Point(6, 88);
-            this.textures.Name = "textures";
-            this.textures.Size = new System.Drawing.Size(67, 17);
-            this.textures.TabIndex = 2;
-            this.textures.Text = "Textures";
-            this.textures.UseVisualStyleBackColor = true;
-            this.textures.CheckedChanged += new System.EventHandler(this.Textures_CheckedChanged);
-            // 
             // materials
             // 
             this.materials.AutoSize = true;
@@ -179,6 +178,17 @@
             this.materials.Text = "Materials";
             this.materials.UseVisualStyleBackColor = true;
             this.materials.CheckedChanged += new System.EventHandler(this.Materials_CheckedChanged);
+            // 
+            // textures
+            // 
+            this.textures.AutoSize = true;
+            this.textures.Location = new System.Drawing.Point(6, 88);
+            this.textures.Name = "textures";
+            this.textures.Size = new System.Drawing.Size(67, 17);
+            this.textures.TabIndex = 2;
+            this.textures.Text = "Textures";
+            this.textures.UseVisualStyleBackColor = true;
+            this.textures.CheckedChanged += new System.EventHandler(this.Textures_CheckedChanged);
             // 
             // instancing
             // 
@@ -194,7 +204,7 @@
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(246, 256);
+            this.cancelButton.Location = new System.Drawing.Point(247, 256);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
@@ -204,7 +214,7 @@
             // exportButton
             // 
             this.exportButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.exportButton.Location = new System.Drawing.Point(165, 256);
+            this.exportButton.Location = new System.Drawing.Point(166, 256);
             this.exportButton.Name = "exportButton";
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
@@ -212,27 +222,18 @@
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.ExportButton_Click);
             // 
-            // normals
-            // 
-            this.normals.AutoSize = true;
-            this.normals.Location = new System.Drawing.Point(6, 42);
-            this.normals.Name = "normals";
-            this.normals.Size = new System.Drawing.Size(64, 17);
-            this.normals.TabIndex = 6;
-            this.normals.Text = "Normals";
-            this.normals.UseVisualStyleBackColor = true;
-            // 
             // ExportDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(333, 291);
+            this.ClientSize = new System.Drawing.Size(334, 291);
             this.Controls.Add(this.exportButton);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.Georeferencing);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "ExportDialog";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Export to 3D Tiles";
             this.Georeferencing.ResumeLayout(false);
             this.Georeferencing.PerformLayout();
