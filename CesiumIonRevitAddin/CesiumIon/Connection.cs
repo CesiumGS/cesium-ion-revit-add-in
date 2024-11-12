@@ -281,7 +281,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             var POSTContent = new StringContent(content.ToString(), Encoding.UTF8, "application/json");
 
             string token = GetAccessToken();
-            if (token == null)
+            if (string.IsNullOrEmpty(token))
             {
                 Debug.WriteLine("No access token found.");
                 return new ConnectionResult(ConnectionStatus.Failure, "No access token found.");
@@ -436,17 +436,17 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         public static bool IsConnected()
         {
-            return GetAccessToken() != null;
+            return !string.IsNullOrEmpty(GetAccessToken());
         }
 
         private static string GetSavedJsonValue(string key)
         {
             try
             {
-                var jsonObject = ReadConnectionData();
+                JObject jsonObject = ReadConnectionData();
 
-                if (jsonObject == null)
-                    return null;
+                if (!jsonObject.HasValues)
+                    return string.Empty;
 
                 if (jsonObject.TryGetValue(key, out var token))
                 {
@@ -455,14 +455,14 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 else
                 {
                     Debug.WriteLine($"{key} not found in JSON.");
-                    return null;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("An unexpected error occurred: " + ex.Message);
-                return null;
             }
+
+            return string.Empty;
         }
 
         public static void OpenBrowser(string url)
@@ -558,32 +558,30 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         private static JObject ReadConnectionData()
         {
-            if (!File.Exists(localUrl))
-            {
-                return null;
+            if (File.Exists(localUrl))
+            { 
+                try
+                {
+                    byte[] encryptedData = File.ReadAllBytes(localUrl);
+
+                    // Decrypt the data using DPAPI
+                    byte[] decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
+
+                    string jsonContent = Encoding.UTF8.GetString(decryptedData);
+
+                    return JObject.Parse(jsonContent);
+                }
+                catch (JsonReaderException ex)
+                {
+                    Debug.WriteLine("Failed to parse JSON: " + ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("An unexpected error occurred: " + ex.Message);
+                }
             }
 
-            try
-            {
-                byte[] encryptedData = File.ReadAllBytes(localUrl);
-
-                // Decrypt the data using DPAPI
-                byte[] decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
-
-                string jsonContent = Encoding.UTF8.GetString(decryptedData);
-
-                return JObject.Parse(jsonContent);
-            }
-            catch (JsonReaderException ex)
-            {
-                Debug.WriteLine("Failed to parse JSON: " + ex.Message);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("An unexpected error occurred: " + ex.Message);
-                return null;
-            }
+            return new JObject();
         }
 
     }
