@@ -4,14 +4,10 @@ using Autodesk.Revit.UI;
 using CesiumIonRevitAddin.CesiumIonClient;
 using CesiumIonRevitAddin.Utils;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Net.Sockets;
-using System.Net;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 using CesiumIonRevitAddin.Forms;
 
