@@ -230,7 +230,7 @@ namespace CesiumIonRevitAddin.Gltf
                     foreach (var obj in categories)
                     {
                         var category = (Category)obj;
-#if REVIT2020 || REVIT2021 || REVIT2022
+#if REVIT2022
                         string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(((BuiltInCategory)category.Id.IntegerValue).ToString());
 #else
                         string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());

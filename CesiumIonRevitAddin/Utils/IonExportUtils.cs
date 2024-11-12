@@ -146,12 +146,6 @@ namespace CesiumIonRevitAddin.Utils
             if (param == null)
                 return null;
 
-#if REVIT2020 || REVIT2021 || REVIT2022 || REVIT2023
-                string elementId = param.AsElementId().IntegerValue.ToString();
-#else
-                string elementId = param.AsElementId().Value.ToString();
-#endif
-
             switch (param.StorageType)
             {
                 case StorageType.String:
@@ -161,7 +155,7 @@ namespace CesiumIonRevitAddin.Utils
                 case StorageType.Double:
                     return param.AsDouble().ToString();
                 case StorageType.ElementId:
-                    return elementId;
+                    return Util.GetElementIdAsLong(param.AsElementId()).ToString(); ;
                 default:
                     return string.Empty;
             }
