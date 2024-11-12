@@ -10,10 +10,10 @@ namespace CesiumIonRevitAddin.Forms
     public partial class IonUploadDialog : Form
     {
         string assetUrl;
-        string zipPath;
-        string assetName;
-        string assetDesc;
-        string inputCrs;
+        readonly string zipPath;
+        readonly string assetName;
+        readonly string assetDesc;
+        readonly string inputCrs;
 
         public IonUploadDialog(string zipPath, string assetName, string assetDesc, string inputCrs)
         {

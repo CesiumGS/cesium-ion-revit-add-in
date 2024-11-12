@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    public class IonExportUtils
+    internal static class IonExportUtils
     {
         public static Preferences GetUserPreferences(Document doc)
         {

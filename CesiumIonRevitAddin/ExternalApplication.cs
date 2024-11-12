@@ -161,7 +161,7 @@ namespace CesiumIonRevitAddin
         }
 
         // Helper to find or create a panel by name
-        private RibbonPanel FindOrCreatePanel(UIControlledApplication application, string panelName)
+        private static RibbonPanel FindOrCreatePanel(UIControlledApplication application, string panelName)
         {
             var panels = application.GetRibbonPanels(RIBBONTAB);
             foreach (var existingPanel in panels)
