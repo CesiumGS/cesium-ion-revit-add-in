@@ -250,13 +250,7 @@ namespace CesiumIonRevitAddin.Export
                 // This has happened with structural elements.
                 // Exit if this is the case.
 
-
-
-#if REVIT2020 || REVIT2021 || REVIT2022 || REVIT2023
-                if (appearanceAssetId.IntegerValue == -1) return attachedBitmapInfo;
-#else
-                if (appearanceAssetId.Value == -1) return attachedBitmapInfo;
-#endif
+                if (Util.GetElementIdAsLong(appearanceAssetId) == -1) return attachedBitmapInfo;
 
                 AppearanceAssetElement appearanceAssetElem = document.GetElement(appearanceAssetId) as AppearanceAssetElement;
                 Asset renderingAsset = appearanceAssetElem.GetRenderingAsset();
@@ -446,7 +440,7 @@ namespace CesiumIonRevitAddin.Export
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return parameter.AsElementId().IntegerValue.ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
                 default:
                     return "Unsupported type";
             }

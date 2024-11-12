@@ -231,7 +231,7 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         var category = (Category)obj;
 #if REVIT2020 || REVIT2021 || REVIT2022
-                        string categoryGltfName = category.Name;  //TODO: Confirm this approach is ok
+                        string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(((BuiltInCategory)category.Id.IntegerValue).ToString());
 #else
                         string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
 #endif
@@ -357,7 +357,7 @@ namespace CesiumIonRevitAddin.Gltf
                 );
 
             newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
-            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
+            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
 
             // create a glTF property from any remaining Revit parameter not explicitly added above
             var parameterSet = element.Parameters;
@@ -499,7 +499,7 @@ namespace CesiumIonRevitAddin.Gltf
                          bufferViews,
                          geometryDataObject,
                          name,
-                         elementId.IntegerValue,
+                         (int)Util.GetElementIdAsLong(elementId),
                          preferences.Normals);
 
                     binaryFileData.Add(elementBinaryData);
@@ -906,7 +906,7 @@ namespace CesiumIonRevitAddin.Gltf
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return parameter.AsElementId().IntegerValue.ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
                 default:
                     return null;
             }
