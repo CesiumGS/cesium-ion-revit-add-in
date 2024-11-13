@@ -586,7 +586,10 @@ namespace CesiumIonRevitAddin.Export
 
         private static void SetGltfMaterialsProperties(MaterialNode materialNode, float opacity, ref GltfPbr gltfPbr, ref GltfMaterial gltfMaterial)
         {
-            gltfPbr.BaseColorFactor = new List<float>(4) { materialNode.Color.Red / 255f, materialNode.Color.Green / 255f, materialNode.Color.Blue / 255f, opacity };
+            // Some materials have an invalid color.  In this case, we use a default color.
+            Color baseColor = materialNode.Color.IsValid ? materialNode.Color : new Color(128, 128, 128);
+
+            gltfPbr.BaseColorFactor = new List<float>(4) { baseColor.Red / 255f, baseColor.Green / 255f, baseColor.Blue / 255f, opacity };
             gltfPbr.MetallicFactor = 0f;
             gltfPbr.RoughnessFactor = opacity < 1f ? 0.5f : 1f;
             gltfMaterial.PbrMetallicRoughness = gltfPbr;
