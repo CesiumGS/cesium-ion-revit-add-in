@@ -13,6 +13,8 @@ namespace CesiumIonRevitAddin.Utils
         // TODO: camel case. "Export to IFC" currently is "exporttoIFC"
         public static string GetGltfName(string input)
         {
+            // Revit enums usually start with "OST_". Remove it.
+            if (input.StartsWith("OST_")) input = input.Substring(4);
             var sb = new StringBuilder();
             for (int i = 0; i < input.Length; ++i)
             {
@@ -90,6 +92,15 @@ namespace CesiumIonRevitAddin.Utils
             string addinDirectory = Path.GetDirectoryName(assemblyLocation);
 
             return addinDirectory;
+        }
+
+        public static long GetElementIdAsLong(ElementId elementId)
+        {
+#if REVIT2020 || REVIT2021 || REVIT2022 || REVIT2023
+            return (long)elementId.IntegerValue;
+#else
+            return elementId.Value;
+#endif
         }
     }
 }

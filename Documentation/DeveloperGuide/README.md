@@ -14,7 +14,7 @@ This guide covers how to run and build in Visual Studio.
 ## Prerequisites
 
 - **Visual Studio 2022** - Install it from https://visualstudio.microsoft.com/downloads. 
-- **.NET Framework 4.8 and .NET 8** - These can be installed using the Visual Studio installer.  We recommend having the .NET desktop development workload installed.
+- **.NET Framework 4.8 and .NET 8** - These can be installed using the Visual Studio installer.  We recommend having ".NET desktop development" under the "Workloads" tab installed.
 
 ## Clone the Repository
 

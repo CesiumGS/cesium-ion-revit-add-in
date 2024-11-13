@@ -1,6 +1,8 @@
-﻿using CesiumIonRevitAddin.Utils;
+﻿using CesiumIonRevitAddin.Model;
+using CesiumIonRevitAddin.Utils;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace CesiumIonRevitAddin
 {
@@ -51,6 +53,40 @@ namespace CesiumIonRevitAddin
                 DateTime now = DateTime.Now;
                 var timeStr = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 logFile.WriteLine($"{timeStr}: {message}");
+            }
+        }
+
+        public void Log(GeometryDataObject geometryDataObject, bool printVertices = false)
+        {
+
+            double sumX = 0, sumY = 0, sumZ = 0;
+            int pointCount = geometryDataObject.Vertices.Count / 3;
+
+            for (int i = 0; i < geometryDataObject.Vertices.Count; i += 3)
+            {
+                sumX += geometryDataObject.Vertices[i];
+                sumY += geometryDataObject.Vertices[i + 1];
+                sumZ += geometryDataObject.Vertices[i + 2];
+            }
+
+            double centroidX = sumX / pointCount;
+            double centroidY = sumY / pointCount;
+            double centroidZ = sumZ / pointCount;
+
+            string formattedList = "";
+            if (printVertices)
+            {
+                formattedList = string.Join(", ", geometryDataObject.Vertices.Select(d => d.ToString("F2")));
+            }
+            lock (LogMutex)
+            {
+                DateTime now = DateTime.Now;
+                var timeStr = now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                logFile.WriteLine($"{timeStr}: Centroid: <{centroidX:F2}, {centroidY:F2}, {centroidZ:F2}>");            
+            if (printVertices)
+                {
+                    logFile.WriteLine($"{timeStr}: {formattedList}");
+                }
             }
         }
     }

@@ -13,9 +13,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("Release")]
 #endif
 
-[assembly: AssemblyCompany("Cesium")]
+[assembly: AssemblyCompany("Cesium GS, Inc.")]
 [assembly: AssemblyProduct("Cesium ion for Autodesk Revit")]
-[assembly: AssemblyCopyright("Copyright ©  2024")]
+[assembly: AssemblyCopyright("Copyright 2024 Cesium GS, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

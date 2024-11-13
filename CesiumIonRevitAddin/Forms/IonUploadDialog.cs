@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO;
 using CesiumIonRevitAddin.CesiumIonClient;
 using Autodesk.Revit.UI;
-using System.Diagnostics;
 
 
 namespace CesiumIonRevitAddin.Forms
@@ -12,10 +10,10 @@ namespace CesiumIonRevitAddin.Forms
     public partial class IonUploadDialog : Form
     {
         string assetUrl;
-        string zipPath;
-        string assetName;
-        string assetDesc;
-        string inputCrs;
+        readonly string zipPath;
+        readonly string assetName;
+        readonly string assetDesc;
+        readonly string inputCrs;
 
         public IonUploadDialog(string zipPath, string assetName, string assetDesc, string inputCrs)
         {
