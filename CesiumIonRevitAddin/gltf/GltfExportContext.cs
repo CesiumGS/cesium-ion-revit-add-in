@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Media.Media3D;
@@ -17,14 +18,18 @@ namespace CesiumIonRevitAddin.Gltf
     {
         private const char UNDERSCORE = '_';
         private readonly bool verboseLog = true;
-        private int instanceStackDepth = 0;
         private Autodesk.Revit.DB.Transform parentTransformInverse = null;
         private readonly Preferences preferences;
         private readonly View view;
         private Autodesk.Revit.DB.Element element;
         private readonly List<Document> documents = new List<Document>();
         private bool cancelation;
+        // We record instanceStackDepth separately from getting it via transformStack.Count because there are
+        // cases where OnInstanceBegin is immediately followed by OnInstanceEnd, then OnPolymesh is triggered.
+        // We detect and handle this case.
+        private int instanceStackDepth = 0;
         private readonly Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
+        private readonly Stack<Autodesk.Revit.DB.Transform> rawTransformStack = new Stack<Autodesk.Revit.DB.Transform>();
         private GltfNode xFormNode;
         private readonly List<GltfAccessor> accessors = new List<GltfAccessor>();
         private readonly List<GltfBufferView> bufferViews = new List<GltfBufferView>();
@@ -68,6 +73,26 @@ namespace CesiumIonRevitAddin.Gltf
 
         // TODO: make export not a singleton and remove Reset()
         private static void Reset() => RevitMaterials.materialIdDictionary.Clear();
+
+
+#if REVIT2022 || REVIT2023 || REVIT2024 || REVIT2025
+        // Classes like SpecTypeId.String contain Text, URI, and more.
+        // Rather than test for each individually, we get all properties of the class and check against those.
+        static bool IsSpecTypeMatch(ForgeTypeId forgeTypeId, Type specTypeClass)
+        {
+            if (!specTypeClass.IsClass)
+            {
+                throw new ArgumentException("The provided type must be a class containing ForgeTypeId properties.", nameof(specTypeClass));
+            }
+
+            // Retrieve all public static properties of type ForgeTypeId in the specified class
+            var specTypeIds = specTypeClass.GetProperties(BindingFlags.Public | BindingFlags.Static)
+                                           .Where(prop => prop.PropertyType == typeof(ForgeTypeId))
+                                           .Select(prop => (ForgeTypeId)prop.GetValue(null));
+
+            return specTypeIds.Contains(forgeTypeId);
+        }
+#endif
 
         public bool Start()
         {
@@ -155,6 +180,10 @@ namespace CesiumIonRevitAddin.Gltf
             AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
             AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
 
+            // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
+            // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
+            // For each parameter, get all all the bound Categories and add them to the glTF schema.
+#if !REVIT2020 && !REVIT2021
             BindingMap bindingMap = Doc.ParameterBindings;
             var iterator = bindingMap.ForwardIterator();
             while (iterator.MoveNext())
@@ -165,11 +194,7 @@ namespace CesiumIonRevitAddin.Gltf
 
                 if (definition is InternalDefinition internalDefinition)
                 {
-#if REVIT2020 || REVIT2021
-                    continue; // Skip for older versions of Revit
-#else
                     ForgeTypeId forgeTypeId = internalDefinition.GetDataType();
-
                     bool isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
 
                     var categoryGltfProperty = new Dictionary<string, Object>
@@ -178,16 +203,16 @@ namespace CesiumIonRevitAddin.Gltf
                         { "required", false }
                     };
 
-                    if (isMeasurable) // TODO: isMeasurable SHOULD equate to Revit's StorageType::Double
+                    if (isMeasurable) // TODO: Does isMeasurable equate to Revit's StorageType::Double?
                     {
                         categoryGltfProperty.Add("type", "SCALAR");
                         categoryGltfProperty.Add("componentType", "FLOAT32");
                     }
-                    else if (forgeTypeId == SpecTypeId.String.Text)
+                    else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.String)))
                     {
                         categoryGltfProperty.Add("type", "STRING");
                     }
-                    else if (forgeTypeId == SpecTypeId.Int.Integer)
+                    else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)))
                     {
                         categoryGltfProperty.Add("type", "SCALAR");
                         categoryGltfProperty.Add("componentType", "INT32");
@@ -195,6 +220,7 @@ namespace CesiumIonRevitAddin.Gltf
                     else
                     {
                         // no mapped ForgeTypeId
+                        // TODO: booleans are falling here
                         continue;
                     }
 
@@ -202,42 +228,28 @@ namespace CesiumIonRevitAddin.Gltf
                     foreach (var obj in categories)
                     {
                         var category = (Category)obj;
-                        var categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.Name);
-
-                        extStructuralMetadataSchema.AddCategory(category.Name);
-                        var class_ = extStructuralMetadataSchema.GetClass(categoryGltfName);
-                        var schemaProperties = extStructuralMetadataSchema.GetProperties(class_);
-                        schemaProperties.Add(CesiumIonRevitAddin.Utils.Util.GetGltfName(definition.Name), categoryGltfProperty);
+#if REVIT2022
+                        string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(((BuiltInCategory)category.Id.IntegerValue).ToString());
+#else
+                        string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
+#endif
+                        extStructuralMetadataSchema.AddCategory(categoryGltfName);
+                        var gltfClass = extStructuralMetadataSchema.GetClass(categoryGltfName);
+                        var schemaProperties = extStructuralMetadataSchema.GetProperties(gltfClass);
+                        string gltfDefinitionName = Util.GetGltfName(definition.Name);
+                        if (schemaProperties.ContainsKey(gltfDefinitionName))
+                        {
+                            // Duplicate keys can occur if a parameter shares a name.
+                            // This has happened before, though one was a shared and one a local parameter.
+                            // ID and the results of GetTypeId() (which is not the same) are the only guaranteed unique fields.
+                            gltfDefinitionName += "_" + internalDefinition.Id;
+                        }
+                        schemaProperties.Add(gltfDefinitionName, categoryGltfProperty);
                     }
 
-                    //// DEVEL
-                    //if (UnitUtils::IsMeasurableSpec(forgeTypeId)) {
-                    //	auto discipline = UnitUtils::GetDiscipline(forgeTypeId);
-                    //	gltfVersion.extras.Add(paramDefinitionName + "_discipline", discipline->TypeId);
-                    //	auto typeCatalog = UnitUtils::GetTypeCatalogStringForSpec(forgeTypeId);
-                    //	gltfVersion.extras.Add(paramDefinitionName + "_typeCatalog", typeCatalog);
-                    //}
-                    //auto isUnit = UnitUtils::IsUnit(forgeTypeId);
-                    //gltfVersion.extras.Add(paramDefinitionName + "_isUnit", isUnit);
-                    //auto isSymbol = UnitUtils::IsSymbol(forgeTypeId);
-                    //gltfVersion.extras.Add(paramDefinitionName + "_isSymbol", isSymbol);
-
-                    // https://forums.autodesk.com/t5/revit-api-forum/conversion-from-internal-to-revit-type-for-unittype/td-p/10452742
-                    // "For context, the ForgeTypeId properties directly in the SpecTypeId class identify the measurable data types, like SpecTypeId.Length or SpecTypeId.Mass. "
-                    // maybe use SpecTypeId comparisons to get data type
-                    //auto isSpec = SpecUtils::IsSpec(forgeTypeId); // "spec" is a unit. Maybe ship those with out units? (What about text?)
-                    //gltfVersion.extras.Add(paramDefinitionName + "_IsSpec", isSpec.ToString());
-
-                    //auto humanLabel = LabelUtils::GetLabelForSpec(forgeTypeId);
-                    //gltfVersion.extras.Add(paramDefinitionName + "_LabelUtils", humanLabel);
-
-                    // useful?
-                    // internalDefinition->GetParameterTypeId();        }
-
-#endif
                 }
             }
-
+#endif
             rootNode.Children = new List<int>();
             xFormNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
@@ -300,11 +312,13 @@ namespace CesiumIonRevitAddin.Gltf
         // This records if the latter has happened
         private bool onInstanceEndCompleted = false;
         private bool useCurrentInstanceTransform = false;
+        private bool shouldLogOnElementEnd = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             onInstanceEndCompleted = false;
             useCurrentInstanceTransform = false;
             parentTransformInverse = null;
+            shouldLogOnElementEnd = false;
 
             element = Doc.GetElement(elementId);
 
@@ -327,7 +341,8 @@ namespace CesiumIonRevitAddin.Gltf
                 linkTransformation = linkInstance.GetTransform();
             }
 
-            Logger.Instance.Log("Processing element " + element.Name);
+            Logger.Instance.Log("Processing element " + element.Name + ", ID: " + element.Id.ToString());
+            shouldLogOnElementEnd = true;
 
             var newNode = new GltfNode();
 
@@ -340,7 +355,7 @@ namespace CesiumIonRevitAddin.Gltf
                 );
 
             newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
-            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", element.LevelId.IntegerValue.ToString());
+            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
 
             // create a glTF property from any remaining Revit parameter not explicitly added above
             var parameterSet = element.Parameters;
@@ -423,6 +438,10 @@ namespace CesiumIonRevitAddin.Gltf
                 !Util.CanBeLockOrHidden(element, view))
             {
                 skipElementFlag = false;
+                if (shouldLogOnElementEnd)
+                {
+                    Logger.Instance.Log("...Finished Processing element " + element.Name);
+                }
                 return;
             }
 
@@ -473,13 +492,13 @@ namespace CesiumIonRevitAddin.Gltf
                     var name = kvp.Key;
                     var geometryDataObject = kvp.Value;
                     GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
-                        buffers,
-                        accessors,
-                        bufferViews,
-                        geometryDataObject,
-                        name,
-                        elementId.IntegerValue,
-                        preferences.Normals);
+                         buffers,
+                         accessors,
+                         bufferViews,
+                         geometryDataObject,
+                         name,
+                         (int)Util.GetElementIdAsLong(elementId),
+                         preferences.Normals);
 
                     binaryFileData.Add(elementBinaryData);
 
@@ -518,11 +537,14 @@ namespace CesiumIonRevitAddin.Gltf
                     geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
                 }
             }
+
+            element = Doc.GetElement(elementId);
+            Logger.Instance.Log("...Finished Processing element " + element.Name);
         }
 
         public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
         {
-            instanceStackDepth++;
+            this.instanceStackDepth++;
 
             // TODO: Note that instanceNode.GetTransform() always seems to be the full transform stack.
             // Chase down an example of instance transforms that actually stack
@@ -530,6 +552,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             var transformationMultiply = CurrentFullTransform.Multiply(instanceNode.GetTransform());
             transformStack.Push(transformationMultiply);
+            rawTransformStack.Push(instanceNode.GetTransform());
 
             return RenderNodeAction.Proceed;
         }
@@ -557,14 +580,15 @@ namespace CesiumIonRevitAddin.Gltf
             // Note: This method is invoked even for instances that were skipped.
 
             Autodesk.Revit.DB.Transform transform = transformStack.Pop();
+            rawTransformStack.Pop();
 
             if (!preferences.Instancing)
             {
                 return;
             }
 
-            // do not write to the node if there is an instance stack
-            // this happens with railings because the balusters are sub-instances of the railing instance
+            // Do not write to the node if there is an instance stack.
+            // This happens with railings because the balusters are sub-instances of the railing instance.
             if (instanceStackDepth > 0)
             {
                 return;
@@ -572,15 +596,14 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (!transform.IsIdentity)
             {
-
-                var currentNode = nodes.CurrentItem;
+                GltfNode currentNode = nodes.CurrentItem;
 
                 var currentNodeTransform = node.GetTransform();
                 if (useCurrentInstanceTransform) // for nodes with a non-root parent
                 {
                     if (!currentNodeTransform.IsIdentity)
                     {
-                        var outgoingMatrix = parentTransformInverse * currentNodeTransform;
+                        Autodesk.Revit.DB.Transform outgoingMatrix = parentTransformInverse * currentNodeTransform;
                         currentNode.Matrix = TransformToList(outgoingMatrix);
                     }
                 }
@@ -613,10 +636,8 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             documents.Add(node.GetDocument());
-
             transformStack.Push(CurrentFullTransform.Multiply(linkTransformation));
 
-            // We can either skip this instance or proceed with rendering it.
             return RenderNodeAction.Proceed;
         }
 
@@ -688,6 +709,7 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
             }
+            Logger.Instance.Log("...Ending OnRPC.");
         }
 
         public void OnLight(LightNode node)
@@ -774,12 +796,25 @@ namespace CesiumIonRevitAddin.Gltf
                 // i.e.: OnElementBegin->OnInstanceBegin->OnInstanceEnd->OnPolymesh
                 if (onInstanceEndCompleted && instanceStackDepth == 0)
                 {
-                    var inverse = cachedTransform.Inverse;
+                    Autodesk.Revit.DB.Transform inverse = cachedTransform.Inverse;
                     pts = pts.Select(p => inverse.OfPoint(p)).ToList();
                 }
-                else if (instanceStackDepth == 2)
+                // Transform stacks above 1 indicate a nested instance.
+                // This could be either from a nested instance in a single document. This has happened with part of a chair being an instance inside a chair instance.
+                // It would also be via a linked Revit document with its own transform stack.
+                // We need to multiply by everything except the transform deepest on the stack.
+                else if (rawTransformStack.Count == 2)
                 {
-                    pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
+                    pts = pts.Select(p => rawTransformStack.Peek().OfPoint(p)).ToList();
+                }
+                // Convert to a List so we can non-destructively multiply by everything except the base stack item.
+                else if (rawTransformStack.Count > 2)
+                {
+                    var rawTransformArray = rawTransformStack.ToArray();
+                    for (int i = 1; i < rawTransformArray.Length; i++)
+                    {
+                        pts = pts.Select(p => rawTransformArray[i].OfPoint(p)).ToList();
+                    }
                 }
             }
 
@@ -869,7 +904,7 @@ namespace CesiumIonRevitAddin.Gltf
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return parameter.AsElementId().IntegerValue.ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
                 default:
                     return null;
             }

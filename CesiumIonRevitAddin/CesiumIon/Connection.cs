@@ -62,7 +62,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
     {
         private readonly Stream _fileStream;
         private readonly IProgress<double> _progress;
-        private long _totalBytes;
+        private readonly long _totalBytes;
         private long _bytesUploaded = 0;
 
         public StreamContentWithProgress(Stream fileStream, IProgress<double> progress) : base(fileStream)
@@ -95,7 +95,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
         private static string apiServer;
         private static string clientID;
         private static string redirectUri;
-        private static string localUrl = Path.Combine(Util.GetAddinUserDataFolder(), "ion_token.json");
+        private static readonly string localUrl = Path.Combine(Util.GetAddinUserDataFolder(), "ion_token.json");
         private static string codeVerifier;
 
         public static void Disconnect()
@@ -281,7 +281,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             var POSTContent = new StringContent(content.ToString(), Encoding.UTF8, "application/json");
 
             string token = GetAccessToken();
-            if (token == null)
+            if (string.IsNullOrEmpty(token))
             {
                 Debug.WriteLine("No access token found.");
                 return new ConnectionResult(ConnectionStatus.Failure, "No access token found.");
@@ -406,9 +406,8 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                     if (!completionResponse.IsSuccessStatusCode)
                     {
                         string error = await completionResponse.Content.ReadAsStringAsync();
-                        return new ConnectionResult(ConnectionStatus.Failure, $"Completion notification failed: {completionResponse.StatusCode}");
+                        return new ConnectionResult(ConnectionStatus.Failure, $"Completion notification failed: {error}");
                     }
-
                     // Return success after the upload and completion notification
                     return new ConnectionResult(ConnectionStatus.Success, uriBuilder.Uri.ToString());
                 }
@@ -437,17 +436,17 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         public static bool IsConnected()
         {
-            return GetAccessToken() != null;
+            return !string.IsNullOrEmpty(GetAccessToken());
         }
 
         private static string GetSavedJsonValue(string key)
         {
             try
             {
-                var jsonObject = ReadConnectionData();
+                JObject jsonObject = ReadConnectionData();
 
-                if (jsonObject == null)
-                    return null;
+                if (!jsonObject.HasValues)
+                    return string.Empty;
 
                 if (jsonObject.TryGetValue(key, out var token))
                 {
@@ -456,14 +455,14 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 else
                 {
                     Debug.WriteLine($"{key} not found in JSON.");
-                    return null;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("An unexpected error occurred: " + ex.Message);
-                return null;
             }
+
+            return string.Empty;
         }
 
         public static void OpenBrowser(string url)
@@ -506,20 +505,18 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
             // Get the value of the 'code' parameter
             string code = queryParams["code"];
-            string state = queryParams["state"];
-
-
+            
             UriBuilder uriBuilder = new UriBuilder(apiServer);
             uriBuilder.Path = Path.Combine(uriBuilder.Path.TrimEnd('/'), "oauth/token/");
 
             Dictionary<string, string> parameters = new Dictionary<string, string>
-        {
-            { "grant_type", "authorization_code" },
-            { "client_id", clientID },
-            { "code", code },
-            { "redirect_uri", redirectUri },
-            { "code_verifier", codeVerifier}
-        };
+            {
+                { "grant_type", "authorization_code" },
+                { "client_id", clientID },
+                { "code", code },
+                { "redirect_uri", redirectUri },
+                { "code_verifier", codeVerifier}
+            };
             var POSTContent = new FormUrlEncodedContent(parameters);
 
             using (HttpResponseMessage responseMessageToken = await client.PostAsync(uriBuilder.Uri, POSTContent).ConfigureAwait(false))
@@ -538,10 +535,12 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         private static void WriteConnectionData(string token, string apiUrl, string ionUrl)
         {
-            JObject jsonObject = new JObject();
-            jsonObject["access_token"] = token;
-            jsonObject["api_url"] = apiUrl;
-            jsonObject["ion_url"] = ionUrl;
+            var jsonObject = new JObject
+            {
+                ["access_token"] = token,
+                ["api_url"] = apiUrl,
+                ["ion_url"] = ionUrl
+            };
             
             // Encrypt the JSON string using DPAPI
             byte[] encryptedData = ProtectedData.Protect(Encoding.UTF8.GetBytes(jsonObject.ToString()), null, DataProtectionScope.CurrentUser);
@@ -559,32 +558,30 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         private static JObject ReadConnectionData()
         {
-            if (!File.Exists(localUrl))
-            {
-                return null;
+            if (File.Exists(localUrl))
+            { 
+                try
+                {
+                    byte[] encryptedData = File.ReadAllBytes(localUrl);
+
+                    // Decrypt the data using DPAPI
+                    byte[] decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
+
+                    string jsonContent = Encoding.UTF8.GetString(decryptedData);
+
+                    return JObject.Parse(jsonContent);
+                }
+                catch (JsonReaderException ex)
+                {
+                    Debug.WriteLine("Failed to parse JSON: " + ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("An unexpected error occurred: " + ex.Message);
+                }
             }
 
-            try
-            {
-                byte[] encryptedData = File.ReadAllBytes(localUrl);
-
-                // Decrypt the data using DPAPI
-                byte[] decryptedData = ProtectedData.Unprotect(encryptedData, null, DataProtectionScope.CurrentUser);
-
-                string jsonContent = Encoding.UTF8.GetString(decryptedData);
-
-                return JObject.Parse(jsonContent);
-            }
-            catch (JsonReaderException ex)
-            {
-                Debug.WriteLine("Failed to parse JSON: " + ex.Message);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("An unexpected error occurred: " + ex.Message);
-                return null;
-            }
+            return new JObject();
         }
 
     }
