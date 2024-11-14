@@ -58,7 +58,7 @@ namespace CesiumIonRevitAddin
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-to-bracket-solid.png"), UriKind.Absolute)),
                 ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted"
             };
-            
+
             // Create Sign Out button
             PushButtonData pushButtonDataSignOut = new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
             {
@@ -72,14 +72,14 @@ namespace CesiumIonRevitAddin
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "cloud-arrow-up-solid.png"), UriKind.Absolute)),
                 ToolTip = "Uploads the current 3D View to Cesium ion"
             };
-            
+
             // Create Export button
             PushButtonData pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute)),
                 ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk"
             };
-            
+
             // Create Learn button
             PushButtonData pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
             {
@@ -93,7 +93,16 @@ namespace CesiumIonRevitAddin
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "handshake-solid.png"), UriKind.Absolute)),
                 ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum"
             };
-            
+
+            // Create help
+            string helpFilePath = Path.Combine(Path.GetDirectoryName(addInPath), "help.html");
+            ContextualHelp help = new ContextualHelp(ContextualHelpType.Url, helpFilePath);
+
+            // Add help to buttons - NOTE: This must be done before adding to panels
+            pushButtonDataConnect.SetContextualHelp(help);
+            pushButtonDataSignOut.SetContextualHelp(help);
+            pushButtonDataUpload.SetContextualHelp(help);
+
             // Add to Cesium tab
             RibbonPanel panelCesiumIon = FindOrCreatePanel(application, CESIUM_ION_PANEL);
             RibbonPanel panel3DTiles = FindOrCreatePanel(application, TILES_PANEL);
