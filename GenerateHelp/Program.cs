@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace GenerateHelp
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
@@ -46,29 +46,27 @@ namespace GenerateHelp
 
             var matches = regex.Matches(htmlContent);
 
-            foreach (Match match in matches)
+            foreach (var match in matches.Where(m => m.Groups.Count > 1))
             {
-                if (match.Groups.Count > 1)
+                string imagePath = match.Groups[1].Value;
+
+                // Handle relative and absolute paths
+                string fullImagePath = Path.IsPathRooted(imagePath) ? imagePath : Path.Combine(markdownDir, imagePath);
+
+                if (File.Exists(fullImagePath))
                 {
-                    string imagePath = match.Groups[1].Value;
+                    string base64Image = ConvertImageToBase64(fullImagePath);
+                    string mimeType = GetImageMimeType(fullImagePath);
 
-                    // Handle relative and absolute paths
-                    string fullImagePath = Path.IsPathRooted(imagePath) ? imagePath : Path.Combine(markdownDir, imagePath);
+                    string base64ImageTag = $"data:image/{mimeType};base64,{base64Image}";
 
-                    if (File.Exists(fullImagePath))
-                    {
-                        string base64Image = ConvertImageToBase64(fullImagePath);
-                        string mimeType = GetImageMimeType(fullImagePath);
-
-                        string base64ImageTag = $"data:image/{mimeType};base64,{base64Image}";
-
-                        htmlContent = htmlContent.Replace(imagePath, base64ImageTag);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Warning: Image not found: {fullImagePath}");
-                    }
+                    htmlContent = htmlContent.Replace(imagePath, base64ImageTag);
                 }
+                else
+                {
+                    Console.WriteLine($"Warning: Image not found: {fullImagePath}");
+                }
+
             }
 
             return htmlContent;
