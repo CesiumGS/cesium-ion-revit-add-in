@@ -47,42 +47,48 @@ namespace CesiumIonRevitAddin
             PushButtonData pushButtonDataConnect = new PushButtonData("ConnectToIon", "Connect", addInPath, "CesiumIonRevitAddin.ConnectToIon")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-to-bracket-solid.png"), UriKind.Absolute)),
-                ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted"
+                ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted.",
+                LongDescription = "The Connect function allows you to establish a connection between Autodesk Revit and Cesium ion, either through the cloud-based Cesium ion service or a locally hosted instance of Cesium ion. This connection enables seamless integration of 3D models and geospatial data into Cesium’s platform, allowing you to visualize, manage, and share your architectural and geospatial models in a high-performance, interactive 3D environment."
             };
             
             // Create Sign Out button
             PushButtonData pushButtonDataSignOut = new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-from-bracket-solid.png"), UriKind.Absolute)),
-                ToolTip = "Signs out from the current Cesium ion server"
+                ToolTip = "Signs out from the current Cesium ion server.",
+                LongDescription = "The Sign Out function allows you to log out of your current Cesium ion session. This action disconnects your Autodesk Revit session from the Cesium ion server, ensuring that any ongoing operations requiring a Cesium ion connection (such as uploading models or accessing hosted assets) are terminated. After signing out, you’ll need to sign in again to re-establish a connection."
             };
             
             // Create Upload button
             PushButtonData pushButtonDataUpload = new PushButtonData("ExportToIon", "Upload", addInPath, "CesiumIonRevitAddin.ExportToIon")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "cloud-arrow-up-solid.png"), UriKind.Absolute)),
-                ToolTip = "Uploads the current 3D View to Cesium ion"
+                ToolTip = "Uploads the current 3D View to Cesium ion.",
+                LongDescription = "The Upload function enables you to send your current 3D View directly to Cesium ion. Your 3D model will be stored on Cesium ion’s platform. This operation creates a cloud-hosted version of your model, making it accessible from anywhere and optimizing it for use in Cesium-based applications or visualizations."
             };
             
             // Create Export button
             PushButtonData pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute)),
-                ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk"
+                ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk.",
+                LongDescription = "The Export function allows you to export your current 3D view or model in Autodesk Revit as a 3D Tiles tileset. 3D Tiles is an open format optimized for streaming and rendering large-scale 3D geospatial data, widely supported by Cesium’s platform. The export process creates a folder containing all the necessary tileset data, which can then be stored locally on disk, used for offline access, or integrated into other 3D visualization environments."
             };
             
             // Create Learn button
             PushButtonData pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "book-open-reader-solid.png"), UriKind.Absolute)),
-                ToolTip = "Open Cesium tutorials and learning resources"
+                ToolTip = "Opens Cesium tutorials and learning resources.",
+                LongDescription = "The Learn function provides quick access to Cesium’s comprehensive collection of tutorials, documentation, and educational materials. From beginner to expert, these structured resources and tutorials will help you understand how to integrate and visualize 3D models, geospatial data, and more."
             };
 
             // Create Help button
             PushButtonData pushButtonDataHelp = new PushButtonData("Help", "Help", addInPath, "CesiumIonRevitAddin.CommunityForum")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "circle-question.png"), UriKind.Absolute)),
-                ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum"
+                ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum.",
+                LongDescription = "The Help function allows you to access the Cesium Community Forum. It is an active community of developers and geospatial professionals who share their knowledge, troubleshoot problems, and discuss best practices. If you can’t find an existing answer to your question, you can post a new inquiry to get help from the Cesium community or Cesium support team."
             };
             
             // Add to Cesium tab
