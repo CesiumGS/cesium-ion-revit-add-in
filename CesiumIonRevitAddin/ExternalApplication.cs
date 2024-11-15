@@ -120,10 +120,6 @@ namespace CesiumIonRevitAddin
             pushButtonSignOut.Enabled = isConnected;       // Enable Sign Out if connected
             pushButtonSignOut.Visible = isConnected;       // Show Sign Out if connected
             pushButtonUpload.Enabled = isConnected;        // Enable Upload if connected
-
-#if DEBUG
-            pushButtonExportDisk.Enabled = isConnected;    // Enable Export to Disk if connected
-#endif
         }
 
         // Static method to allow access to UpdateButtonStates from other commands
