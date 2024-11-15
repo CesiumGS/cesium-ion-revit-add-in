@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExportDialog));
             this.Georeferencing = new System.Windows.Forms.GroupBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -44,6 +45,7 @@
             this.instancing = new System.Windows.Forms.CheckBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
+            this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -80,6 +82,8 @@
             this.crsInput.Name = "crsInput";
             this.crsInput.Size = new System.Drawing.Size(100, 20);
             this.crsInput.TabIndex = 2;
+            this.toolTip.SetToolTip(this.crsInput, "The EPSG code corresponding to the shared coordinates of the project.  Used to ac" +
+        "curately position the project on the globe.");
             this.crsInput.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.CrsInput_KeyPress);
             // 
             // internalOrigin
@@ -91,6 +95,7 @@
             this.internalOrigin.TabIndex = 1;
             this.internalOrigin.TabStop = true;
             this.internalOrigin.Text = "Internal Origin";
+            this.toolTip.SetToolTip(this.internalOrigin, "Positions the geometry relative to Revit’s Internal Origin.");
             this.internalOrigin.UseVisualStyleBackColor = true;
             // 
             // sharedCoordinates
@@ -102,6 +107,8 @@
             this.sharedCoordinates.TabIndex = 0;
             this.sharedCoordinates.TabStop = true;
             this.sharedCoordinates.Text = "Shared Coordinates";
+            this.toolTip.SetToolTip(this.sharedCoordinates, "Positions the geometry relative to Revit’s shared coordinates and aligned to True" +
+        " North.");
             this.sharedCoordinates.UseVisualStyleBackColor = true;
             this.sharedCoordinates.CheckedChanged += new System.EventHandler(this.SharedCoordinates_CheckedChanged);
             // 
@@ -127,18 +134,19 @@
             // normals
             // 
             this.normals.AutoSize = true;
-            this.normals.Location = new System.Drawing.Point(6, 42);
+            this.normals.Location = new System.Drawing.Point(6, 19);
             this.normals.Name = "normals";
             this.normals.Size = new System.Drawing.Size(64, 17);
             this.normals.TabIndex = 6;
             this.normals.Text = "Normals";
+            this.toolTip.SetToolTip(this.normals, "Exports surface normals for geometry.");
             this.normals.UseVisualStyleBackColor = true;
             // 
             // maxTextureSizeLabel
             // 
             this.maxTextureSizeLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.maxTextureSizeLabel.AutoSize = true;
-            this.maxTextureSizeLabel.Location = new System.Drawing.Point(148, 89);
+            this.maxTextureSizeLabel.Location = new System.Drawing.Point(148, 66);
             this.maxTextureSizeLabel.Name = "maxTextureSizeLabel";
             this.maxTextureSizeLabel.Size = new System.Drawing.Size(50, 13);
             this.maxTextureSizeLabel.TabIndex = 5;
@@ -153,10 +161,11 @@
             "4096",
             "2048",
             "1024"});
-            this.maxTextureSize.Location = new System.Drawing.Point(204, 86);
+            this.maxTextureSize.Location = new System.Drawing.Point(204, 63);
             this.maxTextureSize.Name = "maxTextureSize";
             this.maxTextureSize.Size = new System.Drawing.Size(100, 21);
             this.maxTextureSize.TabIndex = 4;
+            this.toolTip.SetToolTip(this.maxTextureSize, "Resizes textures to a maximum resolution, which can help reduce memory usage.");
             // 
             // links
             // 
@@ -166,38 +175,43 @@
             this.links.Size = new System.Drawing.Size(79, 17);
             this.links.TabIndex = 3;
             this.links.Text = "Revit Links";
+            this.toolTip.SetToolTip(this.links, "Exports geometry for Revit files linked to the project.");
             this.links.UseVisualStyleBackColor = true;
             // 
             // materials
             // 
             this.materials.AutoSize = true;
-            this.materials.Location = new System.Drawing.Point(6, 65);
+            this.materials.Location = new System.Drawing.Point(6, 42);
             this.materials.Name = "materials";
             this.materials.Size = new System.Drawing.Size(68, 17);
             this.materials.TabIndex = 1;
             this.materials.Text = "Materials";
+            this.toolTip.SetToolTip(this.materials, "Exports materials using color values from Revit.");
             this.materials.UseVisualStyleBackColor = true;
             this.materials.CheckedChanged += new System.EventHandler(this.Materials_CheckedChanged);
             // 
             // textures
             // 
             this.textures.AutoSize = true;
-            this.textures.Location = new System.Drawing.Point(6, 88);
+            this.textures.Location = new System.Drawing.Point(6, 65);
             this.textures.Name = "textures";
             this.textures.Size = new System.Drawing.Size(67, 17);
             this.textures.TabIndex = 2;
             this.textures.Text = "Textures";
+            this.toolTip.SetToolTip(this.textures, "Exports color textures for materials if present.");
             this.textures.UseVisualStyleBackColor = true;
             this.textures.CheckedChanged += new System.EventHandler(this.Textures_CheckedChanged);
             // 
             // instancing
             // 
             this.instancing.AutoSize = true;
-            this.instancing.Location = new System.Drawing.Point(6, 19);
+            this.instancing.Location = new System.Drawing.Point(6, 88);
             this.instancing.Name = "instancing";
-            this.instancing.Size = new System.Drawing.Size(75, 17);
+            this.instancing.Size = new System.Drawing.Size(101, 17);
             this.instancing.TabIndex = 0;
-            this.instancing.Text = "Instancing";
+            this.instancing.Text = "GPU Instancing";
+            this.toolTip.SetToolTip(this.instancing, "Detects and uses instancing for eligible geometry on export. This can optimize re" +
+        "ndering performance and reduce memory usage.");
             this.instancing.UseVisualStyleBackColor = true;
             // 
             // cancelButton
@@ -209,6 +223,7 @@
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
             this.cancelButton.Text = "Cancel";
+            this.toolTip.SetToolTip(this.cancelButton, "Cancel the upload.");
             this.cancelButton.UseVisualStyleBackColor = true;
             // 
             // exportButton
@@ -219,6 +234,7 @@
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
             this.exportButton.Text = "Upload";
+            this.toolTip.SetToolTip(this.exportButton, "Upload the 3D View to Cesium ion.");
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.ExportButton_Click);
             // 
@@ -261,5 +277,6 @@
         private System.Windows.Forms.Label maxTextureSizeLabel;
         private System.Windows.Forms.ComboBox maxTextureSize;
         private System.Windows.Forms.CheckBox normals;
+        private System.Windows.Forms.ToolTip toolTip;
     }
 }
