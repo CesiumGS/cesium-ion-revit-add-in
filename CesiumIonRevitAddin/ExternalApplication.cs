@@ -34,15 +34,6 @@ namespace CesiumIonRevitAddin
         private PushButton pushButtonSignOut;
         private PushButton pushButtonUpload;
         private PushButton pushButtonExportDisk;
-        private PushButton pushButtonLearn;
-        private PushButton pushButtonHelp;
-
-        private PushButton pushButtonConnectAddin;
-        private PushButton pushButtonSignOutAddin;
-        private PushButton pushButtonUploadAddin;
-        private PushButton pushButtonExportDiskAddin;
-        private PushButton pushButtonLearnAddin;
-        private PushButton pushButtonHelpAddin;
 
         public Result OnStartup(UIControlledApplication application)
         {
@@ -105,27 +96,8 @@ namespace CesiumIonRevitAddin
 #if DEBUG
             pushButtonExportDisk = panel3DTiles.AddItem(pushButtonDataExportDisk) as PushButton;
 #endif
-            pushButtonLearn = panelSupport.AddItem(pushButtonDataLearn) as PushButton;
-            pushButtonHelp = panelSupport.AddItem(pushButtonDataHelp) as PushButton;
-
-            // Add to Add-in tab
-            RibbonPanel ribbonPanel = application.CreateRibbonPanel("Cesium");
-
-            // Create main pulldown button
-            PulldownButtonData pullDownButtonData = new PulldownButtonData("CesiumButton", "Cesium");
-            pullDownButtonData.LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute));
-            PulldownButton pullDownButtonCesium = ribbonPanel.AddItem(pullDownButtonData) as PulldownButton;
-
-            pushButtonConnectAddin = pullDownButtonCesium.AddPushButton(pushButtonDataConnect);
-            pushButtonSignOutAddin = pullDownButtonCesium.AddPushButton(pushButtonDataSignOut);
-            pullDownButtonCesium.AddSeparator();
-            pushButtonUploadAddin = pullDownButtonCesium.AddPushButton(pushButtonDataUpload);
-#if DEBUG
-            pushButtonExportDiskAddin = pullDownButtonCesium.AddPushButton(pushButtonDataExportDisk);
-#endif
-            pullDownButtonCesium.AddSeparator();
-            pushButtonLearnAddin = pullDownButtonCesium.AddPushButton(pushButtonDataLearn);
-            pushButtonHelpAddin = pullDownButtonCesium.AddPushButton(pushButtonDataHelp);
+            panelSupport.AddItem(pushButtonDataLearn);
+            panelSupport.AddItem(pushButtonDataHelp);
 
             // Initially update button states based on connection status
             UpdateButtonStates();
@@ -149,15 +121,8 @@ namespace CesiumIonRevitAddin
             pushButtonSignOut.Visible = isConnected;       // Show Sign Out if connected
             pushButtonUpload.Enabled = isConnected;        // Enable Upload if connected
 
-            pushButtonConnectAddin.Enabled = !isConnected;      // Enable Connect if not connected
-            pushButtonConnectAddin.Visible = !isConnected;      // Show Connect if not connected
-            pushButtonSignOutAddin.Enabled = isConnected;       // Enable Sign Out if connected
-            pushButtonSignOutAddin.Visible = isConnected;       // Show Sign Out if connected
-            pushButtonUploadAddin.Enabled = isConnected;        // Enable Upload if connected
-
 #if DEBUG
             pushButtonExportDisk.Enabled = isConnected;    // Enable Export to Disk if connected
-            pushButtonExportDiskAddin.Enabled = isConnected;    // Enable Export to Disk if connected
 #endif
         }
 
