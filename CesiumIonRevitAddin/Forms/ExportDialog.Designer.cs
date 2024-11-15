@@ -218,7 +218,7 @@
             this.exportButton.Name = "exportButton";
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
-            this.exportButton.Text = "Save";
+            this.exportButton.Text = "Upload";
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.ExportButton_Click);
             // 
