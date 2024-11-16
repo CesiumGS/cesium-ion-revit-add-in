@@ -83,4 +83,24 @@
     </ItemGroup>
   </Target>
 
+  <!-- Track if we have built the GenerateHelp tool -->
+  <PropertyGroup>
+    <GenerateHelpBuilt>false</GenerateHelpBuilt>
+  </PropertyGroup>
+
+  <!-- Build the GenerateHelp tool once, to ensure it is up-to-date for all projects -->
+  <Target Name="BuildGenerateHelp" BeforeTargets="PrepareForBuild" Condition="'$(GenerateHelpBuilt)' == 'false'">
+    <Message Text="Executing BuildGenerateHelp target to ensure GenerateHelp is up-to-date." Importance="high" />
+    <MSBuild Projects="$(SolutionDir)GenerateHelp\GenerateHelp.csproj" Targets="Build" Properties="Configuration=Release" />
+    <PropertyGroup>
+      <GenerateHelpBuilt>true</GenerateHelpBuilt>
+    </PropertyGroup>
+  </Target>
+  
+  <!-- Convert markdown to html for each project -->
+  <Target Name="GenerateHtmlHelp" AfterTargets="Build">
+    <Exec Command="&quot;$(SolutionDir)GenerateHelp\bin\Release\net8.0\GenerateHelp.exe&quot; &quot;$(SolutionDir)README.md&quot; &quot;$(TargetDir)help.html&quot;" />
+  </Target>
+
+
 </Project>
