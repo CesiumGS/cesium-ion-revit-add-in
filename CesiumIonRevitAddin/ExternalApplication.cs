@@ -44,7 +44,7 @@ namespace CesiumIonRevitAddin
             CreateRibbonTab(application, RIBBONTAB);
 
             // Create Connect button
-            PushButtonData pushButtonDataConnect = new PushButtonData("ConnectToIon", "Connect", addInPath, "CesiumIonRevitAddin.ConnectToIon")
+            var pushButtonDataConnect = new PushButtonData("ConnectToIon", "Connect", addInPath, "CesiumIonRevitAddin.ConnectToIon")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-to-bracket-solid.png"), UriKind.Absolute)),
                 ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted.",
@@ -52,7 +52,7 @@ namespace CesiumIonRevitAddin
             };
 
             // Create Sign Out button
-            PushButtonData pushButtonDataSignOut = new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
+            var pushButtonDataSignOut = new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-from-bracket-solid.png"), UriKind.Absolute)),
                 ToolTip = "Signs out from the current Cesium ion server.",
@@ -60,7 +60,7 @@ namespace CesiumIonRevitAddin
             };
             
             // Create Upload button
-            PushButtonData pushButtonDataUpload = new PushButtonData("ExportToIon", "Upload", addInPath, "CesiumIonRevitAddin.ExportToIon")
+            var pushButtonDataUpload = new PushButtonData("ExportToIon", "Upload", addInPath, "CesiumIonRevitAddin.ExportToIon")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "cloud-arrow-up-solid.png"), UriKind.Absolute)),
                 ToolTip = "Uploads the current 3D View to Cesium ion.",
@@ -68,7 +68,7 @@ namespace CesiumIonRevitAddin
             };
 
             // Create Export button
-            PushButtonData pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
+            var pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute)),
                 ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk.",
@@ -76,7 +76,7 @@ namespace CesiumIonRevitAddin
             };
 
             // Create Learn button
-            PushButtonData pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
+            var pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "book-open-reader-solid.png"), UriKind.Absolute)),
                 ToolTip = "Opens Cesium tutorials and learning resources.",
@@ -84,7 +84,7 @@ namespace CesiumIonRevitAddin
             };
 
             // Create Help button
-            PushButtonData pushButtonDataHelp = new PushButtonData("Help", "Help", addInPath, "CesiumIonRevitAddin.CommunityForum")
+            var pushButtonDataHelp = new PushButtonData("Help", "Help", addInPath, "CesiumIonRevitAddin.CommunityForum")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "circle-question.png"), UriKind.Absolute)),
                 ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum.",
@@ -300,7 +300,7 @@ namespace CesiumIonRevitAddin
             string inputCrs = preferences.EpsgCode != "" && preferences.SharedCoordinates ? $"EPSG:{preferences.EpsgCode}" : "";
 
             // The upload dialog handles the upload process
-            using (IonUploadDialog ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs))
+            using (var ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs))
             {
                 ionUploadDialog.ShowDialog();
             }
@@ -323,7 +323,7 @@ namespace CesiumIonRevitAddin
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            using (IonConnectDialog ionConnectDialog = new IonConnectDialog())
+            using (var ionConnectDialog = new IonConnectDialog())
             {
                 ionConnectDialog.ShowDialog();
             }
