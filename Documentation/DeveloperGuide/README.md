@@ -73,5 +73,7 @@ The following steps can be used to create a bundle that supports multiple versio
 
 1. Switch the Solution **Configuration** to **Release** in Visual Studio.
 2. Right click on the Solution and choose **Rebuild**.
-3. Execute the powershell script [bundle.ps1](/AddinBundle/bundle.ps1)
-4. All Release builds will be copied into the [/AddinBundle/CesiumIonRevitAddin.bundle](/AddinBundle/CesiumIonRevitAddin.bundle) folder, which can be copied into `C:\ProgramData\Autodesk\ApplicationPlugins` 
+3. Execute the batch file [BundleDebug.bat](/AddinBundle/BundleDebug.bat) or [BundleRelease.bat](/AddinBundle/BundleRelease.bat) depending on which configuration you want to bundle
+4. All builds from individual projects will be copied into the [/AddinBundle/CesiumIonRevitAddin.bundle](/AddinBundle/CesiumIonRevitAddin.bundle) folder
+5. To test the bundle with Revit, execute the batch file [CopyBundleToRevit.bat](/AddinBundle/CopyBundleToRevit.bat).  This will copy the bundle to `C:\ProgramData\Autodesk\ApplicationPlugins\CesiumIonRevitAddin.bundle`, which will make the add-in available to all currently installed and supported versions of Revit.  NOTE: This will override any existing bundle in the same location
+6. The final bundle can be uploaded to the Autodesk App Store for new releases
