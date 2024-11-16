@@ -34,15 +34,6 @@ namespace CesiumIonRevitAddin
         private PushButton pushButtonSignOut;
         private PushButton pushButtonUpload;
         private PushButton pushButtonExportDisk;
-        private PushButton pushButtonLearn;
-        private PushButton pushButtonHelp;
-
-        private PushButton pushButtonConnectAddin;
-        private PushButton pushButtonSignOutAddin;
-        private PushButton pushButtonUploadAddin;
-        private PushButton pushButtonExportDiskAddin;
-        private PushButton pushButtonLearnAddin;
-        private PushButton pushButtonHelpAddin;
 
         public Result OnStartup(UIControlledApplication application)
         {
@@ -56,42 +47,48 @@ namespace CesiumIonRevitAddin
             PushButtonData pushButtonDataConnect = new PushButtonData("ConnectToIon", "Connect", addInPath, "CesiumIonRevitAddin.ConnectToIon")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-to-bracket-solid.png"), UriKind.Absolute)),
-                ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted"
+                ToolTip = "Connects to Cesium ion or Cesium ion Self Hosted.",
+                LongDescription = "The Connect function allows you to establish a connection between Autodesk Revit and Cesium ion, either through the cloud-based Cesium ion service or a locally hosted instance of Cesium ion. This connection enables seamless integration of 3D models and geospatial data into Cesium’s platform, allowing you to visualize, manage, and share your architectural and geospatial models in a high-performance, interactive 3D environment."
             };
 
             // Create Sign Out button
             PushButtonData pushButtonDataSignOut = new PushButtonData("SignOut", "Sign Out", addInPath, "CesiumIonRevitAddin.Disconnect")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "right-from-bracket-solid.png"), UriKind.Absolute)),
-                ToolTip = "Signs out from the current Cesium ion server"
+                ToolTip = "Signs out from the current Cesium ion server.",
+                LongDescription = "The Sign Out function allows you to log out of your current Cesium ion session. This action disconnects your Autodesk Revit session from the Cesium ion server, ensuring that any ongoing operations requiring a Cesium ion connection (such as uploading models or accessing hosted assets) are terminated. After signing out, you’ll need to sign in again to re-establish a connection."
             };
             
             // Create Upload button
             PushButtonData pushButtonDataUpload = new PushButtonData("ExportToIon", "Upload", addInPath, "CesiumIonRevitAddin.ExportToIon")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "cloud-arrow-up-solid.png"), UriKind.Absolute)),
-                ToolTip = "Uploads the current 3D View to Cesium ion"
+                ToolTip = "Uploads the current 3D View to Cesium ion.",
+                LongDescription = "The Upload function enables you to send your current 3D View directly to Cesium ion. Your 3D model will be stored on Cesium ion’s platform. This operation creates a cloud-hosted version of your model, making it accessible from anywhere and optimizing it for use in Cesium-based applications or visualizations."
             };
 
             // Create Export button
             PushButtonData pushButtonDataExportDisk = new PushButtonData("ExportToDisk", "Export", addInPath, "CesiumIonRevitAddin.ExportToDisk")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "file-export-solid.png"), UriKind.Absolute)),
-                ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk"
+                ToolTip = "Exports the current 3D View into a 3D Tiles tileset on disk.",
+                LongDescription = "The Export function allows you to export your current 3D view or model in Autodesk Revit as a 3D Tiles tileset. 3D Tiles is an open format optimized for streaming and rendering large-scale 3D geospatial data, widely supported by Cesium’s platform. The export process creates a folder containing all the necessary tileset data, which can then be stored locally on disk, used for offline access, or integrated into other 3D visualization environments."
             };
 
             // Create Learn button
             PushButtonData pushButtonDataLearn = new PushButtonData("Learn", "Learn", addInPath, "CesiumIonRevitAddin.LearningContent")
             {
                 LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "book-open-reader-solid.png"), UriKind.Absolute)),
-                ToolTip = "Open Cesium tutorials and learning resources"
+                ToolTip = "Opens Cesium tutorials and learning resources.",
+                LongDescription = "The Learn function provides quick access to Cesium’s comprehensive collection of tutorials, documentation, and educational materials. From beginner to expert, these structured resources and tutorials will help you understand how to integrate and visualize 3D models, geospatial data, and more."
             };
 
             // Create Help button
             PushButtonData pushButtonDataHelp = new PushButtonData("Help", "Help", addInPath, "CesiumIonRevitAddin.CommunityForum")
             {
-                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "handshake-solid.png"), UriKind.Absolute)),
-                ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum"
+                LargeImage = new BitmapImage(new Uri(Path.Combine(fontAwesomeFolder, "circle-question.png"), UriKind.Absolute)),
+                ToolTip = "Search for existing questions or ask a new question on the Cesium Community Forum.",
+                LongDescription = "The Help function allows you to access the Cesium Community Forum. It is an active community of developers and geospatial professionals who share their knowledge, troubleshoot problems, and discuss best practices. If you can’t find an existing answer to your question, you can post a new inquiry to get help from the Cesium community or Cesium support team."
             };
 
             // Create help
@@ -111,26 +108,11 @@ namespace CesiumIonRevitAddin
             pushButtonConnect = panelCesiumIon.AddItem(pushButtonDataConnect) as PushButton;
             pushButtonSignOut = panelCesiumIon.AddItem(pushButtonDataSignOut) as PushButton;
             pushButtonUpload = panel3DTiles.AddItem(pushButtonDataUpload) as PushButton;
+#if DEBUG
             pushButtonExportDisk = panel3DTiles.AddItem(pushButtonDataExportDisk) as PushButton;
-            pushButtonLearn = panelSupport.AddItem(pushButtonDataLearn) as PushButton;
-            pushButtonHelp = panelSupport.AddItem(pushButtonDataHelp) as PushButton;
-
-            // Add to Add-in tab
-            RibbonPanel ribbonPanel = application.CreateRibbonPanel("Cesium");
-
-            // Create main pulldown button
-            PulldownButtonData pullDownButtonData = new PulldownButtonData("CesiumButton", "Cesium");
-            pullDownButtonData.LargeImage = new BitmapImage(new Uri(Path.Combine(buttonIconsFolder, "logo.png"), UriKind.Absolute));
-            PulldownButton pullDownButtonCesium = ribbonPanel.AddItem(pullDownButtonData) as PulldownButton;
-
-            pushButtonConnectAddin = pullDownButtonCesium.AddPushButton(pushButtonDataConnect);
-            pushButtonSignOutAddin = pullDownButtonCesium.AddPushButton(pushButtonDataSignOut);
-            pullDownButtonCesium.AddSeparator();
-            pushButtonUploadAddin = pullDownButtonCesium.AddPushButton(pushButtonDataUpload);
-            pushButtonExportDiskAddin = pullDownButtonCesium.AddPushButton(pushButtonDataExportDisk);
-            pullDownButtonCesium.AddSeparator();
-            pushButtonLearnAddin = pullDownButtonCesium.AddPushButton(pushButtonDataLearn);
-            pushButtonHelpAddin = pullDownButtonCesium.AddPushButton(pushButtonDataHelp);
+#endif
+            panelSupport.AddItem(pushButtonDataLearn);
+            panelSupport.AddItem(pushButtonDataHelp);
 
             // Initially update button states based on connection status
             UpdateButtonStates();
@@ -153,14 +135,6 @@ namespace CesiumIonRevitAddin
             pushButtonSignOut.Enabled = isConnected;       // Enable Sign Out if connected
             pushButtonSignOut.Visible = isConnected;       // Show Sign Out if connected
             pushButtonUpload.Enabled = isConnected;        // Enable Upload if connected
-            pushButtonExportDisk.Enabled = isConnected;    // Enable Export to Disk if connected
-
-            pushButtonConnectAddin.Enabled = !isConnected;      // Enable Connect if not connected
-            pushButtonConnectAddin.Visible = !isConnected;      // Show Connect if not connected
-            pushButtonSignOutAddin.Enabled = isConnected;       // Enable Sign Out if connected
-            pushButtonSignOutAddin.Visible = isConnected;       // Show Sign Out if connected
-            pushButtonUploadAddin.Enabled = isConnected;        // Enable Upload if connected
-            pushButtonExportDiskAddin.Enabled = isConnected;    // Enable Export to Disk if connected
         }
 
         // Static method to allow access to UpdateButtonStates from other commands
@@ -197,10 +171,7 @@ namespace CesiumIonRevitAddin
         }
     }
 
-
-
-
-
+#if DEBUG
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
     public class ExportToDisk : Autodesk.Revit.UI.IExternalCommand
@@ -257,7 +228,7 @@ namespace CesiumIonRevitAddin
             return Result.Succeeded;
         }
     }
-
+#endif
 
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
