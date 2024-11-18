@@ -51,9 +51,15 @@ namespace CesiumIonRevitAddin.Utils
 
         public static View3D GetExportView(Autodesk.Revit.DB.View view)
         {
+            if (view.Document.IsFamilyDocument)
+            {
+                Autodesk.Revit.UI.TaskDialog.Show("Families Not Supported", "Families cannot be uploaded to Cesium ion. Please open a project document and try again.");
+                return null;
+            }
+
             if (view.GetType().Name != "View3D")
             {
-                Autodesk.Revit.UI.TaskDialog.Show("Wrong View", "You must be in a 3D view to export");
+                Autodesk.Revit.UI.TaskDialog.Show("3D View Required", "A 3D view is required to upload to Cesium ion. Please switch to a 3D view and try again.");
                 return null;
             }
             return (View3D)view;
