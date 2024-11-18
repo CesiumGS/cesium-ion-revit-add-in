@@ -57,7 +57,7 @@ namespace CesiumIonRevitAddin.Gltf
         public ClassType GetClass(string gltfClassName)
         {
             var classes = GetClasses();
-            return classes.ContainsKey(gltfClassName) ? (ClassType)classes[gltfClassName] : null;
+            return classes.TryGetValue(gltfClassName, out var value) ? (ClassType)value : new Dictionary<string, object>();
         }
 
         public ClassesType GetClasses()
@@ -74,7 +74,7 @@ namespace CesiumIonRevitAddin.Gltf
             return (PropertiesType)class_["properties"];
         }
 
-        public bool HasProperties(ClassType class_)
+        public static bool HasProperties(ClassType class_)
         {
             return class_.ContainsKey("properties");
         }

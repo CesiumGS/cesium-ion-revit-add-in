@@ -22,6 +22,7 @@ namespace CesiumIonRevitAddin
         public int MaxTextureSize { get; set; } = 2048;
         public bool KeepGltf { get; } = false;
         public bool Export3DTilesDB { get; } = true;
+        public bool ExportMetadata { get; set; } = true;
 
 #pragma warning disable S125
         // If we need to support Revit from 2020 or earlier, you will likely need this.

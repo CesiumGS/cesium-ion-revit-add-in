@@ -42,7 +42,7 @@ namespace CesiumIonRevitAddin.Gltf
         private readonly IndexedDictionary<GltfImage> images = new IndexedDictionary<GltfImage>();
         private readonly IndexedDictionary<GltfSampler> samplers = new IndexedDictionary<GltfSampler>();
         private readonly IndexedDictionary<GltfTexture> textures = new IndexedDictionary<GltfTexture>();
-        private readonly List<string> extensionsUsed = new List<string>();
+        private List<string> extensionsUsed = null;
         private readonly Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
         private readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema = new GltfExtStructuralMetadataExtensionSchema();
         private Autodesk.Revit.DB.Transform cachedTransform;
@@ -122,9 +122,8 @@ namespace CesiumIonRevitAddin.Gltf
             // Aligns to up-axis and contains geometry
             xFormNode = new GltfNode
             {
-                Name = "xFormNode",
-                // xFormNode is the only node that should not have EXT_structural_metadata or any other extensions
-                Extensions = null
+                Name = "xFormNode",                
+                Extensions = null // xFormNode should not have any extensions
             };
 
             // Add a transform that offsets the project to real coordinates
@@ -142,7 +141,7 @@ namespace CesiumIonRevitAddin.Gltf
             // Add a transform that rotates the project to face true north
             if (preferences.TrueNorth)
             {
-                Quaternion trueNorth = new Quaternion(new Vector3D(0, 1, 0), GeometryUtils.GetProjectTrueNorth(Doc));
+                var trueNorth = new Quaternion(new Vector3D(0, 1, 0), GeometryUtils.GetProjectTrueNorth(Doc));
                 rootNodeRotation = Quaternion.Multiply(rootNodeRotation, trueNorth);
             }
 
@@ -162,94 +161,104 @@ namespace CesiumIonRevitAddin.Gltf
             xFormNode.Rotation = new List<double>() { XFormNodeRotation.X, XFormNodeRotation.Y, XFormNodeRotation.Z, XFormNodeRotation.W };
             xFormNode.Scale = new List<double>() { scale, scale, scale }; //Revit internal units are decimal feet - scale to meters
 
-            ProjectInfo projectInfo = Doc.ProjectInformation;
 
-            var rootSchema = extStructuralMetadataSchema.GetClass("project") ?? extStructuralMetadataSchema.AddClass("Project");
-            var rootSchemaProperties = new Dictionary<string, object>();
-            rootSchema.Add("properties", rootSchemaProperties);
-
-            rootNode.Extensions.EXT_structural_metadata.Class = "project";
-            AddPropertyInfoProperty("Project Name", projectInfo.Name, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Project Number", projectInfo.Number, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Client Name", projectInfo.ClientName, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Project Address", projectInfo.Address, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Building Name", projectInfo.BuildingName, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Author", projectInfo.Author, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Organization Name", projectInfo.OrganizationName, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Organization Description", projectInfo.OrganizationDescription, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
-            AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
-
-            // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
-            // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
-            // For each parameter, get all all the bound Categories and add them to the glTF schema.
-#if !REVIT2020 && !REVIT2021
-            BindingMap bindingMap = Doc.ParameterBindings;
-            var iterator = bindingMap.ForwardIterator();
-            while (iterator.MoveNext())
+            if (preferences.ExportMetadata)
             {
-                Definition definition = iterator.Key;
-                // InstanceBinding and TypeBinding don't seem to have any additional members not provided by the ELementBinding base class
-                var elementBinding = (ElementBinding)iterator.Current;
+                extensionsUsed = extensionsUsed ?? new List<string>();
+                extensionsUsed.Add("EXT_structural_metadata");
+                extensions.Add("EXT_structural_metadata", extStructuralMetadataSchema);
 
-                if (definition is InternalDefinition internalDefinition)
+                ProjectInfo projectInfo = Doc.ProjectInformation;
+
+                var rootSchema = extStructuralMetadataSchema.GetClass("project") ?? extStructuralMetadataSchema.AddClass("Project");
+                var rootSchemaProperties = new Dictionary<string, object>();
+                rootSchema.Add("properties", rootSchemaProperties);
+
+                rootNode.Extensions = rootNode.Extensions ?? new GltfExtensions();
+                rootNode.Extensions.EXT_structural_metadata = rootNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
+                rootNode.Extensions.EXT_structural_metadata.Class = "project";
+                AddPropertyInfoProperty("Project Name", projectInfo.Name, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Project Number", projectInfo.Number, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Client Name", projectInfo.ClientName, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Project Address", projectInfo.Address, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Building Name", projectInfo.BuildingName, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Author", projectInfo.Author, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Organization Name", projectInfo.OrganizationName, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Organization Description", projectInfo.OrganizationDescription, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
+                AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
+
+                // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
+                // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
+                // For each parameter, get all all the bound Categories and add them to the glTF schema.
+#if !REVIT2020 && !REVIT2021
+                BindingMap bindingMap = Doc.ParameterBindings;
+                var iterator = bindingMap.ForwardIterator();
+                while (iterator.MoveNext())
                 {
-                    ForgeTypeId forgeTypeId = internalDefinition.GetDataType();
-                    bool isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
+                    Definition definition = iterator.Key;
+                    // InstanceBinding and TypeBinding don't seem to have any additional members not provided by the ELementBinding base class
+                    var elementBinding = (ElementBinding)iterator.Current;
 
-                    var categoryGltfProperty = new Dictionary<string, Object>
+                    if (definition is InternalDefinition internalDefinition)
+                    {
+                        ForgeTypeId forgeTypeId = internalDefinition.GetDataType();
+                        bool isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
+
+                        var categoryGltfProperty = new Dictionary<string, Object>
                     {
                         { "name", definition.Name },
                         { "required", false }
                     };
 
-                    if (isMeasurable) // TODO: Does isMeasurable equate to Revit's StorageType::Double?
-                    {
-                        categoryGltfProperty.Add("type", "SCALAR");
-                        categoryGltfProperty.Add("componentType", "FLOAT32");
-                    }
-                    else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.String)))
-                    {
-                        categoryGltfProperty.Add("type", "STRING");
-                    }
-                    else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)))
-                    {
-                        categoryGltfProperty.Add("type", "SCALAR");
-                        categoryGltfProperty.Add("componentType", "INT32");
-                    }
-                    else
-                    {
-                        // no mapped ForgeTypeId
-                        // TODO: booleans are falling here
-                        continue;
-                    }
+                        if (isMeasurable) // TODO: Does isMeasurable equate to Revit's StorageType::Double?
+                        {
+                            categoryGltfProperty.Add("type", "SCALAR");
+                            categoryGltfProperty.Add("componentType", "FLOAT32");
+                        }
+                        else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.String)))
+                        {
+                            categoryGltfProperty.Add("type", "STRING");
+                        }
+                        else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)))
+                        {
+                            categoryGltfProperty.Add("type", "SCALAR");
+                            categoryGltfProperty.Add("componentType", "INT32");
+                        }
+                        else
+                        {
+                            // no mapped ForgeTypeId
+                            // TODO: booleans are falling here
+                            continue;
+                        }
 
-                    CategorySet categories = elementBinding.Categories;
-                    foreach (var obj in categories)
-                    {
-                        var category = (Category)obj;
+                        CategorySet categories = elementBinding.Categories;
+                        foreach (var obj in categories)
+                        {
+                            var category = (Category)obj;
 #if REVIT2022
                         string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(((BuiltInCategory)category.Id.IntegerValue).ToString());
 #else
-                        string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
+                            string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
 #endif
-                        extStructuralMetadataSchema.AddCategory(categoryGltfName);
-                        var gltfClass = extStructuralMetadataSchema.GetClass(categoryGltfName);
-                        var schemaProperties = extStructuralMetadataSchema.GetProperties(gltfClass);
-                        string gltfDefinitionName = Util.GetGltfName(definition.Name);
-                        if (schemaProperties.ContainsKey(gltfDefinitionName))
-                        {
-                            // Duplicate keys can occur if a parameter shares a name.
-                            // This has happened before, though one was a shared and one a local parameter.
-                            // ID and the results of GetTypeId() (which is not the same) are the only guaranteed unique fields.
-                            gltfDefinitionName += "_" + internalDefinition.Id;
+                            extStructuralMetadataSchema.AddCategory(categoryGltfName);
+                            var gltfClass = extStructuralMetadataSchema.GetClass(categoryGltfName);
+                            var schemaProperties = extStructuralMetadataSchema.GetProperties(gltfClass);
+                            string gltfDefinitionName = Util.GetGltfName(definition.Name);
+                            if (schemaProperties.ContainsKey(gltfDefinitionName))
+                            {
+                                // Duplicate keys can occur if a parameter shares a name.
+                                // This has happened before, though one was a shared and one a local parameter.
+                                // ID and the results of GetTypeId() (which is not the same) are the only guaranteed unique fields.
+                                gltfDefinitionName += "_" + internalDefinition.Id;
+                            }
+                            schemaProperties.Add(gltfDefinitionName, categoryGltfProperty);
                         }
-                        schemaProperties.Add(gltfDefinitionName, categoryGltfProperty);
-                    }
 
+                    }
                 }
-            }
 #endif
+            }
             rootNode.Children = new List<int>();
             xFormNode.Children = new List<int>();
             nodes.AddOrUpdateCurrent("rootNode", rootNode);
@@ -260,14 +269,11 @@ namespace CesiumIonRevitAddin.Gltf
             defaultScene.Nodes.Add(0);
             scenes.Add(defaultScene);
 
-            extensionsUsed.Add("EXT_structural_metadata");
-            extensions.Add("EXT_structural_metadata", extStructuralMetadataSchema);
-
             return true;
         }
 
         // Add information about the physical Revit building/property (via the project's PropertyInfo) to glTF "properties"
-        private void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
+        private static void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
         {
             if (propertyValue == "")
             {
@@ -346,32 +352,40 @@ namespace CesiumIonRevitAddin.Gltf
 
             var newNode = new GltfNode();
 
-            // TODO: recheck if these are still needed
-            var categoryName = element.Category != null ? element.Category.Name : "Undefined";
-            var familyName = GetFamilyName(element);
-            newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
-            newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(
-                Util.CreateClassName(categoryName, familyName)
-                );
-
-            newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
-            newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
-
-            // create a glTF property from any remaining Revit parameter not explicitly added above
-            var parameterSet = element.Parameters;
-            foreach (Parameter parameter in parameterSet)
+            var classMetadata = new Dictionary<string, object>();
+            if (preferences.ExportMetadata)
             {
-                string propertyName = Util.GetGltfName(parameter.Definition.Name);
-                object paramValue = GetParameterValue(parameter);
-                if (paramValue != null && !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                newNode.Extensions = newNode.Extensions ?? new GltfExtensions();
+                newNode.Extensions.EXT_structural_metadata = newNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
+
+                // TODO: recheck if these are still needed
+                var categoryName = element.Category != null ? element.Category.Name : "Undefined";
+                var familyName = GetFamilyName(element);
+                newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
+                newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(
+                    Util.CreateClassName(categoryName, familyName)
+                    );
+
+                newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
+                newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
+
+                // create a glTF property from any remaining Revit parameter not explicitly added above
+                var parameterSet = element.Parameters;
+                foreach (Parameter parameter in parameterSet)
                 {
-                    newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                    string propertyName = Util.GetGltfName(parameter.Definition.Name);
+                    object paramValue = GetParameterValue(parameter);
+                    if (paramValue != null && !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                    {
+                        newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                    }
                 }
+
+                extStructuralMetadataSchema.AddCategory(categoryName);
+                classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
+                extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet);
             }
 
-            extStructuralMetadataSchema.AddCategory(categoryName);
-            var classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
-            extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet);
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
 
             // set parent to Supercomponent if it exists.
@@ -387,15 +401,14 @@ namespace CesiumIonRevitAddin.Gltf
                 }
                 else
                 {
-                    string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
-                    classMetadata["parent"] = superComponentClass;
-
-                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
-                    if (parentNode.Children == null)
+                    if (preferences.ExportMetadata)
                     {
-                        parentNode.Children = new List<int>();
+                        string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
+                        classMetadata["parent"] = superComponentClass;
                     }
 
+                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
+                    parentNode.Children = parentNode.Children ?? new List<int>();
                     parentNode.Children.Add(nodes.CurrentIndex);
                     useCurrentInstanceTransform = true;
 
@@ -542,7 +555,7 @@ namespace CesiumIonRevitAddin.Gltf
             Logger.Instance.Log("...Finished Processing element " + element.Name);
         }
 
-        public RenderNodeAction OnInstanceBegin(InstanceNode instanceNode)
+        public RenderNodeAction OnInstanceBegin(InstanceNode node)
         {
             this.instanceStackDepth++;
 
@@ -550,15 +563,17 @@ namespace CesiumIonRevitAddin.Gltf
             // Chase down an example of instance transforms that actually stack
             // Note that balustrades may be this example (instances of instances)
 
-            var transformationMultiply = CurrentFullTransform.Multiply(instanceNode.GetTransform());
+            var transformationMultiply = CurrentFullTransform.Multiply(node.GetTransform());
             transformStack.Push(transformationMultiply);
-            rawTransformStack.Push(instanceNode.GetTransform());
+            rawTransformStack.Push(node.GetTransform());
 
             return RenderNodeAction.Proceed;
         }
 
         // for Debug logging purposes, so may have 0 references
+#pragma warning disable S1144 // Unused private types or members should be removed
         private static string GetTransformDetails(Autodesk.Revit.DB.Transform transform)
+#pragma warning restore S1144 // Unused private types or members should be removed
         {
             var x = transform.BasisX;
             var y = transform.BasisY;
@@ -667,14 +682,14 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnRPC(RPCNode node)
         {
-            List<Mesh> meshes = GeometryUtils.GetMeshes(Doc, element);
+            List<Mesh> rpcMeshes = GeometryUtils.GetMeshes(Doc, element);
 
-            if (meshes.Count == 0)
+            if (rpcMeshes.Count == 0)
             {
                 return;
             }
 
-            foreach (var mesh in meshes)
+            foreach (Mesh mesh in rpcMeshes)
             {
                 int triangles = mesh.NumTriangles;
                 if (triangles == 0)
@@ -709,7 +724,6 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
             }
-            Logger.Instance.Log("...Ending OnRPC.");
         }
 
         public void OnLight(LightNode node)
@@ -743,12 +757,13 @@ namespace CesiumIonRevitAddin.Gltf
 
             public SerializableTransform(Autodesk.Revit.DB.Transform transform)
             {
-                Matrix = new double[4, 4] {
-            { transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0 },
-            { transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0 },
-            { transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0 },
-            { transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1 }
-        };
+                Matrix = new double[4, 4]
+                {
+                    { transform.BasisX.X, transform.BasisY.X, transform.BasisZ.X, 0 },
+                    { transform.BasisX.Y, transform.BasisY.Y, transform.BasisZ.Y, 0 },
+                    { transform.BasisX.Z, transform.BasisY.Z, transform.BasisZ.Z, 0 },
+                    { transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1 }
+                };
             }
 
             public override string ToString()
@@ -781,11 +796,11 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        public void OnPolymesh(PolymeshTopology polymeshTopology)
+        public void OnPolymesh(PolymeshTopology node)
         {
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
-            var pts = polymeshTopology.GetPoints();
+            var pts = node.GetPoints();
             if (!preferences.Instancing)
             {
                 pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
@@ -818,7 +833,7 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
+            foreach (PolymeshFacet facet in node.GetFacets())
             {
                 foreach (var vertIndex in facet.GetVertices())
                 {
@@ -830,12 +845,12 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(preferences, CurrentFullTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(preferences, CurrentFullTransform, node, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
             {
-                GltfExportUtils.AddTexCoords(preferences, polymeshTopology, currentGeometry.CurrentItem.TexCoords);
+                GltfExportUtils.AddTexCoords(preferences, node, currentGeometry.CurrentItem.TexCoords);
             }
         }
 
@@ -877,13 +892,13 @@ namespace CesiumIonRevitAddin.Gltf
 
         private string GetTypeNameIfApplicable(ElementId elementId)
         {
-            var element = Doc.GetElement(elementId);
-            if (element == null)
+            var currentElement = Doc.GetElement(elementId);
+            if (currentElement == null)
             {
                 return "Element not found";
             }
 
-            if (Doc.GetElement(element.GetTypeId()) is ElementType elementType)
+            if (Doc.GetElement(currentElement.GetTypeId()) is ElementType elementType)
             {
                 return elementType.Name;
             }

@@ -25,6 +25,6 @@ namespace CesiumIonRevitAddin.Gltf
         [JsonProperty("extras")]
         public GltfExtras Extras { get; set; }
         [JsonProperty("extensions")]
-        public GltfExtensions Extensions { get; set; } = new GltfExtensions();
+        public GltfExtensions Extensions { get; set; } = null;
     }
 }
