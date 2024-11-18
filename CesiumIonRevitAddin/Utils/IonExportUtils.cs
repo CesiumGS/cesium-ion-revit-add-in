@@ -24,6 +24,13 @@ namespace CesiumIonRevitAddin.Utils
             else
                 preferences = new Preferences();
 
+            // Use the existing filename for the first export instead of the default tileset.3dtiles
+            if (!existingPreferences && doc.PathName != "")
+            {
+                string docFileName = Path.GetFileNameWithoutExtension(doc.PathName);
+                preferences.OutputPath = Path.Combine(preferences.OutputDirectory, docFileName + ".3dtiles");
+            }
+
             // Display the export preferences dialog
             using (ExportDialog exportDialog = new ExportDialog(ref preferences))
             {
