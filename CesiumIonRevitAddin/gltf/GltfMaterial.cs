@@ -20,6 +20,6 @@ namespace CesiumIonRevitAddin.Gltf
         public bool DoubleSided { get; set; }
 
         [JsonProperty("extensions")]
-        public GltfExtensions Extensions { get; set; } = new GltfExtensions();
+        public GltfExtensions Extensions { get; set; } = null;
     }
 }
