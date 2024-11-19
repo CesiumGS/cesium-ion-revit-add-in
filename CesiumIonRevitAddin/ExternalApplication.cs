@@ -355,12 +355,10 @@ namespace CesiumIonRevitAddin
         {
             try
             {
-                string url = "https://cesium.com/learn/";
-
                 // Use the default browser
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = url,
+                    FileName = "https://cesium.com/learn/",
                     UseShellExecute = true
                 });
 
@@ -382,12 +380,10 @@ namespace CesiumIonRevitAddin
         {
             try
             {
-                string url = "https://community.cesium.com/";
-
                 // Use the default browser
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = url,
+                    FileName = "https://community.cesium.com/",
                     UseShellExecute = true
                 });
 
