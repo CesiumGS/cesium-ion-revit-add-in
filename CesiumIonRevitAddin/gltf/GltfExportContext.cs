@@ -129,8 +129,6 @@ namespace CesiumIonRevitAddin.Gltf
             if (preferences.SharedCoordinates)
             {
                 XYZ projectOffset = GeometryUtils.GetProjectOffset(Doc) * scale;
-
-                //TODO: Implement flip axis support here (not sure if we really need it?)
                 rootNode.Translation = new List<float>() { (float)projectOffset.X, (float)projectOffset.Z, -(float)projectOffset.Y };
             }
 
