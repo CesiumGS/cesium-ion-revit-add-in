@@ -204,25 +204,25 @@ namespace CesiumIonRevitAddin.Gltf
                         ForgeTypeId forgeTypeId = internalDefinition.GetDataType();
                         bool isMeasurable = UnitUtils.IsMeasurableSpec(forgeTypeId);
 
-                        var categoryGltfProperty = new Dictionary<string, Object>
-                    {
-                        { "name", definition.Name },
-                        { "required", false }
-                    };
+                        var categoryGltfProperties = new Dictionary<string, Object>
+                        {
+                            { "name", definition.Name },
+                            { "required", false }
+                        };
 
                         if (isMeasurable)
                         {
-                            categoryGltfProperty.Add("type", "SCALAR");
-                            categoryGltfProperty.Add("componentType", "FLOAT32");
+                            categoryGltfProperties.Add("type", "SCALAR");
+                            categoryGltfProperties.Add("componentType", "FLOAT32");
                         }
                         else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.String)))
                         {
-                            categoryGltfProperty.Add("type", "STRING");
+                            categoryGltfProperties.Add("type", "STRING");
                         }
                         else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)) || forgeTypeId == SpecTypeId.Boolean.YesNo)
                         {
-                            categoryGltfProperty.Add("type", "SCALAR");
-                            categoryGltfProperty.Add("componentType", "INT32");
+                            categoryGltfProperties.Add("type", "SCALAR");
+                            categoryGltfProperties.Add("componentType", "INT32");
                         }
                         else
                         {
@@ -250,7 +250,7 @@ namespace CesiumIonRevitAddin.Gltf
                                 // ID and the results of GetTypeId() (which is not the same) are the only guaranteed unique fields.
                                 gltfDefinitionName += "_" + internalDefinition.Id;
                             }
-                            schemaProperties.Add(gltfDefinitionName, categoryGltfProperty);
+                            schemaProperties.Add(gltfDefinitionName, categoryGltfProperties);
                         }
 
                     }

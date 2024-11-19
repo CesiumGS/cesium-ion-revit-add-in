@@ -205,7 +205,7 @@ namespace CesiumIonRevitAddin.Export
                                 };
                                 images.AddOrUpdateCurrent(rawFileName, gltfImage);
 
-                                // TODO: assuming one-to-one mapping between glTF images and texture arrays
+                                // assuming one-to-one mapping between glTF images and texture arrays
                                 imageIndex = images.GetIndexFromUuid(rawFileName);
                                 var gltfTexture = new GltfTexture
                                 {
@@ -235,9 +235,6 @@ namespace CesiumIonRevitAddin.Export
                             khrTextureTransformExtension.Rotation = bitmapInfo.Rotation;
                             khrTextureTransformExtension.Scale = bitmapInfo.Scale;
                         }
-                        // switch {
-                        //    // TODO: add non-baseColor
-                        //}
                     }
                 }
 
