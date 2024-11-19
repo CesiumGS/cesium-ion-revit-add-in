@@ -33,7 +33,6 @@ namespace CesiumIonRevitAddin
         private PushButton pushButtonConnect;
         private PushButton pushButtonSignOut;
         private PushButton pushButtonUpload;
-        private PushButton pushButtonExportDisk;
 
         public Result OnStartup(UIControlledApplication application)
         {
@@ -109,7 +108,7 @@ namespace CesiumIonRevitAddin
             pushButtonSignOut = panelCesiumIon.AddItem(pushButtonDataSignOut) as PushButton;
             pushButtonUpload = panel3DTiles.AddItem(pushButtonDataUpload) as PushButton;
 #if DEBUG
-            pushButtonExportDisk = panel3DTiles.AddItem(pushButtonDataExportDisk) as PushButton;
+            panel3DTiles.AddItem(pushButtonDataExportDisk);
 #endif
             panelSupport.AddItem(pushButtonDataLearn);
             panelSupport.AddItem(pushButtonDataHelp);
