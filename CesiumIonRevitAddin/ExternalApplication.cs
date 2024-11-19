@@ -183,22 +183,27 @@ namespace CesiumIonRevitAddin
             // Get the export view
             View3D exportView = IonExportUtils.GetExportView(doc.ActiveView);
             if (exportView == null)
+            {
                 return Result.Cancelled;
+            }
 
-            // Get export preferences from the user
             Preferences preferences = IonExportUtils.GetUserPreferences(doc);
             if (preferences == null)
+            {
                 return Result.Cancelled;
+            }
 
-            // Get the save location from the user
             string savePath = IonExportUtils.GetSavePath(doc, preferences);
             if (savePath == null)
+            {
                 return Result.Cancelled;
+            }
 
             preferences.OutputPath = savePath;
             preferences.ionExport = false;
 
-            // Export the intermediate format 
+            IonExportUtils.SaveUserPreferences(doc, preferences);
+
             Result exportResult = IonExportUtils.ExportIntermediateFormat(exportView, preferences);
             if (exportResult != Result.Succeeded)
             {
@@ -218,10 +223,6 @@ namespace CesiumIonRevitAddin
 
             // Clean up the export contents
             IonExportUtils.Cleanup(preferences);
-
-            // As the export has been successful, save out the changes
-            // TODO: Decide if this should happen in a failed export
-            IonExportUtils.SaveUserPreferences(doc, preferences);
 
             TaskDialog.Show("Export Complete", "View exported to 3D Tiles");
 
