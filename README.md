@@ -73,11 +73,12 @@ The following preferences control the content exported to 3D Tiles:
 **NOTE**: For more information on using georeferencing, see the _Exporting with Georeferencing_ section below.
 
 #### Options
-  * **Instancing** - Detects and uses instancing for eligible geometry on export. This can optimize rendering performance and reduce memory usage. Currently, instancing is supported by CesiumJS and Cesium for Unreal, with support for Cesium for Unity and Cesium for Omniverse coming soon.
   * **Normals** - Exports surface normals for geometry.
   * **Materials** - Exports materials using color values from Revit.
   * **Textures** - Exports color textures for materials if present.
   * **Max Size** - Resizes textures to a maximum resolution, which can help reduce memory usage.
+  * **Metadata** - Includes Revit properties as metadata.
+  * **GPU Instancing** - Detects and uses GPU instancing for eligible geometry on export. This can optimize rendering performance and reduce memory usage. Currently, GPU instancing is supported by CesiumJS and Cesium for Unreal, with support for Cesium for Unity and Cesium for Omniverse coming soon.
   * **Revit Links** - Exports geometry for Revit files linked to the project.
 
 ### Exporting with Georeferencing
