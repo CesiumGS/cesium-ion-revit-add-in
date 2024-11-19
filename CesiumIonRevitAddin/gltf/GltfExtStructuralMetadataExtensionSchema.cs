@@ -181,7 +181,7 @@ namespace CesiumIonRevitAddin.Gltf
             return schemaProperties.ContainsKey(propertyGltfName);
         }
 
-        private static readonly HashSet<string> requiredParameters;
+        // private static readonly HashSet<string> requiredParameters;
         public static bool IsRequired(string categoryName)
         {
             // skip marking parameters as "required" for the present

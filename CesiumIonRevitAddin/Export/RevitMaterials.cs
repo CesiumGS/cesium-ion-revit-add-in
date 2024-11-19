@@ -449,6 +449,8 @@ namespace CesiumIonRevitAddin.Export
                     return parameter.AsString();
                 case StorageType.ElementId:
                     return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
+                case StorageType.None:
+                    return "Unsupported type";
                 default:
                     return "Unsupported type";
             }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    internal class GltfBinaryDataUtils
+    internal static class GltfBinaryDataUtils
     {
         private const string VEC2_STR = "VEC2";
         private const string VEC3_STR = "VEC3";
@@ -14,7 +14,6 @@ namespace CesiumIonRevitAddin.Utils
         private const string TEXCOORD_STR = "TEXCOORD_0";
         private const string SCALAR_STR = "SCALAR";
         private const string FACE_STR = "FACE";
-        // const string BATCH_ID_STR = "BATCH_ID";
 
         public static int ExportVertices(int bufferIdx, int byteOffset, GeometryDataObject geomData,
             GltfBinaryData bufferData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors,

@@ -7,7 +7,7 @@ using System.IO;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    internal class TilerExportUtils
+    internal static class TilerExportUtils
     {
         public static void WriteTilerJson(Preferences preferences)
         {
@@ -34,7 +34,6 @@ namespace CesiumIonRevitAddin.Utils
             outputPathUri = jsonDirectoryUri.MakeRelativeUri(outputPathUri);
 
             // Convert the URI to a relative path
-            inputPath = Uri.UnescapeDataString(inputPathUri.ToString()).Replace('/', Path.DirectorySeparatorChar);
             outputPath = Uri.UnescapeDataString(outputPathUri.ToString()).Replace('/', Path.DirectorySeparatorChar);
 
             var jsonObject = new JObject
