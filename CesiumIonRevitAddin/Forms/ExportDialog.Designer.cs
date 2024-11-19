@@ -46,6 +46,7 @@
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.metadata = new System.Windows.Forms.CheckBox();
             this.Georeferencing.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -117,6 +118,7 @@
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.AutoSize = true;
+            this.groupBox1.Controls.Add(this.metadata);
             this.groupBox1.Controls.Add(this.normals);
             this.groupBox1.Controls.Add(this.maxTextureSizeLabel);
             this.groupBox1.Controls.Add(this.maxTextureSize);
@@ -126,7 +128,7 @@
             this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(310, 147);
+            this.groupBox1.Size = new System.Drawing.Size(310, 170);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
@@ -170,7 +172,7 @@
             // links
             // 
             this.links.AutoSize = true;
-            this.links.Location = new System.Drawing.Point(6, 111);
+            this.links.Location = new System.Drawing.Point(6, 134);
             this.links.Name = "links";
             this.links.Size = new System.Drawing.Size(79, 17);
             this.links.TabIndex = 3;
@@ -205,7 +207,7 @@
             // instancing
             // 
             this.instancing.AutoSize = true;
-            this.instancing.Location = new System.Drawing.Point(6, 88);
+            this.instancing.Location = new System.Drawing.Point(6, 111);
             this.instancing.Name = "instancing";
             this.instancing.Size = new System.Drawing.Size(101, 17);
             this.instancing.TabIndex = 0;
@@ -218,7 +220,7 @@
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(247, 256);
+            this.cancelButton.Location = new System.Drawing.Point(247, 279);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
@@ -229,7 +231,7 @@
             // exportButton
             // 
             this.exportButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.exportButton.Location = new System.Drawing.Point(166, 256);
+            this.exportButton.Location = new System.Drawing.Point(166, 279);
             this.exportButton.Name = "exportButton";
             this.exportButton.Size = new System.Drawing.Size(75, 23);
             this.exportButton.TabIndex = 3;
@@ -238,11 +240,22 @@
             this.exportButton.UseVisualStyleBackColor = true;
             this.exportButton.Click += new System.EventHandler(this.ExportButton_Click);
             // 
+            // metadata
+            // 
+            this.metadata.AutoSize = true;
+            this.metadata.Location = new System.Drawing.Point(6, 88);
+            this.metadata.Name = "metadata";
+            this.metadata.Size = new System.Drawing.Size(71, 17);
+            this.metadata.TabIndex = 7;
+            this.metadata.Text = "Metadata";
+            this.toolTip.SetToolTip(this.metadata, "Include Revit properties as metadata");
+            this.metadata.UseVisualStyleBackColor = true;
+            // 
             // ExportDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(334, 291);
+            this.ClientSize = new System.Drawing.Size(334, 314);
             this.Controls.Add(this.exportButton);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.groupBox1);
@@ -278,5 +291,6 @@
         private System.Windows.Forms.ComboBox maxTextureSize;
         private System.Windows.Forms.CheckBox normals;
         private System.Windows.Forms.ToolTip toolTip;
+        private System.Windows.Forms.CheckBox metadata;
     }
 }
