@@ -108,14 +108,12 @@ namespace CesiumIonRevitAddin.Gltf
             }
             catch (KeyNotFoundException)
             {
-                // TODO: handle error better
-                Autodesk.Revit.UI.TaskDialog.Show("IndexedDictionary.h", "Specified item could not be found.");
+                Logger.Instance.Log("Specified item could not be found in IndexedDictionary: " + uuid);
             }
 
             catch (Exception ex)
             {
-                // TODO: handle error better
-                Autodesk.Revit.UI.TaskDialog.Show("IndexedDictionary.h", "Error getting the specified item: " + ex.Message);
+                Logger.Instance.Log("Error getting the specified item " + uuid + " in IndexedDictionary: " + ex.Message);
             }
 
             return -1;

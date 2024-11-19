@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Gltf
 {
-    // TODO: JsonProperty probably not needed
     internal class GltfBinaryData
     {
         [JsonProperty("name")]

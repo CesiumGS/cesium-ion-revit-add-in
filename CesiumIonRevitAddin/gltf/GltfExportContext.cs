@@ -71,7 +71,6 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        // TODO: make export not a singleton and remove Reset()
         private static void Reset() => RevitMaterials.materialIdDictionary.Clear();
 
 
@@ -122,7 +121,7 @@ namespace CesiumIonRevitAddin.Gltf
             // Aligns to up-axis and contains geometry
             xFormNode = new GltfNode
             {
-                Name = "xFormNode",                
+                Name = "xFormNode",
                 Extensions = null // xFormNode should not have any extensions
             };
 
@@ -211,7 +210,7 @@ namespace CesiumIonRevitAddin.Gltf
                         { "required", false }
                     };
 
-                        if (isMeasurable) // TODO: Does isMeasurable equate to Revit's StorageType::Double?
+                        if (isMeasurable)
                         {
                             categoryGltfProperty.Add("type", "SCALAR");
                             categoryGltfProperty.Add("componentType", "FLOAT32");
@@ -220,7 +219,7 @@ namespace CesiumIonRevitAddin.Gltf
                         {
                             categoryGltfProperty.Add("type", "STRING");
                         }
-                        else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)))
+                        else if (IsSpecTypeMatch(forgeTypeId, typeof(SpecTypeId.Int)) || forgeTypeId == SpecTypeId.Boolean.YesNo)
                         {
                             categoryGltfProperty.Add("type", "SCALAR");
                             categoryGltfProperty.Add("componentType", "INT32");
@@ -228,7 +227,6 @@ namespace CesiumIonRevitAddin.Gltf
                         else
                         {
                             // no mapped ForgeTypeId
-                            // TODO: booleans are falling here
                             continue;
                         }
 
@@ -299,7 +297,6 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
-            // TODO: remove GltfVersion
             FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
                 scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
             Logger.Instance.Log("Completed model export.");
@@ -358,19 +355,16 @@ namespace CesiumIonRevitAddin.Gltf
                 newNode.Extensions = newNode.Extensions ?? new GltfExtensions();
                 newNode.Extensions.EXT_structural_metadata = newNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
 
-                // TODO: recheck if these are still needed
-                var categoryName = element.Category != null ? element.Category.Name : "Undefined";
-                var familyName = GetFamilyName(element);
+                string categoryName = element.Category != null ? element.Category.Name : "Undefined";
+                string familyName = GetFamilyName(element);
                 newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
-                newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(
-                    Util.CreateClassName(categoryName, familyName)
-                    );
+                newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
 
                 newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
                 newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
 
                 // create a glTF property from any remaining Revit parameter not explicitly added above
-                var parameterSet = element.Parameters;
+                ParameterSet parameterSet = element.Parameters;
                 foreach (Parameter parameter in parameterSet)
                 {
                     string propertyName = Util.GetGltfName(parameter.Definition.Name);
@@ -558,10 +552,6 @@ namespace CesiumIonRevitAddin.Gltf
         public RenderNodeAction OnInstanceBegin(InstanceNode node)
         {
             this.instanceStackDepth++;
-
-            // TODO: Note that instanceNode.GetTransform() always seems to be the full transform stack.
-            // Chase down an example of instance transforms that actually stack
-            // Note that balustrades may be this example (instances of instances)
 
             var transformationMultiply = CurrentFullTransform.Multiply(node.GetTransform());
             transformStack.Push(transformationMultiply);

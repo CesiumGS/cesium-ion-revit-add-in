@@ -516,7 +516,6 @@ namespace CesiumIonRevitAddin.Export
                             schemaProperty.Add("name", assetPropertyString.Name);
                         }
 
-                        // TODO: more deeply investigate this way of handling the type
                         AssetPropertyType assetPropertyType = property.Type;
                         switch (assetPropertyType)
                         {
@@ -533,7 +532,7 @@ namespace CesiumIonRevitAddin.Export
                                 schemaProperty.Add("componentType", "FLOAT32");
                                 break;
                             default:
-                                schemaProperty.Add("type", "TODO: OTHER");
+                                Logger.Instance.Log("Cannot parse AssetPropertyType " + assetPropertyType.ToString());
                                 break;
                         }
 

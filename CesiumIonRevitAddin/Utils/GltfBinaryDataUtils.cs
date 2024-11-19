@@ -59,7 +59,7 @@ namespace CesiumIonRevitAddin.Utils
             }
 
             // Get max and min for index data
-            var faceMinMax = Util.GetScalarMinMax(binaryData.IndexBuffer);
+            int[] faceMinMax = Util.GetScalarMinMax(binaryData.IndexBuffer);
 
             // Add a faces / indexes buffer view
             var elementsPerIndex = 1;

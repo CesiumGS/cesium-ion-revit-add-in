@@ -8,9 +8,8 @@ using System.Text;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    internal class Util
+    internal static class Util
     {
-        // TODO: camel case. "Export to IFC" currently is "exporttoIFC"
         public static string GetGltfName(string input)
         {
             // Revit enums usually start with "OST_". Remove it.
@@ -71,7 +70,7 @@ namespace CesiumIonRevitAddin.Utils
         {
             if (scalars == null || scalars.Count == 0)
             {
-                return null;
+                return Array.Empty<int>();
             }
 
             return new int[] { scalars.Min(), scalars.Max() };

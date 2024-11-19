@@ -91,9 +91,6 @@ namespace CesiumIonRevitAddin.Gltf
                 {
                     { "name", className }
                 };
-                // TODO
-                //gltfClass->Add("properties", gcnew PropertiesType());
-                //PropertiesType^ properties = safe_cast<PropertiesType^>(gltfClass["properties"]);
 
                 classes.Add(gltfName, gltfClass);
             }
@@ -141,8 +138,8 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         case StorageType.None:
                             {
-                                /* TODO: unsure how to handle "None". Stringifying for now
-                                 schema/classes/rVTLinksSystemFamily/properties/projectInformation has triggered this case:
+                                /* Unsure how best to handle "None". Stringifying for now.
+                                 schema/classes/rVTLinksSystemFamily/properties/projectInformation triggered this case:
                                     "projectInformation": {
                                         "name": "Project Information",
                                         "type": "None",
@@ -165,7 +162,6 @@ namespace CesiumIonRevitAddin.Gltf
                             schemaProperty.Add("componentType", "FLOAT32");
                             break;
                         default:
-                            // TODO
                             break;
                     }
 

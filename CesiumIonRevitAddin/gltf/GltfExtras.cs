@@ -6,9 +6,6 @@ namespace CesiumIonRevitAddin.Gltf
     {
         public string uniqueId;
 
-        // TODO: handle grids
-        // RevitGridParametersObject gridParameters;
-
         public Dictionary<string, string> parameters;
         public int elementId;
         public string elementCategory;
