@@ -259,6 +259,8 @@ namespace CesiumIonRevitAddin
             preferences.OutputPath = Path.Combine(Path.GetTempPath(), "cesium", "ion_export.3dtiles");
             preferences.ionExport = true;
 
+            IonExportUtils.SaveUserPreferences(doc, preferences);
+
             // Export the intermediate format 
             Result exportResult = IonExportUtils.ExportIntermediateFormat(exportView, preferences);
             if (exportResult != Result.Succeeded)
@@ -309,10 +311,6 @@ namespace CesiumIonRevitAddin
             // Remove the zip
             if (File.Exists(zipPath))
                 File.Delete(zipPath);
-
-            // As the export has been successful, save out the changes
-            // TODO: Decide if this should happen in a failed export
-            IonExportUtils.SaveUserPreferences(doc, preferences);
 
             return Result.Succeeded;
         }
