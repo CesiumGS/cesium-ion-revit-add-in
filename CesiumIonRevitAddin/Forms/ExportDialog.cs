@@ -28,6 +28,7 @@ namespace CesiumIonRevitAddin.Forms
             normals.Checked = this.preferences.Normals;
             textures.Checked = this.preferences.Textures;
             links.Checked = this.preferences.Links;
+            metadata.Checked = this.preferences.ExportMetadata;
 
             maxTextureSize.Text = this.preferences.MaxTextureSize.ToString();
             maxTextureSize.Enabled = textures.Checked && materials.Checked;
@@ -47,6 +48,7 @@ namespace CesiumIonRevitAddin.Forms
             this.preferences.Normals = normals.Checked;
             this.preferences.Textures = textures.Checked;
             this.preferences.Links = links.Checked;
+            this.preferences.ExportMetadata = metadata.Checked;
             this.preferences.MaxTextureSize = int.Parse(maxTextureSize.Text);
 
             this.DialogResult = DialogResult.OK;
