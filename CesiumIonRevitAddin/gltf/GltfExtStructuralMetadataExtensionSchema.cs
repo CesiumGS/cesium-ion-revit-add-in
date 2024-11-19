@@ -74,11 +74,6 @@ namespace CesiumIonRevitAddin.Gltf
             return (PropertiesType)class_["properties"];
         }
 
-        public static bool HasProperties(ClassType class_)
-        {
-            return class_.ContainsKey("properties");
-        }
-
         public ClassType AddClass(string className)
         {
             ClassesType classes = GetClasses();
@@ -117,7 +112,7 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 string gltfPropertyName = Util.GetGltfName(parameter.Definition.Name);
 
-                // do not add the parameter if the parent category has it
+                // do not add the parameter if the category has it
                 var categoryClass = GetClass(Util.GetGltfName(categoryName));
                 if (ClassHasProperty(categoryClass, gltfPropertyName))
                 {
@@ -172,9 +167,10 @@ namespace CesiumIonRevitAddin.Gltf
 
         public bool ClassHasProperty(ClassType class_, string propertyGltfName)
         {
-            if (!HasProperties(class_))
+            // Some classes may have no properties, such as classes for Revit Categories
+            if (!class_.ContainsKey("properties"))
             {
-                return false; // TODO: empty "properties" should be handled better
+                return false;
             }
 
             var schemaProperties = GetProperties(class_);
