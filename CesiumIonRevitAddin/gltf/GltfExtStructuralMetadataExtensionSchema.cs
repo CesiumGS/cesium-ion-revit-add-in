@@ -67,11 +67,12 @@ namespace CesiumIonRevitAddin.Gltf
 
         public PropertiesType GetProperties(ClassType class_)
         {
-            if (!class_.ContainsKey("properties"))
+            if (!class_.TryGetValue("properties", out var properties))
             {
-                class_.Add("properties", new PropertiesType());
+                properties = new PropertiesType();
+                class_.Add("properties", properties);
             }
-            return (PropertiesType)class_["properties"];
+            return (PropertiesType)properties;
         }
 
         public ClassType AddClass(string className)
@@ -133,14 +134,7 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         case StorageType.None:
                             {
-                                /* Unsure how best to handle "None". Stringifying for now.
-                                 schema/classes/rVTLinksSystemFamily/properties/projectInformation triggered this case:
-                                    "projectInformation": {
-                                        "name": "Project Information",
-                                        "type": "None",
-                                        "required": false
-                                    },
-                                */
+
                                 schemaProperty.Add("type", "STRING");
                                 break;
                             }
@@ -177,9 +171,13 @@ namespace CesiumIonRevitAddin.Gltf
             return schemaProperties.ContainsKey(propertyGltfName);
         }
 
+
+#pragma warning disable S125 // Sections of code should not be commented out
         // private static readonly HashSet<string> requiredParameters;
+#pragma warning restore S125 // Sections of code should not be commented out
         public static bool IsRequired(string categoryName)
         {
+#pragma warning disable S125 // Sections of code should not be commented out
             // skip marking parameters as "required" for the present
 
             //if (requiredParameters == null)
@@ -198,6 +196,7 @@ namespace CesiumIonRevitAddin.Gltf
             //}
 
             //if (requiredParameters.Contains(categoryName)) return true;
+#pragma warning restore S125 // Sections of code should not be commented out
 
             return false;
         }

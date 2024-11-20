@@ -6,14 +6,14 @@ using System.Linq;
 
 namespace CesiumIonRevitAddin.Utils
 {
-    internal class GltfExportUtils
+    internal static class GltfExportUtils
     {
         private const int DEF_COLOR = 250;
         private const string DEF_MATERIAL_NAME = "default";
         public static GltfMaterial GetGLTFMaterial(List<GltfMaterial> gltfMaterials, Material material, bool doubleSided)
         {
             // search for an already existing material
-            var m = gltfMaterials.FirstOrDefault(x =>
+            GltfMaterial m = gltfMaterials.FirstOrDefault(x =>
             x.PbrMetallicRoughness != null &&
             x.PbrMetallicRoughness.BaseColorFactor[0] == material.Color.Red &&
             x.PbrMetallicRoughness.BaseColorFactor[1] == material.Color.Green &&
@@ -43,7 +43,7 @@ namespace CesiumIonRevitAddin.Utils
                 Name = buffer.Uri
             };
 
-            byteOffset = GltfBinaryDataUtils.ExportVertices(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors, out int sizeOfVec3View, out int elementsPerVertex);
+            byteOffset = GltfBinaryDataUtils.ExportVertices(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors, out _, out _);
 
             if (exportNormals)
             {
@@ -52,7 +52,7 @@ namespace CesiumIonRevitAddin.Utils
 
             byteOffset = GltfBinaryDataUtils.ExportTexCoords(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
 
-            byteOffset = GltfBinaryDataUtils.ExportFaces(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
+            GltfBinaryDataUtils.ExportFaces(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
 
 
             return bufferData;
@@ -135,12 +135,6 @@ namespace CesiumIonRevitAddin.Utils
         public static void AddTexCoords(Preferences preferences, PolymeshTopology polymeshTopology, List<double> uvs)
         {
             IList<UV> polyMeshUvs = polymeshTopology.GetUVs();
-            //foreach (var uv in polyMeshUvs)
-            //{
-            //    uvs.Add(uv.U);
-            //    uvs.Add(uv.V);
-            //}
-
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {

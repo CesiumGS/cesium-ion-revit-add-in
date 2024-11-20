@@ -66,7 +66,9 @@ namespace CesiumIonRevitAddin.Export
 
         // For debug purposes, may have zero references
 #pragma warning disable S1144 // Unused private types or members should be removed
+#pragma warning disable IDE0051 // Remove unused private members
         private static void LogMaterialSchemaStats(MaterialNode materialNode, Document document)
+#pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore S1144 // Unused private types or members should be removed
         {
             ElementId id = materialNode.MaterialId;
@@ -153,9 +155,8 @@ namespace CesiumIonRevitAddin.Export
                     AddMaterialRenderingPropertiesToSchema(material, doc, gltfMaterial, extStructuralMetadataExtensionSchema);
                 }
 
-                if (MaterialNameContainer.ContainsKey(materialNode.MaterialId))
+                if (MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDto elementData))
                 {
-                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
                     gltfMaterial.Name = elementData.MaterialName;
                     uniqueId = elementData.UniqueId;
                 }
@@ -173,10 +174,10 @@ namespace CesiumIonRevitAddin.Export
 
                 List<BitmapInfo> bitmapInfoCollection = GetBitmapInfo(doc, material);
 
-                materialHasTexture = preferences.Textures && bitmapInfoCollection.Any();
+                materialHasTexture = preferences.Textures && bitmapInfoCollection.Count > 0;
                 if (materialHasTexture)
                 {
-                    if (!samplers.List.Any())
+                    if (samplers.List.Count == 0)
                     {
                         samplers.AddOrUpdateCurrent("defaultSampler", new GltfSampler());
                     }
@@ -553,24 +554,20 @@ namespace CesiumIonRevitAddin.Export
         {
             var gltfPropertyName = Utils.Util.GetGltfName(parameter.Definition.Name);
 
-            Dictionary<string, object> classSchemaProperties;
-            if (classSchema.ContainsKey("properties"))
+            if (!classSchema.TryGetValue("properties", out var classSchemaOut))
             {
-                classSchemaProperties = (Dictionary<string, object>)classSchema["properties"];
+                classSchemaOut = new Dictionary<string, object>();
+                classSchema.Add("properties", classSchemaOut);
             }
-            else
+            var classSchemaProperties = (Dictionary<string, object>)classSchemaOut;
+
+            if (!classSchemaProperties.TryGetValue(gltfPropertyName, out var value))
             {
-                classSchemaProperties = new Dictionary<string, object>();
-                classSchema.Add("properties", classSchemaProperties);
+                value = new Dictionary<string, object>();
+                classSchemaProperties.Add(gltfPropertyName, value);
             }
 
-            var propertySchema = new Dictionary<string, object>();
-            if (classSchemaProperties.ContainsKey(gltfPropertyName))
-            {
-                return;
-            }
-            classSchemaProperties.Add(gltfPropertyName, propertySchema);
-
+            var propertySchema = (Dictionary<string, object>)value;
             propertySchema.Add("name", parameter.Definition.Name);
 
             switch (parameter.StorageType)

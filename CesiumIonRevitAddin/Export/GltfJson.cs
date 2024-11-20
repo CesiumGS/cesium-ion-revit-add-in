@@ -36,7 +36,7 @@ namespace CesiumIonRevitAddin.Export
                 accessors = accessors
             };
 
-            if (images.Any())
+            if (images.Count > 0)
             {
                 model.images = images;
                 model.textures = textures;
