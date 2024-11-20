@@ -24,8 +24,6 @@ namespace CesiumIonRevitAddin.Utils
 
         public static void SetMaterial(Document doc, Preferences preferences, Mesh mesh, IndexedDictionary<GltfMaterial> materials, bool doubleSided)
         {
-            GltfMaterial gltfMaterial = new GltfMaterial();
-
             Material material = MaterialUtils.GetMeshMaterial(doc, mesh);
 
             if (preferences.Materials)
@@ -35,7 +33,7 @@ namespace CesiumIonRevitAddin.Utils
                     material = Collectors.GetRandomMaterial(doc);
                 }
 
-                gltfMaterial = GltfExportUtils.GetGLTFMaterial(materials.List, material, doubleSided);
+                GltfMaterial gltfMaterial = GltfExportUtils.GetGLTFMaterial(materials.List, material, doubleSided);
 
                 materials.AddOrUpdateCurrentMaterial(material.UniqueId, gltfMaterial, doubleSided);
             }
