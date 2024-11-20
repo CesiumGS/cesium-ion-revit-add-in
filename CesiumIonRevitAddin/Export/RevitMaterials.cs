@@ -493,15 +493,15 @@ namespace CesiumIonRevitAddin.Export
                 {
                     string gltfPropertyName = Util.GetGltfName(assetPropertyString.Name);
 
-                    // TODO: DEBUG
                     if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
                     {
                         gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
                     }
                     else
                     {
-                        // TODO: why does this fire?
-                        System.Diagnostics.Debug.WriteLine("Error: should not happen");
+                        // A property from the Appearance can have the same name as one from the physical Material.
+                        // For example, "category".
+                        gltfPropertyName = "render" + char.ToUpper(gltfPropertyName[0]) + gltfPropertyName.Substring(1);
                     }
 
                     // add to schema
@@ -539,7 +539,6 @@ namespace CesiumIonRevitAddin.Export
                     }
                 }
             }
-            System.Diagnostics.Debug.WriteLine("Finished adding properties");
         }
 
         private static void AddParameterToClassSchema(Parameter parameter, Dictionary<string, object> classSchema)
