@@ -63,18 +63,12 @@ namespace CesiumIonRevitAddin.Gltf
 
         public int GetIndexFromUuid(string uuid)
         {
-            try
+            if (dict.TryGetValue(uuid, out int index))
             {
-                return dict[uuid];
+                return index;
             }
-            catch (KeyNotFoundException)
-            {
-                throw new Exception("Specified item could not be found.");
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error getting the specified item {ex.Message}");
-            }
+
+            throw new KeyNotFoundException($"Specified item with UUID '{uuid}' could not be found.");
         }
 
         public bool AddOrUpdateCurrentMaterial(string uuid, T elem, bool doubleSided)
