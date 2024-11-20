@@ -26,7 +26,8 @@ namespace CesiumIonRevitAddin.Export
         private const string BLEND = "BLEND";
         private const string OPAQUE = "OPAQUE";
         private const int ONEINTVALUE = 1;
-        private const double magicNumber = 11.11; // Temporary number to make texture scaling close to real-world values until permanent fix is in
+        // Temporary number to make texture scaling close to real-world values until permanent fix is in
+        private const double magicTextureScalingNumber = 11.11;
         public const string INVALID_MATERIAL = "INVALID_MATERIAL";
 
 
@@ -61,7 +62,7 @@ namespace CesiumIonRevitAddin.Export
             }
         }
 
-        public static Dictionary<ElementId, GltfMaterial> materialIdDictionary = new Dictionary<ElementId, GltfMaterial>();
+        public readonly static Dictionary<ElementId, GltfMaterial> materialIdDictionary = new Dictionary<ElementId, GltfMaterial>();
 
         // For debug purposes, may have zero references
 #pragma warning disable S1144 // Unused private types or members should be removed
@@ -184,8 +185,6 @@ namespace CesiumIonRevitAddin.Export
                     {
                         if (bitmapInfo.GltfBitmapType == GltfBitmapType.baseColorTexture)
                         {
-                            // addOrUpdate to images IndexedDir
-                            // TODO: handle file-name collision
                             var rawFileName = Path.GetFileName(bitmapInfo.AbsolutePath);
 
                             int imageIndex;
@@ -357,18 +356,16 @@ namespace CesiumIonRevitAddin.Export
         // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
         private static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
-            // TODO: magicNumber
             var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDistance;
             var yOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) as AssetPropertyDistance;
-            // TODO: why is null check needed? RevitLookupTool shows val of 0. Maybe it handles null before display.
-            bitmapInfo.Offset = new double[] { xOffset == null ? 0 : xOffset.Value * magicNumber, yOffset == null ? 0 : yOffset.Value * magicNumber };
+            bitmapInfo.Offset = new double[] { xOffset == null ? 0 : xOffset.Value * magicTextureScalingNumber, yOffset == null ? 0 : yOffset.Value * magicTextureScalingNumber };
 
             var rotation = connectedProperty.FindByName(UnifiedBitmap.TextureWAngle) as AssetPropertyDouble;
             bitmapInfo.Rotation = rotation.Value;
 
             var xScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) as AssetPropertyDistance;
             var yScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) as AssetPropertyDistance;
-            bitmapInfo.Scale = new double[] { xScale == null ? 1.0 : 1.0 / xScale.Value * magicNumber, yScale == null ? 1.0 : 1.0 / yScale.Value * magicNumber };
+            bitmapInfo.Scale = new double[] { xScale == null ? 1.0 : 1.0 / xScale.Value * magicTextureScalingNumber, yScale == null ? 1.0 : 1.0 / yScale.Value * magicTextureScalingNumber };
         }
 
         private static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
@@ -447,7 +444,6 @@ namespace CesiumIonRevitAddin.Export
                 case StorageType.ElementId:
                     return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
                 case StorageType.None:
-                    return "Unsupported type";
                 default:
                     return "Unsupported type";
             }
@@ -561,7 +557,6 @@ namespace CesiumIonRevitAddin.Export
             }
 
             var propertySchema = new Dictionary<string, object>();
-            // TODO: "Image" parameter triggered this. Why?
             if (classSchemaProperties.ContainsKey(gltfPropertyName))
             {
                 return;
@@ -603,7 +598,6 @@ namespace CesiumIonRevitAddin.Export
             gltfPbr.RoughnessFactor = opacity < 1f ? 0.5f : 1f;
             gltfMaterial.PbrMetallicRoughness = gltfPbr;
 
-            // TODO: Implement MASK alphamode for elements like leaves or wire fences
             gltfMaterial.AlphaMode = opacity < 1f ? BLEND : OPAQUE;
             gltfMaterial.AlphaCutoff = null;
         }
