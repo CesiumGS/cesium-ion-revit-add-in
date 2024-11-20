@@ -558,7 +558,9 @@ namespace CesiumIonRevitAddin.Gltf
 
         // for Debug logging purposes, so may have 0 references
 #pragma warning disable S1144 // Unused private types or members should be removed
+#pragma warning disable IDE0051 // Remove unused private members
         private static string GetTransformDetails(Autodesk.Revit.DB.Transform transform)
+#pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore S1144 // Unused private types or members should be removed
         {
             var x = transform.BasisX;

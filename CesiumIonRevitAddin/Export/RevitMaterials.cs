@@ -66,7 +66,9 @@ namespace CesiumIonRevitAddin.Export
 
         // For debug purposes, may have zero references
 #pragma warning disable S1144 // Unused private types or members should be removed
+#pragma warning disable IDE0051 // Remove unused private members
         private static void LogMaterialSchemaStats(MaterialNode materialNode, Document document)
+#pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore S1144 // Unused private types or members should be removed
         {
             ElementId id = materialNode.MaterialId;
@@ -153,9 +155,8 @@ namespace CesiumIonRevitAddin.Export
                     AddMaterialRenderingPropertiesToSchema(material, doc, gltfMaterial, extStructuralMetadataExtensionSchema);
                 }
 
-                if (MaterialNameContainer.ContainsKey(materialNode.MaterialId))
+                if (MaterialNameContainer.TryGetValue(materialNode.MaterialId, out MaterialCacheDto elementData))
                 {
-                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
                     gltfMaterial.Name = elementData.MaterialName;
                     uniqueId = elementData.UniqueId;
                 }
@@ -173,10 +174,10 @@ namespace CesiumIonRevitAddin.Export
 
                 List<BitmapInfo> bitmapInfoCollection = GetBitmapInfo(doc, material);
 
-                materialHasTexture = preferences.Textures && bitmapInfoCollection.Any();
+                materialHasTexture = preferences.Textures && bitmapInfoCollection.Count > 0;
                 if (materialHasTexture)
                 {
-                    if (!samplers.List.Any())
+                    if (samplers.List.Count == 0)
                     {
                         samplers.AddOrUpdateCurrent("defaultSampler", new GltfSampler());
                     }
@@ -356,16 +357,24 @@ namespace CesiumIonRevitAddin.Export
         // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
         private static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
-            var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDistance;
-            var yOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) as AssetPropertyDistance;
-            bitmapInfo.Offset = new double[] { xOffset == null ? 0 : xOffset.Value * magicTextureScalingNumber, yOffset == null ? 0 : yOffset.Value * magicTextureScalingNumber };
+            bitmapInfo.Offset = new double[]
+            {
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) is AssetPropertyDistance xOffset
+                    ? xOffset.Value * magicTextureScalingNumber : 0,
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) is AssetPropertyDistance yOffset
+                    ? yOffset.Value * magicTextureScalingNumber : 0
+            };
 
             var rotation = connectedProperty.FindByName(UnifiedBitmap.TextureWAngle) as AssetPropertyDouble;
             bitmapInfo.Rotation = rotation.Value;
 
-            var xScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) as AssetPropertyDistance;
-            var yScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) as AssetPropertyDistance;
-            bitmapInfo.Scale = new double[] { xScale == null ? 1.0 : 1.0 / xScale.Value * magicTextureScalingNumber, yScale == null ? 1.0 : 1.0 / yScale.Value * magicTextureScalingNumber };
+            bitmapInfo.Scale = new double[]
+            {
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) is AssetPropertyDistance xScale
+                    ? 1.0 / xScale.Value * magicTextureScalingNumber : 1.0,
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) is AssetPropertyDistance yScale
+                    ? 1.0 / yScale.Value * magicTextureScalingNumber : 1.0
+            };
         }
 
         private static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
@@ -498,7 +507,6 @@ namespace CesiumIonRevitAddin.Export
                         // A property from the Appearance can have the same name as one from the physical Material.
                         // For example, "category".
                         gltfPropertyName = string.Concat("render", char.ToUpper(gltfPropertyName[0]), gltfPropertyName.Substring(1));
-
                         if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
                         {
                             gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
@@ -546,24 +554,20 @@ namespace CesiumIonRevitAddin.Export
         {
             var gltfPropertyName = Utils.Util.GetGltfName(parameter.Definition.Name);
 
-            Dictionary<string, object> classSchemaProperties;
-            if (classSchema.ContainsKey("properties"))
+            if (!classSchema.TryGetValue("properties", out var classSchemaOut))
             {
-                classSchemaProperties = (Dictionary<string, object>)classSchema["properties"];
+                classSchemaOut = new Dictionary<string, object>();
+                classSchema.Add("properties", classSchemaOut);
             }
-            else
+            var classSchemaProperties = (Dictionary<string, object>)classSchemaOut;
+
+            if (!classSchemaProperties.TryGetValue(gltfPropertyName, out var value))
             {
-                classSchemaProperties = new Dictionary<string, object>();
-                classSchema.Add("properties", classSchemaProperties);
+                value = new Dictionary<string, object>();
+                classSchemaProperties.Add(gltfPropertyName, value);
             }
 
-            var propertySchema = new Dictionary<string, object>();
-            if (classSchemaProperties.ContainsKey(gltfPropertyName))
-            {
-                return;
-            }
-            classSchemaProperties.Add(gltfPropertyName, propertySchema);
-
+            var propertySchema = (Dictionary<string, object>)value;
             propertySchema.Add("name", parameter.Definition.Name);
 
             switch (parameter.StorageType)
