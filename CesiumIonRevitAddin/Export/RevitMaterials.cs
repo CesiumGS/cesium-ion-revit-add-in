@@ -152,19 +152,19 @@ namespace CesiumIonRevitAddin.Export
                     AddMaterialRenderingPropertiesToSchema(material, doc, gltfMaterial, extStructuralMetadataExtensionSchema);
                 }
 
-                if (!MaterialNameContainer.ContainsKey(materialNode.MaterialId))
+                if (MaterialNameContainer.ContainsKey(materialNode.MaterialId))
+                {
+                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
+                    gltfMaterial.Name = elementData.MaterialName;
+                    uniqueId = elementData.UniqueId;
+                }
+                else
                 {
                     // construct a material from the node
                     Element materialElement = doc.GetElement(materialNode.MaterialId);
                     gltfMaterial.Name = materialElement.Name;
                     uniqueId = materialElement.UniqueId;
                     MaterialNameContainer.Add(materialNode.MaterialId, new MaterialCacheDto(materialElement.Name, materialElement.UniqueId));
-                }
-                else
-                {
-                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
-                    gltfMaterial.Name = elementData.MaterialName;
-                    uniqueId = elementData.UniqueId;
                 }
 
                 var gltfPbr = new GltfPbr();
@@ -205,7 +205,7 @@ namespace CesiumIonRevitAddin.Export
                                 };
                                 images.AddOrUpdateCurrent(rawFileName, gltfImage);
 
-                                // TODO: assuming one-to-one mapping between glTF images and texture arrays
+                                // assuming one-to-one mapping between glTF images and texture arrays
                                 imageIndex = images.GetIndexFromUuid(rawFileName);
                                 var gltfTexture = new GltfTexture
                                 {
@@ -235,9 +235,6 @@ namespace CesiumIonRevitAddin.Export
                             khrTextureTransformExtension.Rotation = bitmapInfo.Rotation;
                             khrTextureTransformExtension.Scale = bitmapInfo.Scale;
                         }
-                        // switch {
-                        //    // TODO: add non-baseColor
-                        //}
                     }
                 }
 
@@ -449,6 +446,8 @@ namespace CesiumIonRevitAddin.Export
                     return parameter.AsString();
                 case StorageType.ElementId:
                     return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
+                case StorageType.None:
+                    return "Unsupported type";
                 default:
                     return "Unsupported type";
             }
@@ -516,7 +515,6 @@ namespace CesiumIonRevitAddin.Export
                             schemaProperty.Add("name", assetPropertyString.Name);
                         }
 
-                        // TODO: more deeply investigate this way of handling the type
                         AssetPropertyType assetPropertyType = property.Type;
                         switch (assetPropertyType)
                         {
@@ -533,7 +531,7 @@ namespace CesiumIonRevitAddin.Export
                                 schemaProperty.Add("componentType", "FLOAT32");
                                 break;
                             default:
-                                schemaProperty.Add("type", "TODO: OTHER");
+                                Logger.Instance.Log("Cannot parse AssetPropertyType " + assetPropertyType.ToString());
                                 break;
                         }
 
