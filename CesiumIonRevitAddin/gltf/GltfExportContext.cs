@@ -191,7 +191,6 @@ namespace CesiumIonRevitAddin.Gltf
                 // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
                 // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
                 // For each parameter, get all all the bound Categories and add them to the glTF schema.
-#if !REVIT2020 && !REVIT2021
                 BindingMap bindingMap = Doc.ParameterBindings;
                 var iterator = bindingMap.ForwardIterator();
                 while (iterator.MoveNext())
@@ -257,7 +256,6 @@ namespace CesiumIonRevitAddin.Gltf
 
                     }
                 }
-#endif
             }
             rootNode.Children = new List<int>();
             xFormNode.Children = new List<int>();
