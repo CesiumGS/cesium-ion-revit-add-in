@@ -18,10 +18,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2023", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2022", "CesiumIonRevitAddin_2022\CesiumIonRevitAddin_2022.csproj", "{C23BB660-F85F-44DC-872E-47BF1D476DFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2021", "CesiumIonRevitAddin_2021\CesiumIonRevitAddin_2021.csproj", "{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CesiumIonRevitAddin_2020", "CesiumIonRevitAddin_2020\CesiumIonRevitAddin_2020.csproj", "{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenerateHelp", "GenerateHelp\GenerateHelp.csproj", "{4E152EF8-2B09-4F6F-8FB1-184921AE55C0}"
 EndProject
 Global
@@ -46,14 +42,6 @@ Global
 		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C23BB660-F85F-44DC-872E-47BF1D476DFD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{06C8DC3A-3CBA-4EB7-AEDD-6564FB887465}.Release|Any CPU.Build.0 = Release|Any CPU
-		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{675CEB4E-CAE4-4E4A-98C4-2B8BB5A95452}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4E152EF8-2B09-4F6F-8FB1-184921AE55C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4E152EF8-2B09-4F6F-8FB1-184921AE55C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
@@ -64,9 +52,7 @@ Global
 		SolutionGuid = {9935126A-47E0-4852-97AD-943EDFB38C2E}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{06c8dc3a-3cba-4eb7-aedd-6564fb887465}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{1dd3ffa0-ad97-4e51-8fab-9a065c71ac64}*SharedItemsImports = 13
-		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{675ceb4e-cae4-4e4a-98c4-2b8bb5a95452}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{9aa1e96b-5910-40c0-a871-ddcf118474ab}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{b0ed72c2-cd9a-4e86-a091-fa328b2f542c}*SharedItemsImports = 4
 		CesiumIonRevitAddin\CesiumIonRevitAddin.projitems*{c23bb660-f85f-44dc-872e-47bf1d476dfd}*SharedItemsImports = 4

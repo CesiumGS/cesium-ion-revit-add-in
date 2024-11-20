@@ -23,17 +23,6 @@ namespace CesiumIonRevitAddin
         public bool KeepGltf { get; } = false;
         public bool Export3DTilesDB { get; } = true;
         public bool ExportMetadata { get; set; } = true;
-
-#pragma warning disable S125
-        // If we need to support Revit from 2020 or earlier, you will likely need this.
-        //#if REVIT2019 || REVIT2020\
-        //        DisplayUnitType units;
-        //#else
-        //        ForgeTypeId units;
-        //
-        //#endif
-#pragma warning restore S125
-
         public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.3dtiles";
         public string OutputDirectory => Path.GetDirectoryName(OutputPath);
         public string OutputFilename => Path.GetFileName(OutputPath);
