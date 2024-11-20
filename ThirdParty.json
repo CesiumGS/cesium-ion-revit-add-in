@@ -6,9 +6,33 @@
     "url": "https://github.com/JamesNK/Newtonsoft.Json"
   },
   {
-    "name": "Cesium Native ion Wrapper",
+    "name": "AWSSDK.Core",
     "license": ["Apache 2.0"],
+    "version": "3.7.400.34",
+    "url": "https://github.com/aws/aws-sdk-net/"
+  },
+  {
+    "name": "AWSSDK.S3",
+    "license": ["Apache 2.0"],
+    "version": "3.7.404.6",
+    "url": "https://github.com/aws/aws-sdk-net/"
+  },
+  {
+    "name": "AWSSDK.SecurityToken",
+    "license": ["Apache 2.0"],
+    "version": "3.7.400.34",
+    "url": "https://github.com/aws/aws-sdk-net/"
+  },
+  {
+    "name": "Revit_All_Main_Versions_API_x64",
+    "license": ["Proprietary"],
     "version": "Latest",
-    "url": "https://github.com/CesiumGS/cesium-native-ion-wrapper"
-  }  
+    "url": "https://www.nuget.org/packages/Revit_All_Main_Versions_API_x64"
+  },
+  {
+    "name": "Revit glTF exporter",
+    "license": ["MIT"],
+    "version": "Latest",
+    "url": "https://github.com/EverseDevelopment/revit-glTF-exporter"
+  }    
 ]
