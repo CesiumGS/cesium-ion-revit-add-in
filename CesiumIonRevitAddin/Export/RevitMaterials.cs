@@ -152,19 +152,19 @@ namespace CesiumIonRevitAddin.Export
                     AddMaterialRenderingPropertiesToSchema(material, doc, gltfMaterial, extStructuralMetadataExtensionSchema);
                 }
 
-                if (!MaterialNameContainer.ContainsKey(materialNode.MaterialId))
+                if (MaterialNameContainer.ContainsKey(materialNode.MaterialId))
+                {
+                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
+                    gltfMaterial.Name = elementData.MaterialName;
+                    uniqueId = elementData.UniqueId;
+                }
+                else
                 {
                     // construct a material from the node
                     Element materialElement = doc.GetElement(materialNode.MaterialId);
                     gltfMaterial.Name = materialElement.Name;
                     uniqueId = materialElement.UniqueId;
                     MaterialNameContainer.Add(materialNode.MaterialId, new MaterialCacheDto(materialElement.Name, materialElement.UniqueId));
-                }
-                else
-                {
-                    MaterialCacheDto elementData = MaterialNameContainer[materialNode.MaterialId];
-                    gltfMaterial.Name = elementData.MaterialName;
-                    uniqueId = elementData.UniqueId;
                 }
 
                 var gltfPbr = new GltfPbr();
