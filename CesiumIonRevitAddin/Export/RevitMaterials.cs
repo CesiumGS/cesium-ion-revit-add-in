@@ -356,16 +356,24 @@ namespace CesiumIonRevitAddin.Export
         // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
         private static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
-            var xOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) as AssetPropertyDistance;
-            var yOffset = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) as AssetPropertyDistance;
-            bitmapInfo.Offset = new double[] { xOffset == null ? 0 : xOffset.Value * magicTextureScalingNumber, yOffset == null ? 0 : yOffset.Value * magicTextureScalingNumber };
+            bitmapInfo.Offset = new double[]
+            {
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetX) is AssetPropertyDistance xOffset
+                    ? xOffset.Value * magicTextureScalingNumber : 0,
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldOffsetY) is AssetPropertyDistance yOffset
+                    ? yOffset.Value * magicTextureScalingNumber : 0
+            };
 
             var rotation = connectedProperty.FindByName(UnifiedBitmap.TextureWAngle) as AssetPropertyDouble;
             bitmapInfo.Rotation = rotation.Value;
 
-            var xScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) as AssetPropertyDistance;
-            var yScale = connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) as AssetPropertyDistance;
-            bitmapInfo.Scale = new double[] { xScale == null ? 1.0 : 1.0 / xScale.Value * magicTextureScalingNumber, yScale == null ? 1.0 : 1.0 / yScale.Value * magicTextureScalingNumber };
+            bitmapInfo.Scale = new double[]
+            {
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleX) is AssetPropertyDistance xScale
+                    ? 1.0 / xScale.Value * magicTextureScalingNumber : 1.0,
+                connectedProperty.FindByName(UnifiedBitmap.TextureRealWorldScaleY) is AssetPropertyDistance yScale
+                    ? 1.0 / yScale.Value * magicTextureScalingNumber : 1.0
+            };
         }
 
         private static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
