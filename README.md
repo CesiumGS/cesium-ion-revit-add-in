@@ -109,7 +109,7 @@ When exporting with materials, the following values will be used:
 
 All parameters associated with each specific Element in the 3D View are exported as metadata. This includes both instance parameters (specific to an element instance) and type parameters (common to all instances of a given type).
 
-![Metadata Example](./Documentation/resources/cesium-unreal-metadata.png)
+![Metadata Example](./Documentation/Resources/cesium-unreal-metadata.png)
 
 ### Current Limitations or Known Issues
 
