@@ -361,19 +361,25 @@ namespace CesiumIonRevitAddin.Gltf
 
                 // create a glTF property from any remaining Revit parameter not explicitly added above
                 ParameterSet parameterSet = element.Parameters;
+                var parametersToSkip = new HashSet<Parameter>();
                 foreach (Parameter parameter in parameterSet)
                 {
-                    string propertyName = Util.GetGltfName(parameter.Definition.Name);
-                    object paramValue = GetParameterValue(parameter);
-                    if (paramValue != null && !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                    if (parameter.HasValue) {
+                        string propertyName = Util.GetGltfName(parameter.Definition.Name);
+                        object paramValue = GetParameterValue(parameter);
+                        if (paramValue != null && !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                        {
+                            newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                        }
+                    } else
                     {
-                        newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                        parametersToSkip.Add(parameter);
                     }
                 }
 
                 extStructuralMetadataSchema.AddCategory(categoryName);
                 classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
-                extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet);
+                extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet, parametersToSkip);
             }
 
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
