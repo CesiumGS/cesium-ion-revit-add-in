@@ -41,7 +41,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExportContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtensionSchema.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtras.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfExtStructuralMetadataExtensionSchema.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfImage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)gltf\GltfMaterial.cs" />
