@@ -361,7 +361,7 @@ namespace CesiumIonRevitAddin.Gltf
 
                 // create a glTF property from any remaining Revit parameter not explicitly added above
                 ParameterSet parameterSet = element.Parameters;
-                var skippedParameters = new HashSet<Parameter>();
+                var parametersToSkip = new HashSet<Parameter>();
                 foreach (Parameter parameter in parameterSet)
                 {
                     if (parameter.HasValue) {
@@ -373,13 +373,13 @@ namespace CesiumIonRevitAddin.Gltf
                         }
                     } else
                     {
-                        skippedParameters.Add(parameter);
+                        parametersToSkip.Add(parameter);
                     }
                 }
 
                 extStructuralMetadataSchema.AddCategory(categoryName);
                 classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
-                extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet, skippedParameters);
+                extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet, parametersToSkip);
             }
 
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
