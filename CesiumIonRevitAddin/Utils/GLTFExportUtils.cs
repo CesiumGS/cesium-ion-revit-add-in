@@ -19,7 +19,7 @@ namespace CesiumIonRevitAddin.Utils
             x.PbrMetallicRoughness.BaseColorFactor[1] == material.Color.Green &&
             x.PbrMetallicRoughness.BaseColorFactor[2] == material.Color.Blue && x.DoubleSided == doubleSided);
 
-            return m != null ? m : GltfExportUtils.CreateGltfMaterial(DEF_MATERIAL_NAME, 0, new Color(DEF_COLOR, DEF_COLOR, DEF_COLOR), doubleSided);
+            return m ?? GltfExportUtils.CreateGltfMaterial(DEF_MATERIAL_NAME, 0, new Color(DEF_COLOR, DEF_COLOR, DEF_COLOR), doubleSided);
         }
         public static GltfBinaryData AddGeometryMeta(
             List<GltfBuffer> buffers,
