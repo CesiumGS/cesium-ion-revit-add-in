@@ -52,7 +52,8 @@ namespace CesiumIonRevitAddin.Export
 
             var settings = new JsonSerializerSettings
             {
-                NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented
             };
             string serializedModel = JsonConvert.SerializeObject(model, settings);
 
