@@ -103,7 +103,7 @@ namespace CesiumIonRevitAddin.Gltf
         }
 
         // see https://github.com/CesiumGS/glTF/blob/0dc2f8e299a26f3544d26d8aefbc893b08fc5037/extensions/2.0/Vendor/EXT_structural_metadata/schema/class.property.schema.json
-        public void AddProperties(string categoryName, string familyName, Autodesk.Revit.DB.ParameterSet parameterSet)
+        public void AddProperties(string categoryName, string familyName, Autodesk.Revit.DB.ParameterSet parameterSet, HashSet<Parameter> parametersToSkip)
         {
             var gltfClassName = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
             ClassType class_ = GetClass(gltfClassName);
@@ -111,6 +111,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             foreach (Parameter parameter in parameterSet)
             {
+                if (parametersToSkip.Contains(parameter)) continue;
+
                 string gltfPropertyName = Util.GetGltfName(parameter.Definition.Name);
 
                 // do not add the parameter if the category has it

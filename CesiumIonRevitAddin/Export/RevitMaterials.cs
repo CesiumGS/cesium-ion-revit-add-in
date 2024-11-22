@@ -140,15 +140,19 @@ namespace CesiumIonRevitAddin.Export
                     while (paramIterator.MoveNext())
                     {
                         var parameter = (Parameter)paramIterator.Current;
-                        string paramName = parameter.Definition.Name;
-                        string paramValue = GetParameterValueAsString(parameter);
-
-                        string paramGltfName = Utils.Util.GetGltfName(paramName);
-
-                        if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
+                        if (parameter.HasValue)
                         {
-                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
-                            AddParameterToClassSchema(parameter, classSchema);
+                            string paramName = parameter.Definition.Name;
+                            string paramValue = GetParameterValueAsString(parameter);
+                            if (paramValue == "") continue;
+
+                            string paramGltfName = Utils.Util.GetGltfName(paramName);
+
+                            if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
+                            {
+                                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
+                                AddParameterToClassSchema(parameter, classSchema);
+                            }
                         }
                     }
 
@@ -496,6 +500,8 @@ namespace CesiumIonRevitAddin.Export
                 AssetProperty property = renderingAsset.Get(i);
                 if (property is AssetPropertyString assetPropertyString)
                 {
+                    if (assetPropertyString.Value == "") continue;
+
                     string gltfPropertyName = Util.GetGltfName(assetPropertyString.Name);
 
                     if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
