@@ -17,6 +17,7 @@ namespace CesiumIonRevitAddin.Gltf
             IndexedDictionary<GltfMaterial> materials,
             List<GltfAccessor> accessors,
             List<string> extensionsUsed,
+            List<string> extensionsRequired,
             Dictionary<string, GltfExtensionSchema> extensions,
             GltfVersion asset,
             IndexedDictionary<GltfImage> images,
@@ -27,7 +28,7 @@ namespace CesiumIonRevitAddin.Gltf
             BinFile.Create(preferences.BinPath, binaryData, preferences.Normals, false);
 
             string gltfJson = GltfJson.Get(scenes, nodes.List, meshes.List, materials.List,
-                buffers, bufferViews, accessors, extensionsUsed, extensions, preferences, asset, images.List, textures.List, samplers.List);
+                buffers, bufferViews, accessors, extensionsUsed, extensionsRequired, extensions, preferences, asset, images.List, textures.List, samplers.List);
 
             File.WriteAllText(preferences.GltfPath, gltfJson);
         }

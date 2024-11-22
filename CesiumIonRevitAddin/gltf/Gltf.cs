@@ -29,6 +29,7 @@ namespace CesiumIonRevitAddin.Gltf
     internal struct Gltf
     {
         public List<string> extensionsUsed;
+        public List<string> extensionsRequired;
         public GltfVersion asset;
         public List<GltfScene> scenes;
         public List<GltfNode> nodes;

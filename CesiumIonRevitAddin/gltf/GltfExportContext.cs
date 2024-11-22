@@ -43,6 +43,7 @@ namespace CesiumIonRevitAddin.Gltf
         private readonly IndexedDictionary<GltfSampler> samplers = new IndexedDictionary<GltfSampler>();
         private readonly IndexedDictionary<GltfTexture> textures = new IndexedDictionary<GltfTexture>();
         private List<string> extensionsUsed = null;
+        private List<string> extensionsRequired = null;
         private readonly Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
         private readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema = new GltfExtStructuralMetadataExtensionSchema();
         private Autodesk.Revit.DB.Transform cachedTransform;
@@ -294,7 +295,7 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
-                scenes, nodes, meshes, materials, accessors, extensionsUsed, extensions, new GltfVersion(), images, textures, samplers);
+                scenes, nodes, meshes, materials, accessors, extensionsUsed, extensionsRequired, extensions, new GltfVersion(), images, textures, samplers);
             Logger.Instance.Log("Completed model export.");
 
             // Write out the json for the tiler
@@ -740,6 +741,8 @@ namespace CesiumIonRevitAddin.Gltf
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {
                     extensionsUsed.Add("KHR_texture_transform");
+                    extensionsRequired = extensionsRequired ?? new List<string>();
+                    extensionsRequired.Add("KHR_texture_transform");
                     khrTextureTransformAdded = true;
                 }
             }

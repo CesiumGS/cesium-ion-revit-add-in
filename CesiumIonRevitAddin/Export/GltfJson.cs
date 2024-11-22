@@ -16,6 +16,7 @@ namespace CesiumIonRevitAddin.Export
             List<GltfBufferView> bufferViews,
             List<GltfAccessor> accessors,
             List<string> extensionsUsed,
+            List<string> extensionsRequired,
             Dictionary<string, GltfExtensionSchema> extensions,
             Preferences preferences,
             GltfVersion asset,
@@ -27,6 +28,7 @@ namespace CesiumIonRevitAddin.Export
             var model = new CesiumIonRevitAddin.Gltf.Gltf
             {
                 extensionsUsed = extensionsUsed,
+                extensionsRequired = extensionsRequired,
                 asset = asset,
                 scenes = scenes,
                 nodes = nodes,
