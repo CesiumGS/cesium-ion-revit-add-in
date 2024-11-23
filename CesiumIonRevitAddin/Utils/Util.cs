@@ -112,6 +112,7 @@ namespace CesiumIonRevitAddin.Utils
         {
             return _metaDataFilterValues.Contains(value);
         }
+
         public static object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
         {
             switch (parameter.StorageType)
@@ -128,6 +129,5 @@ namespace CesiumIonRevitAddin.Utils
                     return null;
             }
         }
-
     }
 }
