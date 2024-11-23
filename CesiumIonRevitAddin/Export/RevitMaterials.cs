@@ -143,8 +143,8 @@ namespace CesiumIonRevitAddin.Export
                         if (parameter.HasValue)
                         {
                             string paramName = parameter.Definition.Name;
-                            string paramValue = GetParameterValueAsString(parameter);
-                            if (paramValue == "") continue;
+                            object paramValue = Util.GetParameterValue(parameter);
+                            if (Util.ShouldFilterMetadata(paramValue)) continue;
 
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
 
@@ -444,24 +444,6 @@ namespace CesiumIonRevitAddin.Export
             return paths;
         }
 
-        private static string GetParameterValueAsString(Parameter parameter)
-        {
-            switch (parameter.StorageType)
-            {
-                case StorageType.Double:
-                    return parameter.AsDouble().ToString("F2");
-                case StorageType.Integer:
-                    return parameter.AsInteger().ToString();
-                case StorageType.String:
-                    return parameter.AsString();
-                case StorageType.ElementId:
-                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
-                case StorageType.None:
-                default:
-                    return "Unsupported type";
-            }
-        }
-
         private static void AddMaterialRenderingPropertiesToSchema(Autodesk.Revit.DB.Material material, Document doc, GltfMaterial gltfMaterial,
             GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema)
         {
@@ -500,7 +482,7 @@ namespace CesiumIonRevitAddin.Export
                 AssetProperty property = renderingAsset.Get(i);
                 if (property is AssetPropertyString assetPropertyString)
                 {
-                    if (assetPropertyString.Value == "") continue;
+                    if (Util.ShouldFilterMetadata(assetPropertyString.Value)) continue;
 
                     string gltfPropertyName = Util.GetGltfName(assetPropertyString.Name);
 

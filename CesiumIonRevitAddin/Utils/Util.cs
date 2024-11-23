@@ -101,5 +101,33 @@ namespace CesiumIonRevitAddin.Utils
             return elementId.Value;
 #endif
         }
+
+        static HashSet<string> _metaDataFilterValues = new HashSet<string> { "", "-1" };
+        public static bool ShouldFilterMetadata(object value)
+        {
+            return value == null || ShouldFilterMetadata(value.ToString());
+        }
+
+        public static bool ShouldFilterMetadata(string value)
+        {
+            return _metaDataFilterValues.Contains(value);
+        }
+        public static object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
+        {
+            switch (parameter.StorageType)
+            {
+                case StorageType.Integer:
+                    return parameter.AsInteger();
+                case StorageType.Double:
+                    return parameter.AsDouble();
+                case StorageType.String:
+                    return parameter.AsString();
+                case StorageType.ElementId:
+                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
+                default:
+                    return null;
+            }
+        }
+
     }
 }

@@ -354,25 +354,25 @@ namespace CesiumIonRevitAddin.Gltf
 
                 string categoryName = element.Category != null ? element.Category.Name : "Undefined";
                 string familyName = GetFamilyName(element);
+
                 newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
+
                 newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
 
-                newNode.Extensions.EXT_structural_metadata.Properties.Add("uniqueId", element.UniqueId);
-                newNode.Extensions.EXT_structural_metadata.Properties.Add("levelId", Util.GetElementIdAsLong(element.LevelId).ToString());
-
-                // create a glTF property from any remaining Revit parameter not explicitly added above
                 ParameterSet parameterSet = element.Parameters;
                 var parametersToSkip = new HashSet<Parameter>();
                 foreach (Parameter parameter in parameterSet)
                 {
-                    if (parameter.HasValue) {
-                        string propertyName = Util.GetGltfName(parameter.Definition.Name);
-                        object paramValue = GetParameterValue(parameter);
-                        if (paramValue != null && !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
-                        {
-                            newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
-                        }
-                    } else
+                    string propertyName = Util.GetGltfName(parameter.Definition.Name);
+                    object paramValue = Util.GetParameterValue(parameter);
+
+                    if (parameter.HasValue && 
+                        !Util.ShouldFilterMetadata(paramValue) && 
+                        !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                    {
+                        newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                    }
+                    else
                     {
                         parametersToSkip.Add(parameter);
                     }
@@ -902,23 +902,6 @@ namespace CesiumIonRevitAddin.Gltf
             else
             {
                 return "Type not applicable or not found";
-            }
-        }
-
-        private static object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
-        {
-            switch (parameter.StorageType)
-            {
-                case StorageType.Integer:
-                    return parameter.AsInteger();
-                case StorageType.Double:
-                    return parameter.AsDouble();
-                case StorageType.String:
-                    return parameter.AsString();
-                case StorageType.ElementId:
-                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
-                default:
-                    return null;
             }
         }
 
