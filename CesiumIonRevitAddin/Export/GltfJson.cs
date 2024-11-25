@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -62,6 +63,8 @@ namespace CesiumIonRevitAddin.Export
             if (!preferences.Normals)
             {
                 serializedModel = serializedModel.Replace(",\"NORMAL\":0", string.Empty);
+                var pattern = @"\s*,\s*""NORMAL""\s*:\s*0";
+                serializedModel = Regex.Replace(serializedModel, pattern, string.Empty);
             }
 
             return serializedModel;
