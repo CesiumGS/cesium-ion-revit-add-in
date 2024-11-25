@@ -20,7 +20,11 @@ namespace CesiumIonRevitAddin
         public bool SharedCoordinates { get; set; } = true;
         public string EpsgCode { get; set; } = "";
         public int MaxTextureSize { get; set; } = 2048;
+#if DEBUG
+        public bool KeepGltf { get; } = true;
+#else
         public bool KeepGltf { get; } = false;
+#endif
         public bool Export3DTilesDB { get; } = true;
         public bool ExportMetadata { get; set; } = true;
         public string OutputPath { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\tileset.3dtiles";
