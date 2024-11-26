@@ -59,11 +59,6 @@ namespace CesiumIonRevitAddin.Export
             };
             string serializedModel = JsonConvert.SerializeObject(model, settings);
 
-            if (!preferences.Normals)
-            {
-                serializedModel = serializedModel.Replace(",\"NORMAL\":0", string.Empty);
-            }
-
             return serializedModel;
         }
     }
