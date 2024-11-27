@@ -212,7 +212,8 @@ namespace CesiumIonRevitAddin
 
             if (TilerExportUtils.GetTilerLocation() == string.Empty)
             {
-                TaskDialog.Show("Export Complete", "View exported to glTF");
+                TaskDialog.Show("Export Complete", "View exported to glTF. Tiler application not found, skipping tiling.");
+
                 return Result.Succeeded;
             }
 
