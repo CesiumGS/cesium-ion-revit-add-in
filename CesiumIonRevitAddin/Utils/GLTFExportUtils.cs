@@ -30,7 +30,7 @@ namespace CesiumIonRevitAddin.Utils
             int elementId,
             bool exportNormals)
         {
-            int byteOffset = 0;
+            ulong byteOffset = 0;
 
             var buffer = new GltfBuffer
             {

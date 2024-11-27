@@ -15,9 +15,9 @@ namespace CesiumIonRevitAddin.Utils
         private const string SCALAR_STR = "SCALAR";
         private const string FACE_STR = "FACE";
 
-        public static int ExportVertices(int bufferIdx, int byteOffset, GeometryDataObject geomData,
+        public static ulong ExportVertices(int bufferIdx, ulong byteOffset, GeometryDataObject geomData,
             GltfBinaryData bufferData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors,
-            out int sizeOfVec3View, out int elementsPerVertex)
+            out ulong sizeOfVec3View, out int elementsPerVertex)
         {
             for (int i = 0; i < geomData.Vertices.Count; i++)
             {
@@ -32,7 +32,7 @@ namespace CesiumIonRevitAddin.Utils
             int bytesPerElement = 4;
             int bytesPerVertex = elementsPerVertex * bytesPerElement;
             int numVec3 = geomData.Vertices.Count / elementsPerVertex;
-            sizeOfVec3View = numVec3 * bytesPerVertex;
+            sizeOfVec3View = (ulong) (numVec3 * bytesPerVertex);
 
             var vec3View = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3View, Targets.ARRAY_BUFFER, "verts");
             bufferViews.Add(vec3View);
@@ -49,7 +49,7 @@ namespace CesiumIonRevitAddin.Utils
             return byteOffset + vec3View.ByteLength;
         }
 
-        public static int ExportFaces(int bufferIdx, int byteOffset, GeometryDataObject geometryData, GltfBinaryData binaryData,
+        public static ulong ExportFaces(int bufferIdx, ulong byteOffset, GeometryDataObject geometryData, GltfBinaryData binaryData,
             List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
         {
             foreach (var index in geometryData.Faces)
@@ -65,7 +65,7 @@ namespace CesiumIonRevitAddin.Utils
             var bytesPerIndexElement = 4;
             var bytesPerIndex = elementsPerIndex * bytesPerIndexElement;
             var numIndexes = geometryData.Faces.Count;
-            var sizeOfIndexView = numIndexes * bytesPerIndex;
+            ulong sizeOfIndexView = (ulong) (numIndexes * bytesPerIndex);
             var facesView = new GltfBufferView(bufferIdx, byteOffset, sizeOfIndexView, Targets.ELEMENT_ARRAY_BUFFER, "faces");
             bufferViews.Add(facesView);
             var facesViewIdx = bufferViews.Count - 1;
@@ -80,7 +80,7 @@ namespace CesiumIonRevitAddin.Utils
             return byteOffset + facesView.ByteLength;
         }
 
-        public static int ExportNormals(int bufferIdx, int byteOffset, GeometryDataObject geomData, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
+        public static ulong ExportNormals(int bufferIdx, ulong byteOffset, GeometryDataObject geomData, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
         {
             for (int i = 0; i < geomData.Normals.Count; i++)
             {
@@ -94,9 +94,9 @@ namespace CesiumIonRevitAddin.Utils
             int elementsPerNormal = 3;
             int bytesPerNormalElement = 4;
             int bytesPerNormal = elementsPerNormal * bytesPerNormalElement;
-            var normalsCount = geomData.Normals.Count;
+            int normalsCount = geomData.Normals.Count;
             int numVec3Normals = normalsCount / elementsPerNormal;
-            int sizeOfVec3ViewNormals = numVec3Normals * bytesPerNormal;
+            ulong sizeOfVec3ViewNormals = (ulong)numVec3Normals * (ulong)bytesPerNormal;
             GltfBufferView vec3ViewNormals = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec3ViewNormals, Targets.ARRAY_BUFFER, "normals");
             bufferViews.Add(vec3ViewNormals);
             int vec3ViewNormalsIdx = bufferViews.Count - 1;
@@ -111,7 +111,7 @@ namespace CesiumIonRevitAddin.Utils
             binaryData.NormalsAccessorIndex = accessors.Count - 1;
             return byteOffset + vec3ViewNormals.ByteLength;
         }
-        public static int ExportTexCoords(int bufferIdx, int byteOffset, GeometryDataObject geometryDataObject, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
+        public static ulong ExportTexCoords(int bufferIdx, ulong byteOffset, GeometryDataObject geometryDataObject, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
         {
             int texCoordsCount = geometryDataObject.TexCoords.Count;
             if (texCoordsCount == 0)
@@ -131,7 +131,7 @@ namespace CesiumIonRevitAddin.Utils
             int bytesPerElement = 4;
             int bytesPerTexcoord = elementsPerTexcoord * bytesPerElement;
             int numVec2TexCoords = texCoordsCount / elementsPerTexcoord;
-            int sizeOfVec2ViewTexCoords = numVec2TexCoords * bytesPerTexcoord;
+            ulong sizeOfVec2ViewTexCoords = (ulong) numVec2TexCoords * (ulong) bytesPerTexcoord;
             GltfBufferView vec2ViewTexCoords = new GltfBufferView(bufferIdx, byteOffset, sizeOfVec2ViewTexCoords, Targets.ARRAY_BUFFER, "texcoords_0");
             bufferViews.Add(vec2ViewTexCoords);
             int vec2ViewTexCoordsIdx = bufferViews.Count - 1;
