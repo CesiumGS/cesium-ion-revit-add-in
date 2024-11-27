@@ -38,7 +38,6 @@
   <PropertyGroup>
     <TilersBinSourceDir>$(SolutionDir)..\tilers\build\bin\$(Configuration)\</TilersBinSourceDir>
     <TilersConfigSourceDir>$(SolutionDir)..\tilers\</TilersConfigSourceDir>
-    <ImagesSourceDir>$(SolutionDir)CesiumIonRevitAddin\Images\</ImagesSourceDir>
     <AddinFileSource>$(SolutionDir)CesiumIonRevitAddin\CesiumIonRevit.addin</AddinFileSource>
     <ThirdPartySource>$(SolutionDir)ThirdParty.json</ThirdPartySource>
   </PropertyGroup>
@@ -47,17 +46,12 @@
   <ItemGroup>
     <TilerBinFiles Include="$(TilersBinSourceDir)**\*.*" />
     <TilerConfigFiles Include="$(TilersConfigSourceDir)ThirdParty.json" />
-    <ImageFiles Include="$(ImagesSourceDir)**\*.*" />
     <AddinFile Include="$(AddinFileSource)" />
     <ThirdPartyFile Include="$(ThirdPartySource)" />
   </ItemGroup>
 
   <!-- Copy files post build -->
   <Target Name="CustomPostBuild" AfterTargets="Build">
-    <Copy SourceFiles="@(ImageFiles)"
-          DestinationFolder="$(TargetDir)Images\%(RecursiveDir)"
-          SkipUnchangedFiles="true" />
-
     <Copy SourceFiles="@(AddinFile)" 
           DestinationFolder="$(TargetDir)..\" />
 
