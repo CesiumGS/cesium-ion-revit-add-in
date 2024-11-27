@@ -7,7 +7,7 @@ namespace CesiumIonRevitAddin.Export
     {
         public static void Run(List<GltfBufferView> bufferViews, List<GltfBuffer> buffers, string bufferUri)
         {
-            int bytePosition = 0;
+            ulong bytePosition = 0;
             int currentBuffer = 0;
 
             foreach (var bufferView in bufferViews)

@@ -8,10 +8,10 @@ namespace CesiumIonRevitAddin.Gltf
         public int Buffer { get; set; }
 
         [JsonProperty("byteOffset")]
-        public int ByteOffset { get; set; }
+        public ulong ByteOffset { get; set; }
 
         [JsonProperty("byteLength")]
-        public int ByteLength { get; set; }
+        public ulong ByteLength { get; set; }
 
         /// <summary>
         [JsonProperty("target")]
@@ -20,7 +20,7 @@ namespace CesiumIonRevitAddin.Gltf
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        public GltfBufferView(int buffer, int byteOffset, int byteLength, Targets target, string name)
+        public GltfBufferView(int buffer, ulong byteOffset, ulong byteLength, Targets target, string name)
         {
             Buffer = buffer;
             ByteOffset = byteOffset;

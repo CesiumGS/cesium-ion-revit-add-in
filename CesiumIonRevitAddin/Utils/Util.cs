@@ -28,7 +28,11 @@ namespace CesiumIonRevitAddin.Utils
                     sb.Append(c);
                 }
             }
-            return sb.ToString();
+            string gltfName = sb.ToString();
+            // glTF properties can't start with a number.
+            // Some Revit material names like "---" can also become empty-string glTF names.
+            if (gltfName.Length > 0 && char.IsDigit(gltfName[0])) gltfName = "_" + gltfName;
+            return gltfName;
         }
         public static bool CanBeLockOrHidden(Element element, View view)
         {

@@ -8,6 +8,6 @@ namespace CesiumIonRevitAddin.Gltf
         public string Uri { get; set; }
 
         [JsonProperty("byteLength")]
-        public int ByteLength { get; set; }
+        public ulong ByteLength { get; set; }
     }
 }
