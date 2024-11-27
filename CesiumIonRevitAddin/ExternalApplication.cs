@@ -210,6 +210,12 @@ namespace CesiumIonRevitAddin
                 return exportResult;
             }
 
+            if (TilerExportUtils.GetTilerLocation() == string.Empty)
+            {
+                TaskDialog.Show("Export Complete", "View exported to glTF");
+                return Result.Succeeded;
+            }
+
             // If we don't export to ion, we execute the tiler locally
             TilerExportUtils.RunTiler(preferences.JsonPath);
 

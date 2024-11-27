@@ -127,7 +127,12 @@ namespace CesiumIonRevitAddin.Utils
 
         public static string GetTilerLocation()
         {
-            return Util.GetAddinFolder() + "\\tiler\\tilers.exe";
+            string envPath = Environment.GetEnvironmentVariable("CESIUM_TILER_PATH");
+            if (!string.IsNullOrEmpty(envPath) && File.Exists(envPath))
+            {
+                return envPath;
+            }
+            return string.Empty;
         }
     }
 }
