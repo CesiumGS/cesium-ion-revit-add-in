@@ -149,7 +149,7 @@ namespace CesiumIonRevitAddin.Export
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
 
                             if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
-                            {
+                                {
                                 gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
                                 AddParameterToClassSchema(parameter, classSchema);
                             }
@@ -549,36 +549,33 @@ namespace CesiumIonRevitAddin.Export
             }
             var classSchemaProperties = (Dictionary<string, object>)classSchemaOut;
 
-            if (!classSchemaProperties.TryGetValue(gltfPropertyName, out var value))
+            if (!classSchemaProperties.ContainsKey(gltfPropertyName))
             {
-                value = new Dictionary<string, object>();
-                classSchemaProperties.Add(gltfPropertyName, value);
+                var propertySchema = new Dictionary<string, object>();
+                propertySchema.Add("name", parameter.Definition.Name);
+
+                switch (parameter.StorageType)
+                {
+                    case StorageType.Double:
+                        propertySchema.Add("type", "SCALAR");
+                        propertySchema.Add("componentType", "FLOAT32");
+                        break;
+                    case StorageType.Integer:
+                        propertySchema.Add("type", "SCALAR");
+                        propertySchema.Add("componentType", "INT32");
+                        break;
+                    case StorageType.String:
+                        propertySchema.Add("type", "STRING");
+                        break;
+                    case StorageType.ElementId:
+                        propertySchema.Add("type", "STRING");
+                        break;
+                    default:
+                        break;
+                }
+
+                propertySchema.Add("required", false);
             }
-
-            var propertySchema = (Dictionary<string, object>)value;
-            propertySchema.Add("name", parameter.Definition.Name);
-
-            switch (parameter.StorageType)
-            {
-                case StorageType.Double:
-                    propertySchema.Add("type", "SCALAR");
-                    propertySchema.Add("componentType", "FLOAT32");
-                    break;
-                case StorageType.Integer:
-                    propertySchema.Add("type", "SCALAR");
-                    propertySchema.Add("componentType", "INT32");
-                    break;
-                case StorageType.String:
-                    propertySchema.Add("type", "STRING");
-                    break;
-                case StorageType.ElementId:
-                    propertySchema.Add("type", "STRING");
-                    break;
-                default:
-                    break;
-            }
-
-            propertySchema.Add("required", false);
         }
 
         private static void SetGltfMaterialsProperties(MaterialNode materialNode, float opacity, ref GltfPbr gltfPbr, ref GltfMaterial gltfMaterial)
