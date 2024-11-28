@@ -150,7 +150,7 @@ namespace CesiumIonRevitAddin.Export
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
 
                             if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
-                                {
+                            {
                                 gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
                                 AddParameterToClassSchema(parameter, classSchema);
                             }
