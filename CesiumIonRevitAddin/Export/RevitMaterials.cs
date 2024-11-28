@@ -109,6 +109,8 @@ namespace CesiumIonRevitAddin.Export
                 return;
             }
 
+            if (preferences.VerboseLogging) Logger.Instance.Log("Exporting MaterialId " + id.ToString());
+
             string uniqueId;
             if (materialIdDictionary.TryGetValue(id, out GltfMaterial gltfMaterial))
             {
