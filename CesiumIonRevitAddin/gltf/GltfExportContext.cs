@@ -729,6 +729,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnMaterial(MaterialNode node)
         {
+            if (preferences.VerboseLogging) Logger.Instance.Log("Beginning OnMaterial...");
+
             materialHasTexture = false;
             if (preferences.Materials)
             {
@@ -747,6 +749,7 @@ namespace CesiumIonRevitAddin.Gltf
                     khrTextureTransformAdded = true;
                 }
             }
+            if (preferences.VerboseLogging) Logger.Instance.Log("...ending OnMaterial");
         }
 
         public class SerializableTransform
@@ -796,6 +799,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnPolymesh(PolymeshTopology node)
         {
+            if (preferences.VerboseLogging) Logger.Instance.Log("Beginning OnPolymesh...");
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             var pts = node.GetPoints();
@@ -850,6 +854,8 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 GltfExportUtils.AddTexCoords(preferences, node, currentGeometry.CurrentItem.TexCoords);
             }
+
+            if (preferences.VerboseLogging) Logger.Instance.Log("...ending OnPolymesh");
         }
 
         RenderNodeAction IExportContext.OnViewBegin(ViewNode node)
