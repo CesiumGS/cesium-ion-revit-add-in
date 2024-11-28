@@ -2,6 +2,7 @@
 using Autodesk.Revit.DB.Visual;
 using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Utils;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -552,6 +553,7 @@ namespace CesiumIonRevitAddin.Export
             if (!classSchemaProperties.ContainsKey(gltfPropertyName))
             {
                 var propertySchema = new Dictionary<string, object>();
+                classSchemaProperties.Add(gltfPropertyName, propertySchema);
                 propertySchema.Add("name", parameter.Definition.Name);
 
                 switch (parameter.StorageType)
