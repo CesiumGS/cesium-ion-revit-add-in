@@ -251,6 +251,8 @@ namespace CesiumIonRevitAddin
 
             Document doc = commandData.Application.ActiveUIDocument.Document;
 
+            IonExportUtils.ConfigureClient(commandData.Application);
+
             // Get the export view
             View3D exportView = IonExportUtils.GetExportView(doc.ActiveView);
             if (exportView == null)
@@ -302,7 +304,7 @@ namespace CesiumIonRevitAddin
             // Clean up the export contents
             IonExportUtils.Cleanup(preferences);
 
-            string assetName = Path.GetFileName(doc.PathName);
+            string assetName = Path.GetFileName(doc.Title);
             string assetDesc = IonExportUtils.GetProjectInformationAsString(doc);
 
             // Only supply an EPSG code if the user has shared coordinates enabled
@@ -328,6 +330,8 @@ namespace CesiumIonRevitAddin
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
+            IonExportUtils.ConfigureClient(commandData.Application);
+
             using (var ionConnectDialog = new IonConnectDialog())
             {
                 ionConnectDialog.ShowDialog();
