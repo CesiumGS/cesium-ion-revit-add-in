@@ -179,10 +179,16 @@ namespace CesiumIonRevitAddin.Utils
 
         public static void ConfigureClient(UIApplication app)
         {
-            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+            string fileVersionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
             string revitInfo = $"Autodesk Revit {app.Application.SubVersionNumber}";
+            string view = app.ActiveUIDocument.ActiveView.Name;
             string project = app.ActiveUIDocument.Document.Title;
-            Connection.ConfigureClient("Cesium ion for Autodesk Revit", fileVersionInfo.ProductVersion, revitInfo, project);
+
+            string santizedView = string.IsNullOrWhiteSpace(view) ? "UnknownView" : view;
+            string sanitizedProject = string.IsNullOrWhiteSpace(project) ? "UnknownProject" : project;
+            string projectInfo = $"{sanitizedProject}:{santizedView}";
+
+            Connection.ConfigureClient("Cesium ion for Autodesk Revit", fileVersionInfo, revitInfo, projectInfo);
         }
     }
 }

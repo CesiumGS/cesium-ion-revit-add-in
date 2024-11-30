@@ -17,6 +17,7 @@ using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 
 namespace CesiumIonRevitAddin.CesiumIonClient
 {
@@ -266,7 +267,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             attribution = attribution.Replace("__\\n__", "\n");
 
             // The API will error if the name is empty
-            string sanitizedName = string.IsNullOrWhiteSpace(project) ? "UnknownProject" : project;
+            string sanitizedName = string.IsNullOrWhiteSpace(name) ? "UnknownProject" : name;
 
             // Prepare the content to send to the API
             var content = new JObject
@@ -613,12 +614,20 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
             string userAgent = $"Mozilla/5.0 ({sanitizedOsInfo}) {sanitizedClientName}/{sanitizedClientVersion} (Project {sanitizedProject} Engine {sanitizedEngine})";
 
-            client.DefaultRequestHeaders.Add("User-Agent", userAgent);
-            client.DefaultRequestHeaders.Add("X-Cesium-Client", sanitizedClientName);
-            client.DefaultRequestHeaders.Add("X-Cesium-Client-Version", sanitizedClientVersion);
-            client.DefaultRequestHeaders.Add("X-Cesium-Client-OS", sanitizedOsInfo);
-            client.DefaultRequestHeaders.Add("X-Cesium-Client-Engine", sanitizedEngine);
-            client.DefaultRequestHeaders.Add("X-Cesium-Client-Project", sanitizedProject);
+            client.DefaultRequestHeaders.Add("User-Agent", SanitizeHeader(userAgent));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client", SanitizeHeader(sanitizedClientName));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-Version", SanitizeHeader(sanitizedClientVersion));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-OS", SanitizeHeader(sanitizedOsInfo));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-Engine", SanitizeHeader(sanitizedEngine));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-Project", SanitizeHeader(sanitizedProject));
+        }
+
+        private static string SanitizeHeader(string header)
+        {   
+            if (header == null) return string.Empty;
+
+            // Printable ASCII chars only
+            return Regex.Replace(header, @"[^\u0020-\u007E]", string.Empty);
         }
 
     }
