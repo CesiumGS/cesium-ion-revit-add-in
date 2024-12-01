@@ -1,10 +1,13 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using CesiumIonRevitAddin.CesiumIonClient;
 using CesiumIonRevitAddin.Forms;
 using CesiumIonRevitAddin.Gltf;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -172,6 +175,20 @@ namespace CesiumIonRevitAddin.Utils
                 default:
                     return string.Empty;
             }
+        }
+
+        public static void ConfigureClient(UIApplication app)
+        {
+            string fileVersionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+            string revitInfo = $"Autodesk Revit {app.Application.SubVersionNumber}";
+            string view = app.ActiveUIDocument.ActiveView.Name;
+            string project = app.ActiveUIDocument.Document.Title;
+
+            string santizedView = string.IsNullOrWhiteSpace(view) ? "UnknownView" : view;
+            string sanitizedProject = string.IsNullOrWhiteSpace(project) ? "UnknownProject" : project;
+            string projectInfo = $"{sanitizedProject}:{santizedView}";
+
+            Connection.ConfigureClient("Cesium ion for Autodesk Revit", fileVersionInfo, revitInfo, projectInfo);
         }
     }
 }
