@@ -18,13 +18,10 @@ namespace CesiumIonRevitAddin.Utils
             for (int i = 0; i < input.Length; ++i)
             {
                 Char c = input[i];
-                if (Char.IsLetterOrDigit(c))
+                // Verify the character is ASCII and alphanumeric
+                if (c <= 127 && Char.IsLetterOrDigit(c))
                 {
-                    if (i == 0)
-                    {
-                        c = Char.ToLower(c);
-                    }
-
+                    if (i == 0) c = Char.ToLower(c);
                     sb.Append(c);
                 }
             }
