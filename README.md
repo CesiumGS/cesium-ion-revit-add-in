@@ -27,6 +27,8 @@ By leveraging Cesium ion and the power of 3D Tiles, even multi-gigabyte models c
 
 Autodesk Revit versions 2022 to 2025 are supported.
 
+For Cesium clients, we recommend using Cesium for Unreal v2.11.0 or later, Cesium for Unity v1.14.0 or later, and CesiumJS v1.124.0 or later
+
 Learn more at https://cesium.com.
 
 ![Snowdon](./Documentation/Resources/SnowdonRevitIon.png)
