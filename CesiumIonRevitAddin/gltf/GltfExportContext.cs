@@ -270,14 +270,15 @@ namespace CesiumIonRevitAddin.Gltf
         // Add information about the physical Revit building/property (via the project's PropertyInfo) to glTF "properties"
         private static void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
         {
-            if (propertyValue == "")
+            if (Util.ShouldFilterMetadata(propertyValue))
             {
                 return;
             }
 
             // add to node
             var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
-            rootNode.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyValue);
+            // rootNode.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyValue);
+            rootNode.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, propertyValue);
 
             // add to schema
             var propertySchema = new Dictionary<string, object>();
@@ -368,9 +369,9 @@ namespace CesiumIonRevitAddin.Gltf
 
                     if (parameter.HasValue && 
                         !Util.ShouldFilterMetadata(paramValue) && 
-                        !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
+                        !newNode.Extensions.EXT_structural_metadata.HasProperty(propertyName))
                     {
-                        newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
+                        newNode.Extensions.EXT_structural_metadata.AddProperty(propertyName, paramValue);
                     }
                     else
                     {

@@ -151,9 +151,9 @@ namespace CesiumIonRevitAddin.Export
 
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
 
-                            if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
+                            if (!gltfMaterial.Extensions.EXT_structural_metadata.HasProperty(paramGltfName))
                             {
-                                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
+                                gltfMaterial.Extensions.EXT_structural_metadata.AddProperty(paramGltfName, paramValue);
                                 AddParameterToClassSchema(parameter, classSchema);
                             }
                         }
@@ -452,14 +452,14 @@ namespace CesiumIonRevitAddin.Export
         {
             if (!(doc.GetElement(material.AppearanceAssetId) is AppearanceAssetElement assetElement))
             {
-                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add("AppearanceAsset", "None");
+                gltfMaterial.Extensions.EXT_structural_metadata.AddProperty("AppearanceAsset", "None");
                 return;
             }
 
             Asset renderingAsset = assetElement.GetRenderingAsset();
             if (renderingAsset == null)
             {
-                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add("RenderingAsset", "None");
+                gltfMaterial.Extensions.EXT_structural_metadata.AddProperty("RenderingAsset", "None");
                 return;
             }
 
@@ -477,7 +477,6 @@ namespace CesiumIonRevitAddin.Export
             {
                 classSchema = extStructuralMetadataSchema.AddClass(material.Name);
                 classPropertiesSchema = new Dictionary<string, object>();
-                classSchema["properties"] = classPropertiesSchema;
             }
 
             for (int i = 0; i < renderingAsset.Size; i++)
@@ -489,18 +488,18 @@ namespace CesiumIonRevitAddin.Export
 
                     string gltfPropertyName = Util.GetGltfName(assetPropertyString.Name);
 
-                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
+                    if (!gltfMaterial.Extensions.EXT_structural_metadata.HasProperty(gltfPropertyName))
                     {
-                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
+                        gltfMaterial.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, assetPropertyString.Value);
                     }
                     else
                     {
                         // A property from the Appearance can have the same name as one from the physical Material.
                         // For example, "category".
                         gltfPropertyName = string.Concat("render", char.ToUpper(gltfPropertyName[0]), gltfPropertyName.Substring(1));
-                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
+                        if (!gltfMaterial.Extensions.EXT_structural_metadata.HasProperty(gltfPropertyName))
                         {
-                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
+                            gltfMaterial.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, assetPropertyString.Value);
                         }
                     }
 
@@ -539,6 +538,8 @@ namespace CesiumIonRevitAddin.Export
                     }
                 }
             }
+
+            if (classPropertiesSchema.Count > 0) classSchema["properties"] = classPropertiesSchema;
         }
 
         private static void AddParameterToClassSchema(Parameter parameter, Dictionary<string, object> classSchema)
