@@ -10,6 +10,7 @@ namespace CesiumIonRevitAddin.Gltf
         [JsonProperty("class")]
         public String Class;
 
+        [JsonProperty("properties")]
         Dictionary<String, Object> properties;
 
         public void AddProperty(String key, Object value)
