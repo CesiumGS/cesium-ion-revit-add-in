@@ -365,7 +365,7 @@ namespace CesiumIonRevitAddin.Gltf
                 foreach (Parameter parameter in parameterSet)
                 {
                     string propertyName = Util.GetGltfName(parameter.Definition.Name);
-                    object paramValue = Util.GetParameterValue(parameter);
+                    ParameterValue paramValue = Util.GetParameterValue(parameter);
 
                     if (parameter.HasValue && 
                         !Util.ShouldFilterMetadata(paramValue) && 

@@ -108,13 +108,12 @@ namespace CesiumIonRevitAddin.Utils
         {
             return value == null || ShouldFilterMetadata(value.ToString());
         }
-
         public static bool ShouldFilterMetadata(string value)
         {
             return _metaDataFilterValues.Contains(value);
         }
 
-        public static object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
+        public static ParameterValue GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
         {
             switch (parameter.StorageType)
             {
@@ -125,9 +124,9 @@ namespace CesiumIonRevitAddin.Utils
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId());
                 default:
-                    return null;
+                    return new ParameterValue();
             }
         }
     }
