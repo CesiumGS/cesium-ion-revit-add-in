@@ -10,7 +10,9 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Xml.Linq;
 
 namespace CesiumIonRevitAddin.Gltf
 {
@@ -362,16 +364,22 @@ namespace CesiumIonRevitAddin.Gltf
 
                 ParameterSet parameterSet = element.Parameters;
                 var parametersToSkip = new HashSet<Parameter>();
+                var elementIdProperties = new HashSet<Parameter>(); // save to resolve with additional properties such as a human-readable name
                 foreach (Parameter parameter in parameterSet)
                 {
                     string propertyName = Util.GetGltfName(parameter.Definition.Name);
                     ParameterValue paramValue = Util.GetParameterValue(parameter);
 
-                    if (parameter.HasValue && 
-                        !Util.ShouldFilterMetadata(paramValue) && 
+                    if (parameter.HasValue &&
+                        !Util.ShouldFilterMetadata(paramValue) &&
                         !newNode.Extensions.EXT_structural_metadata.HasProperty(propertyName))
                     {
                         newNode.Extensions.EXT_structural_metadata.AddProperty(propertyName, paramValue);
+
+                        if (parameter.StorageType == StorageType.ElementId)
+                        {
+                            elementIdProperties.Add(parameter);
+                        }
                     }
                     else
                     {
@@ -382,6 +390,41 @@ namespace CesiumIonRevitAddin.Gltf
                 extStructuralMetadataSchema.AddCategory(categoryName);
                 classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
                 extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet, parametersToSkip);
+
+                // Add human-readable category and family names to schema as default properties.
+                extStructuralMetadataSchema.AddDefaultSchemaProperty(categoryName, familyName, "categoryName", categoryName, "Category Name");
+                extStructuralMetadataSchema.AddDefaultSchemaProperty(categoryName, familyName, "familyName", familyName, "Family Name");
+
+                // Add additional properties (e.g. 'name') to properties that are ElementIds
+                foreach (Parameter parameter in elementIdProperties)
+                {
+                    ElementId parameterElementId = parameter.AsElementId();
+#if REVIT2022 || REVIT2023
+                    if (parameterElementId.IntegerValue != -1)
+#else               
+                    if (parameterElementId.Value != -1)
+#endif
+                    {
+                        var parameterElement = Doc.GetElement(parameterElementId);
+                        if (parameterElement != null)
+                        {
+                            // Resolve properties by getting the element's Element.Name value for human readability.
+                            // The name of the "Name" property. E.g., "type" -> "typeName"
+                            string resolvedPropertyName = Util.GetGltfName(parameter.Definition.Name) + "Name";
+
+                            // skip adding the human-readible name for the "family" parameter.
+                            // It resolves to the type name. We added "familyName" above as a default schema property.
+                            if (resolvedPropertyName == "familyName")
+                            {
+                                continue;
+                            }
+
+                            string propertyValue = parameterElement.Name;
+                            newNode.Extensions.EXT_structural_metadata.AddProperty(resolvedPropertyName, propertyValue);
+                            extStructuralMetadataSchema.AddSchemaProperty(categoryName, familyName, resolvedPropertyName, propertyValue.GetType());
+                        }
+                    }
+                }
             }
 
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
