@@ -137,15 +137,14 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         case StorageType.None:
                             {
-
                                 schemaProperty.Add("type", "STRING");
                                 break;
                             }
                         case StorageType.String:
-                        case StorageType.ElementId:
                             schemaProperty.Add("type", "STRING");
                             break;
                         case StorageType.Integer:
+                        case StorageType.ElementId:
                             schemaProperty.Add("type", "SCALAR");
                             schemaProperty.Add("componentType", "INT32");
                             break;
