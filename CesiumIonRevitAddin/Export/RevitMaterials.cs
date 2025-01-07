@@ -146,7 +146,8 @@ namespace CesiumIonRevitAddin.Export
                         if (parameter.HasValue)
                         {
                             string paramName = parameter.Definition.Name;
-                            object paramValue = Util.GetParameterValue(parameter);
+                            ParameterValue paramValue = Util.GetParameterValue(parameter);
+
                             if (Util.ShouldFilterMetadata(paramValue)) continue;
 
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
