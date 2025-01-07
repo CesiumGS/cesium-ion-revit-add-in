@@ -146,6 +146,7 @@ namespace CesiumIonRevitAddin.Export
                         if (parameter.HasValue)
                         {
                             string paramName = parameter.Definition.Name;
+
                             ParameterValue paramValue = Util.GetParameterValue(parameter);
 
                             if (Util.ShouldFilterMetadata(paramValue)) continue;
@@ -567,13 +568,11 @@ namespace CesiumIonRevitAddin.Export
                         propertySchema.Add("componentType", "FLOAT32");
                         break;
                     case StorageType.Integer:
+                    case StorageType.ElementId:
                         propertySchema.Add("type", "SCALAR");
                         propertySchema.Add("componentType", "INT32");
                         break;
                     case StorageType.String:
-                        propertySchema.Add("type", "STRING");
-                        break;
-                    case StorageType.ElementId:
                         propertySchema.Add("type", "STRING");
                         break;
                     default:
