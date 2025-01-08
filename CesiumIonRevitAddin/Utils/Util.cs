@@ -103,7 +103,7 @@ namespace CesiumIonRevitAddin.Utils
 #endif
         }
 
-        static HashSet<string> metadataFilterValues = new HashSet<string> { "", "-1" };
+        static readonly HashSet<string> metadataFilterValues = new HashSet<string> { "", "-1" };
         public static bool ShouldFilterMetadata(ParameterValue parameterValue)
         {
             if (parameterValue.IntegerValue.HasValue || parameterValue.DoubleValue.HasValue || parameterValue.LongValue.HasValue)

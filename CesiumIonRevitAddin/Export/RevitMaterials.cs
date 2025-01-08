@@ -2,11 +2,9 @@
 using Autodesk.Revit.DB.Visual;
 using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Utils;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
