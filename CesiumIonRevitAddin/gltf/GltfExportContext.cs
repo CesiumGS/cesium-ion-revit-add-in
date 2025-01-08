@@ -277,7 +277,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             // add to node
             var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
-            // rootNode.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyValue);
             rootNode.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, propertyValue);
 
             // add to schema
