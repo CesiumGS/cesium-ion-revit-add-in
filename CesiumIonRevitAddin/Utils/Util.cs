@@ -103,14 +103,22 @@ namespace CesiumIonRevitAddin.Utils
 #endif
         }
 
-        static HashSet<string> _metaDataFilterValues = new HashSet<string> { "", "-1" };
-        public static bool ShouldFilterMetadata(object value)
+        static readonly HashSet<string> metadataFilterValues = new HashSet<string> { "", "-1" };
+        public static bool ShouldFilterMetadata(ParameterValue parameterValue)
         {
-            return value == null || ShouldFilterMetadata(value.ToString());
+            if (parameterValue.IntegerValue.HasValue || parameterValue.DoubleValue.HasValue || parameterValue.LongValue.HasValue)
+            {
+                return false;
+            }
+            if (parameterValue.StringValue != null)
+            {
+                return ShouldFilterMetadata(parameterValue.StringValue);
+            }
+            return true;
         }
         public static bool ShouldFilterMetadata(string value)
         {
-            return _metaDataFilterValues.Contains(value);
+            return metadataFilterValues.Contains(value);
         }
 
         public static ParameterValue GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
