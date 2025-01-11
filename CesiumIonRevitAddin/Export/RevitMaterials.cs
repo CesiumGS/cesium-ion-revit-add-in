@@ -398,15 +398,12 @@ namespace CesiumIonRevitAddin.Export
 
             string programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string programFilesX86Path = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-
             List<string> possibleBasePaths = new List<string>();
-
             foreach (string possiblePathExtension in possiblePathExtensions)
             {
                 possibleBasePaths.Add(System.IO.Path.Combine(programFilesX86Path, possiblePathExtension));
                 possibleBasePaths.Add(System.IO.Path.Combine(programFilesPath, possiblePathExtension));
             }
-
             possibleBasePaths.AddRange(GetAdditionalRenderAppearancePaths());
 
             foreach (string basePath in possibleBasePaths)
