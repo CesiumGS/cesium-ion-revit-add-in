@@ -156,7 +156,6 @@ namespace CesiumIonRevitAddin.Utils
         {
             // Add new "_current" entries if vertex_key is unique
             string vertexKey = nodes.CurrentKey + "_" + materials.CurrentKey;
-            Logger.Instance.Log($"vertex_key: {vertexKey}");
             geometryDataObjects.AddOrUpdateCurrent(vertexKey, new GeometryDataObject());
             vertexLookupIntObjects.AddOrUpdateCurrent(vertexKey, new VertexLookupIntObject());
         }
