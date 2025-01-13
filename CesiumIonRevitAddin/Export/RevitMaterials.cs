@@ -30,6 +30,7 @@ namespace CesiumIonRevitAddin.Export
         // Temporary number to make texture scaling close to real-world values until permanent fix is in
         private const double magicTextureScalingNumber = 11.11;
         public const string INVALID_MATERIAL = "INVALID_MATERIAL";
+        public const string NULL_MATERIAL = "NULL_MATERIAL";
 
 
         /// <summary>
@@ -107,6 +108,12 @@ namespace CesiumIonRevitAddin.Export
             if (id == ElementId.InvalidElementId)
             {
                 materials.AddOrUpdateCurrentMaterial(INVALID_MATERIAL, new GltfMaterial { Name = "Revit Invalid Material" }, false);
+                return;
+            }
+
+            if (doc.GetElement(materialNode.MaterialId) == null)
+            {
+                materials.AddOrUpdateCurrentMaterial(NULL_MATERIAL, new GltfMaterial { Name = "Revit Null Material" }, false);
                 return;
             }
 
