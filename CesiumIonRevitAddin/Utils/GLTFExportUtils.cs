@@ -10,6 +10,8 @@ namespace CesiumIonRevitAddin.Utils
     {
         private const int DEF_COLOR = 250;
         private const string DEF_MATERIAL_NAME = "default";
+        private const string BIN = ".bin";
+
         public static GltfMaterial GetGLTFMaterial(List<GltfMaterial> gltfMaterials, Material material, bool doubleSided)
         {
             // search for an already existing material
@@ -37,30 +39,27 @@ namespace CesiumIonRevitAddin.Utils
                 Uri = name + BIN
             };
             buffers.Add(buffer);
-            int bufferIdx = buffers.Count - 1;
+            int bufferIndex = buffers.Count - 1;
             GltfBinaryData bufferData = new GltfBinaryData
             {
                 Name = buffer.Uri
             };
 
-            byteOffset = GltfBinaryDataUtils.ExportVertices(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors, out _, out _);
+            byteOffset = GltfBinaryDataUtils.ExportVertices(bufferIndex, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
 
             if (exportNormals)
             {
-                byteOffset = GltfBinaryDataUtils.ExportNormals(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
+                byteOffset = GltfBinaryDataUtils.ExportNormals(bufferIndex, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
             }
 
-            byteOffset = GltfBinaryDataUtils.ExportTexCoords(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
+            byteOffset = GltfBinaryDataUtils.ExportTexCoords(bufferIndex, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
 
-            GltfBinaryDataUtils.ExportFaces(bufferIdx, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
-
+            GltfBinaryDataUtils.ExportFaces(bufferIndex, byteOffset, geometryDataObject, bufferData, bufferViews, accessors);
 
             return bufferData;
         }
 
-        private static readonly string BIN = ".bin";
-
-        public static void AddNormals(Preferences preferences, Autodesk.Revit.DB.Transform transform, PolymeshTopology polymeshTopology, List<double> normals)
+        public static void AddNormals(Autodesk.Revit.DB.Transform transform, PolymeshTopology polymeshTopology, List<double> normals)
         {
             IList<XYZ> polymeshNormals = polymeshTopology.GetNormals();
 
@@ -132,7 +131,7 @@ namespace CesiumIonRevitAddin.Utils
             }
         }
 
-        public static void AddTexCoords(Preferences preferences, PolymeshTopology polymeshTopology, List<double> uvs)
+        public static void AddTexCoords(PolymeshTopology polymeshTopology, List<double> uvs)
         {
             IList<UV> polyMeshUvs = polymeshTopology.GetUVs();
 
@@ -152,13 +151,13 @@ namespace CesiumIonRevitAddin.Utils
             }
         }
 
-        public static void AddOrUpdateCurrentItem(IndexedDictionary<GltfNode> nodes, IndexedDictionary<GeometryDataObject> geomDataObj,
-            IndexedDictionary<VertexLookupIntObject> vertexIntObj, IndexedDictionary<GltfMaterial> materials)
+        public static void AddOrUpdateCurrentItem(IndexedDictionary<GltfNode> nodes, IndexedDictionary<GeometryDataObject> geometryDataObjects,
+            IndexedDictionary<VertexLookupIntObject> vertexLookupIntObjects, IndexedDictionary<GltfMaterial> materials)
         {
             // Add new "_current" entries if vertex_key is unique
             string vertex_key = nodes.CurrentKey + "_" + materials.CurrentKey;
-            geomDataObj.AddOrUpdateCurrent(vertex_key, new GeometryDataObject());
-            vertexIntObj.AddOrUpdateCurrent(vertex_key, new VertexLookupIntObject());
+            geometryDataObjects.AddOrUpdateCurrent(vertex_key, new GeometryDataObject());
+            vertexLookupIntObjects.AddOrUpdateCurrent(vertex_key, new VertexLookupIntObject());
         }
 
         public static void AddRPCNormals(Preferences preferences, MeshTriangle triangle, GeometryDataObject geomDataObj)

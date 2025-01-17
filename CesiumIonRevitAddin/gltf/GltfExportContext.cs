@@ -5,6 +5,7 @@ using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -526,10 +527,10 @@ namespace CesiumIonRevitAddin.Gltf
                     meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
                     if (preferences.Materials)
                     {
-                        var materialKey = kvp.Key.Split(UNDERSCORE)[1];
+                        string materialKey = kvp.Key.Split(UNDERSCORE)[1];
                         if (materials.Contains(materialKey))
                         {
-                            var material = materials.Dict[materialKey];
+                            GltfMaterial material = materials.Dict[materialKey];
                             if (material.Name != RevitMaterials.INVALID_MATERIAL)
                             {
                                 meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
@@ -847,12 +848,12 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(preferences, CurrentFullTransform, node, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(CurrentFullTransform, node, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
             {
-                GltfExportUtils.AddTexCoords(preferences, node, currentGeometry.CurrentItem.TexCoords);
+                GltfExportUtils.AddTexCoords(node, currentGeometry.CurrentItem.TexCoords);
             }
 
             if (preferences.VerboseLogging) Logger.Instance.Log("...ending OnPolymesh");
