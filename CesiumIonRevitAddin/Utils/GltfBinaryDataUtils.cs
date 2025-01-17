@@ -1,9 +1,7 @@
-﻿using Autodesk.Revit.DB;
-using CesiumIonRevitAddin.Gltf;
+﻿using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Model;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace CesiumIonRevitAddin.Utils
 {
