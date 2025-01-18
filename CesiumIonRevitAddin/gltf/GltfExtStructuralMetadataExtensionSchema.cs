@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using CesiumIonRevitAddin.Utils;
+using System;
 using System.Collections.Generic;
 
 namespace CesiumIonRevitAddin.Gltf
@@ -41,8 +42,6 @@ namespace CesiumIonRevitAddin.Gltf
             levelIdProperty.Add("type", "STRING");
             levelIdProperty.Add("required", false);
             elementClassProperties.Add("levelId", levelIdProperty);
-
-
 
             var classes = GetClasses();
             classes.Add("element", elementClass);
@@ -136,15 +135,14 @@ namespace CesiumIonRevitAddin.Gltf
                     {
                         case StorageType.None:
                             {
-
                                 schemaProperty.Add("type", "STRING");
                                 break;
                             }
                         case StorageType.String:
-                        case StorageType.ElementId:
                             schemaProperty.Add("type", "STRING");
                             break;
                         case StorageType.Integer:
+                        case StorageType.ElementId:
                             schemaProperty.Add("type", "SCALAR");
                             schemaProperty.Add("componentType", "INT32");
                             break;
@@ -157,6 +155,61 @@ namespace CesiumIonRevitAddin.Gltf
                     }
 
                     schemaProperty.Add("required", IsRequired(parameter.Definition.Name));
+                }
+            }
+        }
+
+        public void AddDefaultSchemaProperty(string categoryName, string familyName, string propertyName, string defaultValue, string name)
+        {
+            var gltfClassName = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
+            ClassType gltfClass = GetClass(gltfClassName);
+            PropertiesType schemaProperties = GetProperties(gltfClass);
+            if (!schemaProperties.ContainsKey(propertyName))
+            {
+                schemaProperties.Add(propertyName, new PropertyType());
+                var schemaProperty = (PropertyType)schemaProperties[propertyName];
+                schemaProperty.Add("name", name);
+                schemaProperty.Add("type", "STRING");
+                schemaProperty.Add("default", defaultValue);
+            }
+        }
+
+        public void AddSchemaProperty(string categoryName, string familyName, string propertyName, Type propertyType)
+        {
+            var gltfClassName = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
+            ClassType gltfClass = GetClass(gltfClassName);
+            PropertiesType schemaProperties = GetProperties(gltfClass);
+            if (!schemaProperties.ContainsKey(propertyName))
+            {
+                var schemaProperty = new PropertyType();
+                schemaProperty.Add("name", propertyName);
+
+                bool typeHandled = true;
+
+                if (propertyType == typeof(string))
+                {
+                    schemaProperty.Add("type", "STRING");
+                }
+                else if (propertyType == typeof(int) || propertyType == typeof(bool))
+                {
+                    schemaProperty.Add("type", "SCALAR");
+                    schemaProperty.Add("componentType", "INT32");
+                }
+                else if (propertyType == typeof(double) || propertyType == typeof(float))
+                {
+                    schemaProperty.Add("type", "SCALAR");
+                    schemaProperty.Add("componentType", "FLOAT32");
+                } else
+                {
+                    typeHandled = false;
+                }
+
+                if (typeHandled)
+                {
+                    schemaProperties.Add(propertyName, schemaProperty);
+                } else
+                {
+                    Logger.Instance.Log("Error: Cannot handle parameter type " + propertyType + " for property " + propertyName);
                 }
             }
         }
