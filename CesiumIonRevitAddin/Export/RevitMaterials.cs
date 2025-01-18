@@ -2,7 +2,6 @@
 using Autodesk.Revit.DB.Visual;
 using CesiumIonRevitAddin.Gltf;
 using CesiumIonRevitAddin.Utils;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -153,7 +152,9 @@ namespace CesiumIonRevitAddin.Export
                         if (parameter.HasValue)
                         {
                             string paramName = parameter.Definition.Name;
-                            object paramValue = Util.GetParameterValue(parameter);
+
+                            ParameterValue paramValue = Util.GetParameterValue(parameter);
+
                             if (Util.ShouldFilterMetadata(paramValue)) continue;
 
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
@@ -574,13 +575,11 @@ namespace CesiumIonRevitAddin.Export
                         propertySchema.Add("componentType", "FLOAT32");
                         break;
                     case StorageType.Integer:
+                    case StorageType.ElementId:
                         propertySchema.Add("type", "SCALAR");
                         propertySchema.Add("componentType", "INT32");
                         break;
                     case StorageType.String:
-                        propertySchema.Add("type", "STRING");
-                        break;
-                    case StorageType.ElementId:
                         propertySchema.Add("type", "STRING");
                         break;
                     default:
