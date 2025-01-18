@@ -43,8 +43,6 @@ namespace CesiumIonRevitAddin.Gltf
             levelIdProperty.Add("required", false);
             elementClassProperties.Add("levelId", levelIdProperty);
 
-
-
             var classes = GetClasses();
             classes.Add("element", elementClass);
         }

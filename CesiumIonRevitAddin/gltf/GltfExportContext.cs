@@ -402,7 +402,7 @@ namespace CesiumIonRevitAddin.Gltf
                     if (parameterElementId.Value != -1)
 #endif
                     {
-                        var parameterElement = Doc.GetElement(parameterElementId);
+                        Element parameterElement = Doc.GetElement(parameterElementId);
                         if (parameterElement != null)
                         {
                             // Resolve properties by getting the element's Element.Name value for human readability.
@@ -422,6 +422,15 @@ namespace CesiumIonRevitAddin.Gltf
                         }
                     }
                 }
+
+                // All nodes should have its ElementId in the metadata
+#if REVIT2022 || REVIT2023
+                int elementIdValue = elementId.IntegerValue;
+#else
+                int elementIdValue = (int) elementId.Value;
+#endif
+                newNode.Extensions.EXT_structural_metadata.AddProperty("elementId", elementIdValue);
+                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "elementId", elementIdValue.GetType());
             }
 
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
