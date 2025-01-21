@@ -4,9 +4,19 @@ namespace CesiumIonRevitAddin.Model
 {
     internal class VertexLookupIntObject : Dictionary<PointIntObject, int>
     {
-        public int AddVertex(PointIntObject p) => this.ContainsKey(p)
-              ? this[p]
-              : this[p] = this.Count;
+        public int AddVertex(PointIntObject p)
+        {
+            if (this.ContainsKey(p))
+            {
+                return this[p];
+            }
+            else
+            {
+                int index = this.Count;
+                this[p] = index;
+                return index;
+            }
+        }
 
         /// <summary>
         /// Define equality for integer-based PointInt.
