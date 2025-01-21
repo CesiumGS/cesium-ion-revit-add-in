@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace CesiumIonRevitAddin.Forms
@@ -40,6 +41,12 @@ namespace CesiumIonRevitAddin.Forms
 
         private void ExportButton_Click(object sender, EventArgs e)
         {
+            if (!string.IsNullOrEmpty(this.crsInput.Text) && !ValidateInputCRS(this.crsInput.Text))
+            {
+                Autodesk.Revit.UI.TaskDialog.Show("Invalid EPSG Code", "Please enter a valid 4- or 5-digit EPSG code in the range 1024 to 32767.  For combined CRS, use the format 'EPSG+EPSG', where both codes are within the valid range.");
+                return;
+            }
+
             this.preferences.SharedCoordinates = sharedCoordinates.Checked;
             this.preferences.TrueNorth = sharedCoordinates.Checked; // For now, true north only be used with shared coordinates
             this.preferences.Instancing = instancing.Checked;
@@ -77,6 +84,22 @@ namespace CesiumIonRevitAddin.Forms
         {
             textures.Enabled = materials.Checked;
             maxTextureSize.Enabled = textures.Checked && materials.Checked;
+        }
+
+        private static bool ValidateInputCRS(string inputCRS)
+        {
+            var regex = new Regex(@"^(\d{4,5})(\+(\d{4,5}))?$");
+            var match = regex.Match(inputCRS);
+
+            if (!match.Success) return false;
+
+            int horizontal = int.Parse(match.Groups[1].Value);
+            int vertical = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : -1;
+
+            bool isHorizontalValid = horizontal >= 1024 && horizontal <= 32767;
+            bool isVerticalValid = vertical == -1 || (vertical >= 1024 && vertical <= 32767);
+
+            return isHorizontalValid && isVerticalValid;    
         }
     }
 }
