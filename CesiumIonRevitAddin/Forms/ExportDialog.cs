@@ -91,8 +91,7 @@ namespace CesiumIonRevitAddin.Forms
             var regex = new Regex(@"^(\d{4,5})(\+(\d{4,5}))?$");
             var match = regex.Match(inputCRS);
 
-            if (!match.Success) 
-                return false;
+            if (!match.Success) return false;
 
             int horizontal = int.Parse(match.Groups[1].Value);
             int vertical = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : -1;
