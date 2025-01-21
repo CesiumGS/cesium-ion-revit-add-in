@@ -5,6 +5,7 @@ using CesiumIonRevitAddin.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace CesiumIonRevitAddin.Export
 {
@@ -285,10 +286,13 @@ namespace CesiumIonRevitAddin.Export
                 {
                     case "PrismOpaqueSchema":
                     case "AdvancedOpaque":
-                        attachedBitmapInfo = ParseSchemaPrismOpaqueSchema(renderingAsset);
+                        attachedBitmapInfo = ParsePrismOpaqueSchema(renderingAsset);
                         break;
                     case "HardwoodSchema":
-                        attachedBitmapInfo = ParseSchemaHardwoodSchema(renderingAsset);
+                        attachedBitmapInfo = ParseHardwoodSchema(renderingAsset);
+                        break;
+                    case "GenericSchema":
+                        attachedBitmapInfo = ParseGenericSchema(renderingAsset);
                         break;
                     default:
                         Logger.Instance.Log("skipping material processing of unknown material schema type: " + schema);
@@ -300,18 +304,28 @@ namespace CesiumIonRevitAddin.Export
         }
 
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
-        private static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
+        private static List<BitmapInfo> ParsePrismOpaqueSchema(Asset renderingAsset)
+        {
+            AssetProperty baseColorProperty = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
+            List<BitmapInfo> bitmapInfoCollection = GetBitmapInfoCollection(baseColorProperty);
+            return bitmapInfoCollection;
+        }
+
+        private static List<BitmapInfo> GetBitmapInfoCollection(AssetProperty baseColorProperty)
         {
             var bitmapInfoCollection = new List<BitmapInfo>();
 
-            AssetProperty baseColorProperty = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
             if (baseColorProperty.NumberOfConnectedProperties < 1)
             {
                 return bitmapInfoCollection;
             }
 
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
+
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+            // Procedurally generated textures (e.g., NoiseSchema) will not have bitmaps.
+            if (path == null) return bitmapInfoCollection;
+
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
             // It's possible for a bitmap object propery to have a path to a texture file, but that
             // file is not on the disk. The can happen if the texture patch and the model is being exported
@@ -330,38 +344,22 @@ namespace CesiumIonRevitAddin.Export
             return bitmapInfoCollection;
         }
 
-        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Protein_Hardwood_Schema_html
-        private static List<BitmapInfo> ParseSchemaHardwoodSchema(Asset renderingAsset)
+        private static List<BitmapInfo> ParseGenericSchema(Asset renderingAsset)
         {
-            var bitmapInfoCollection = new List<BitmapInfo>();
-
-            AssetProperty baseColorProperty = renderingAsset.FindByName(Hardwood.HardwoodColor);
-            if (baseColorProperty.NumberOfConnectedProperties < 1)
-            {
-                return bitmapInfoCollection;
-            }
-
-            var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
-            var path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
-            string absolutePath = GetAbsoluteMaterialPath(path.Value);
-            // It's possible for a bitmap object propery to have a path to a texture file, but that
-            // file is not on the disk. The can happen if the texture patch and the model is being exported
-            // on another machine that doesn't have the materials installed in that location. Test for this case.
-            if (absolutePath == null)
-            {
-                Logger.Instance.Log("Could not find the following texture: " + path.Value);
-                return bitmapInfoCollection;
-            }
-            var baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
-
-            AddTextureTransformInfo(ref baseColor, connectedProperty);
-
-            bitmapInfoCollection.Add(baseColor);
-
+            AssetProperty baseColorProperty = renderingAsset.FindByName("generic_diffuse");
+            List<BitmapInfo> bitmapInfoCollection = GetBitmapInfoCollection(baseColorProperty);
             return bitmapInfoCollection;
         }
 
-        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
+        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Protein_Hardwood_Schema_html
+        private static List<BitmapInfo> ParseHardwoodSchema(Asset renderingAsset)
+        {
+            AssetProperty baseColorProperty = renderingAsset.FindByName(Hardwood.HardwoodColor);
+            List<BitmapInfo> bitmapInfoCollection = GetBitmapInfoCollection(baseColorProperty);
+            return bitmapInfoCollection;
+        }
+
+        // See https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
         private static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
             bitmapInfo.Offset = new double[]
@@ -384,9 +382,18 @@ namespace CesiumIonRevitAddin.Export
             };
         }
 
+        private static readonly string baseCommonPath = Path.Combine("Common Files", "Autodesk Shared", "Materials", "Textures");
+        private static readonly string[] possiblePathExtensions = new string[] {
+            baseCommonPath,
+            Path.Combine(baseCommonPath, "1", "Mats"),
+            Path.Combine(baseCommonPath, "2", "Mats"),
+            Path.Combine(baseCommonPath, "3", "Mats")
+        };
+
         private static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
         {
             string[] allPaths = relativeOrAbsolutePath.Split('|');
+            allPaths = allPaths.Distinct().ToArray();
             relativeOrAbsolutePath = allPaths[allPaths.Length - 1];
 
             if (Path.IsPathRooted(relativeOrAbsolutePath) && File.Exists(relativeOrAbsolutePath))
@@ -396,13 +403,12 @@ namespace CesiumIonRevitAddin.Export
 
             string programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string programFilesX86Path = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-
-            List<string> possibleBasePaths = new List<string>
+            List<string> possibleBasePaths = new List<string>();
+            foreach (string possiblePathExtension in possiblePathExtensions)
             {
-                System.IO.Path.Combine(programFilesX86Path, "Common Files", "Autodesk Shared", "Materials", "Textures"),
-                System.IO.Path.Combine(programFilesPath, "Common Files", "Autodesk Shared", "Materials", "Textures")
-            };
-
+                possibleBasePaths.Add(System.IO.Path.Combine(programFilesX86Path, possiblePathExtension));
+                possibleBasePaths.Add(System.IO.Path.Combine(programFilesPath, possiblePathExtension));
+            }
             possibleBasePaths.AddRange(GetAdditionalRenderAppearancePaths());
 
             foreach (string basePath in possibleBasePaths)
