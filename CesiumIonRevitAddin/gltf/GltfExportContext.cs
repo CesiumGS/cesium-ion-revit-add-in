@@ -776,14 +776,14 @@ namespace CesiumIonRevitAddin.Gltf
             // this custom exporter is currently not exporting lights
         }
 
-        public void OnMaterial(MaterialNode node)
+        public void OnMaterial(MaterialNode materialNode)
         {
-            if (preferences.VerboseLogging) Logger.Instance.Log("Beginning OnMaterial...");
+            if (preferences.VerboseLogging) Logger.Instance.Log($"Beginning OnMaterial, id {materialNode.MaterialId}...");
 
             materialHasTexture = false;
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadataExtensionSchema, samplers, images, textures, ref materialHasTexture, preferences);
+                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataExtensionSchema, samplers, images, textures, ref materialHasTexture, preferences);
 
                 if (!preferences.Textures)
                 {
@@ -846,12 +846,12 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        public void OnPolymesh(PolymeshTopology node)
+        public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
             if (preferences.VerboseLogging) Logger.Instance.Log("Beginning OnPolymesh...");
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
-            var pts = node.GetPoints();
+            var pts = polymeshTopology.GetPoints();
             if (!preferences.Instancing)
             {
                 pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
@@ -884,7 +884,7 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            foreach (PolymeshFacet facet in node.GetFacets())
+            foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
                 foreach (var vertIndex in facet.GetVertices())
                 {
@@ -896,12 +896,12 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(CurrentFullTransform, node, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(CurrentFullTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
             {
-                GltfExportUtils.AddTexCoords(node, currentGeometry.CurrentItem.TexCoords);
+                GltfExportUtils.AddTexCoords(polymeshTopology, currentGeometry.CurrentItem.TexCoords);
             }
 
             if (preferences.VerboseLogging) Logger.Instance.Log("...ending OnPolymesh");

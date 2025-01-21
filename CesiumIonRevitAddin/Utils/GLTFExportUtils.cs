@@ -155,9 +155,9 @@ namespace CesiumIonRevitAddin.Utils
             IndexedDictionary<VertexLookupIntObject> vertexLookupIntObjects, IndexedDictionary<GltfMaterial> materials)
         {
             // Add new "_current" entries if vertex_key is unique
-            string vertex_key = nodes.CurrentKey + "_" + materials.CurrentKey;
-            geometryDataObjects.AddOrUpdateCurrent(vertex_key, new GeometryDataObject());
-            vertexLookupIntObjects.AddOrUpdateCurrent(vertex_key, new VertexLookupIntObject());
+            string vertexKey = nodes.CurrentKey + "_" + materials.CurrentKey;
+            geometryDataObjects.AddOrUpdateCurrent(vertexKey, new GeometryDataObject());
+            vertexLookupIntObjects.AddOrUpdateCurrent(vertexKey, new VertexLookupIntObject());
         }
 
         public static void AddRPCNormals(Preferences preferences, MeshTriangle triangle, GeometryDataObject geomDataObj)
