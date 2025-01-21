@@ -179,7 +179,9 @@ namespace CesiumIonRevitAddin.Utils
 
         public static void ConfigureClient(UIApplication app)
         {
-            string fileVersionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+            string location = Assembly.GetExecutingAssembly().Location;
+            string fileVersionInfo = string.IsNullOrWhiteSpace(location) ? "UnknownVersion" : FileVersionInfo.GetVersionInfo(location).ProductVersion;
+
             string revitInfo = $"Autodesk Revit {app.Application.SubVersionNumber}";
             string view = app.ActiveUIDocument.ActiveView.Name;
             string project = app.ActiveUIDocument.Document.Title;
