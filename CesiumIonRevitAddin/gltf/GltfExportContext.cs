@@ -345,17 +345,15 @@ namespace CesiumIonRevitAddin.Gltf
             shouldLogOnElementEnd = true;
 
             var newNode = new GltfNode();
+            string categoryName = element.Category != null ? element.Category.Name : "Undefined";
+            string familyName = GetFamilyName(element);
+            newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
 
             var classMetadata = new Dictionary<string, object>();
             if (preferences.ExportMetadata)
             {
                 newNode.Extensions = newNode.Extensions ?? new GltfExtensions();
                 newNode.Extensions.EXT_structural_metadata = newNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
-
-                string categoryName = element.Category != null ? element.Category.Name : "Undefined";
-                string familyName = GetFamilyName(element);
-
-                newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
 
                 newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
 
