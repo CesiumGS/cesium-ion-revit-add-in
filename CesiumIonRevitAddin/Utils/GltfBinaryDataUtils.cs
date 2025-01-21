@@ -81,9 +81,9 @@ namespace CesiumIonRevitAddin.Utils
 
         public static ulong ExportNormals(int bufferIndex, ulong byteOffset, GeometryDataObject geometryDataObject, GltfBinaryData binaryData, List<GltfBufferView> bufferViews, List<GltfAccessor> accessors)
         {
-            for (int i = 0; i < geometryDataObject.Normals.Count; i++)
+            foreach (double normal in geometryDataObject.Normals)
             {
-                binaryData.NormalBuffer.Add(Convert.ToSingle(geometryDataObject.Normals[i]));
+                binaryData.NormalBuffer.Add(Convert.ToSingle(normal));
             }
 
             // Get max and min for normal data

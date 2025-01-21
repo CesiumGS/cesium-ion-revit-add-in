@@ -59,6 +59,8 @@ namespace CesiumIonRevitAddin.Utils
             return bufferData;
         }
 
+        public static XYZ FixXYZIfZero(XYZ xyz) => xyz.IsZeroLength() ? XYZ.BasisZ : xyz;
+
         public static void AddNormals(Autodesk.Revit.DB.Transform transform, PolymeshTopology polymeshTopology, List<double> normals)
         {
             IList<XYZ> polymeshNormals = polymeshTopology.GetNormals();
@@ -76,9 +78,9 @@ namespace CesiumIonRevitAddin.Utils
                                 transform.OfVector(polymeshNormals[facet.V3])
                             };
 
-                            foreach (var normalPoint in normalPoints)
+                            foreach (XYZ normalPoint in normalPoints)
                             {
-                                var newNormalPoint = normalPoint;
+                                XYZ newNormalPoint = FixXYZIfZero(normalPoint);
                                 newNormalPoint = newNormalPoint.Normalize();
 
                                 normals.Add(newNormalPoint.X);
@@ -91,11 +93,11 @@ namespace CesiumIonRevitAddin.Utils
                     }
                 case DistributionOfNormals.OnePerFace:
                     {
-                        foreach (var facet in polymeshTopology.GetFacets())
+                        foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
                         {
-                            foreach (var normal in polymeshTopology.GetNormals())
+                            foreach (XYZ normal in polymeshTopology.GetNormals())
                             {
-                                var newNormal = normal;
+                                XYZ newNormal = FixXYZIfZero(normal);
                                 newNormal = newNormal.Normalize();
 
                                 for (int j = 0; j < 3; j++)
@@ -112,9 +114,9 @@ namespace CesiumIonRevitAddin.Utils
 
                 case DistributionOfNormals.OnEachFacet:
                     {
-                        foreach (var normal in polymeshNormals)
+                        foreach (XYZ normal in polymeshNormals)
                         {
-                            var newNormal = transform.OfVector(normal);
+                            XYZ newNormal = transform.OfVector(FixXYZIfZero(normal));
                             newNormal = newNormal.Normalize();
 
                             // Add a normal for each vertex of the facet
