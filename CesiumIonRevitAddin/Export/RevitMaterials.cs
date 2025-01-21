@@ -328,7 +328,11 @@ namespace CesiumIonRevitAddin.Export
             }
 
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
+
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+            // Procedurally generated textures (e.g., NoiseSchema) will not have bitmaps.
+            if (path == null) return bitmapInfoCollection;
+
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
             // It's possible for a bitmap object propery to have a path to a texture file, but that
             // file is not on the disk. The can happen if the texture patch and the model is being exported
