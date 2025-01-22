@@ -733,18 +733,7 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
-            GltfNode currentNode = nodes.CurrentItem;
-            // TODO: skip identity matrix and !null
-            Autodesk.Revit.DB.Transform currentMatrix = null;
-            if (isChild)
-            {
-                currentMatrix = parentTransformInverse * currentElementTransform;
-            }
-            else
-            {
-                currentMatrix = transformStack.Peek();
-            }
-            currentNode.Matrix = TransformToList(currentMatrix);
+            AddCurrentTransformToNode(nodes.CurrentItem);
 
             foreach (Mesh mesh in rpcMeshes)
             {
@@ -866,25 +855,8 @@ namespace CesiumIonRevitAddin.Gltf
 
         void AddCurrentTransformToNode(GltfNode gltfNode)
         {
-            // TODO: skip identity matrix and !null
-            Autodesk.Revit.DB.Transform currentMatrix = null;
-            if (isChild)
-            {
-                currentMatrix = parentTransformInverse * currentElementTransform; // currentElementTransform same as transformStack?
-            }
-            else
-            {
-                currentMatrix = transformStack.Peek();
-            }
-
-            if (currentMatrix.IsIdentity)
-            {
-                gltfNode.Matrix = null;
-            }
-            else
-            {
-                gltfNode.Matrix = TransformToList(currentMatrix);
-            }
+            Autodesk.Revit.DB.Transform currentMatrix = isChild ? parentTransformInverse * currentElementTransform : transformStack.Peek();
+            gltfNode.Matrix = currentMatrix.IsIdentity ? null : TransformToList(currentMatrix);
         }
 
         public void OnPolymesh(PolymeshTopology polymeshTopology)
@@ -912,8 +884,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                // TODO: what transform should normals have? Probably identity.
-                GltfExportUtils.AddNormals(transformStack.Peek(), polymeshTopology, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(Autodesk.Revit.DB.Transform.Identity, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
