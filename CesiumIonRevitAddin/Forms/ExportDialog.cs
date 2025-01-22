@@ -24,7 +24,6 @@ namespace CesiumIonRevitAddin.Forms
             crsInput.Enabled = sharedCoordinates.Checked;
             crsInput.Text = this.preferences.EpsgCode;
 
-            instancing.Checked = this.preferences.Instancing;
             materials.Checked = this.preferences.Materials;
             normals.Checked = this.preferences.Normals;
             textures.Checked = this.preferences.Textures;
@@ -49,7 +48,6 @@ namespace CesiumIonRevitAddin.Forms
 
             this.preferences.SharedCoordinates = sharedCoordinates.Checked;
             this.preferences.TrueNorth = sharedCoordinates.Checked; // For now, true north only be used with shared coordinates
-            this.preferences.Instancing = instancing.Checked;
             this.preferences.EpsgCode = crsInput.Text;
             this.preferences.Materials = materials.Checked;
             this.preferences.Normals = normals.Checked;
