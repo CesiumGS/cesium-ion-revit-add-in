@@ -375,21 +375,33 @@ namespace CesiumIonRevitAddin.Gltf
 #if !REVIT2019 &&!REVIT2020 && !REVIT2021 && !REVIT2022
             if (preferences.SymbolicInstancing)
             {
-                Options options = new Options();
-                GeometryElement geometryElement = element.get_Geometry(options);
-                if (geometryElement != null)
+                // Some FamilyInstances can share the same SymbolGeometryId, but have different vertices.
+                // This happens in some translated columns in Snowdon (see elements 1158107, 1161167).
+                // Skip these.
+                bool hasModifiedGeometry = false;
+                if (element is FamilyInstance dummy && dummy.HasModifiedGeometry())
                 {
-                    foreach (GeometryObject geometryObject in geometryElement)
+                    hasModifiedGeometry = true;
+                }
+
+                if (!hasModifiedGeometry)
+                {
+                    Options options = new Options();
+                    GeometryElement geometryElement = element.get_Geometry(options);
+                    if (geometryElement != null)
                     {
-                        if (geometryObject is GeometryInstance geometryInstance)
+                        foreach (GeometryObject geometryObject in geometryElement)
                         {
-                            SymbolGeometryId symbolGeometryId = geometryInstance.GetSymbolGeometryId();
-                            symbolGeometryUniqueId = symbolGeometryId.AsUniqueIdentifier();
-                            if (symbolGeometryIdToGltfNode.TryGetValue(symbolGeometryUniqueId, out int index))
+                            if (geometryObject is GeometryInstance geometryInstance)
                             {
-                                nodes.CurrentItem.Mesh = index;
-                                instanceIndex = index;
-                                break; // Currently only handling the first GeometryInstance
+                                SymbolGeometryId symbolGeometryId = geometryInstance.GetSymbolGeometryId();
+                                symbolGeometryUniqueId = symbolGeometryId.AsUniqueIdentifier();
+                                if (symbolGeometryIdToGltfNode.TryGetValue(symbolGeometryUniqueId, out int index))
+                                {
+                                    nodes.CurrentItem.Mesh = index;
+                                    instanceIndex = index;
+                                    break; // Currently only handling the first GeometryInstance
+                                }
                             }
                         }
                     }
