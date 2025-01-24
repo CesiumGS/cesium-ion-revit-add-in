@@ -887,8 +887,14 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
+            Autodesk.Revit.DB.Transform normalsTransform = Autodesk.Revit.DB.Transform.Identity;
+
             var pts = polymeshTopology.GetPoints();
-            if (!isFamilyInstance) for (int i = 0; i < pts.Count; i++) pts[i] = transformStack.Peek().OfPoint(pts[i]);
+            if (!isFamilyInstance)
+            {
+                for (int i = 0; i < pts.Count; i++) pts[i] = transformStack.Peek().OfPoint(pts[i]);
+                normalsTransform = transformStack.Peek();
+            }
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
@@ -902,7 +908,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(Autodesk.Revit.DB.Transform.Identity, polymeshTopology, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(normalsTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
