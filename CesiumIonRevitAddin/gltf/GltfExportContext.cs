@@ -316,16 +316,18 @@ namespace CesiumIonRevitAddin.Gltf
 
         private bool shouldLogOnElementEnd = false;
 
-        string symbolGeometryUniqueId = "";
-        int instanceIndex = -1;
-        bool isChild = false;
-        Autodesk.Revit.DB.Transform currentElementTransform = null;
+        private string symbolGeometryUniqueId = "";
+        private int instanceIndex = -1;
+        private bool isChild = false;
+        private Autodesk.Revit.DB.Transform currentElementTransform = null;
+        private bool isFamilyInstance = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
             parentTransformInverse = null;
             shouldLogOnElementEnd = false;
             symbolGeometryUniqueId = "";
             instanceIndex = -1;
+            isFamilyInstance = false;
 
             element = Doc.GetElement(elementId);
 
@@ -341,6 +343,8 @@ namespace CesiumIonRevitAddin.Gltf
                 shouldSkipElement = true;
                 return RenderNodeAction.Skip;
             }
+
+            if (element is FamilyInstance) isFamilyInstance = true;
 
             linkTransformation = (element as RevitLinkInstance)?.GetTransform();
 
@@ -682,12 +686,12 @@ namespace CesiumIonRevitAddin.Gltf
         private static List<double> TransformToList(Autodesk.Revit.DB.Transform transform)
         {
             return new List<double>
-                        {
-                            transform.BasisX.X, transform.BasisX.Y, transform.BasisX.Z, 0.0,
-                            transform.BasisY.X, transform.BasisY.Y, transform.BasisY.Z, 0.0,
-                            transform.BasisZ.X, transform.BasisZ.Y, transform.BasisZ.Z, 0.0,
-                            transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
-                        };
+            {
+                transform.BasisX.X, transform.BasisX.Y, transform.BasisX.Z, 0.0,
+                transform.BasisY.X, transform.BasisY.Y, transform.BasisY.Z, 0.0,
+                transform.BasisZ.X, transform.BasisZ.Y, transform.BasisZ.Z, 0.0,
+                transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
+            };
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
@@ -875,7 +879,7 @@ namespace CesiumIonRevitAddin.Gltf
         {
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
-            AddCurrentTransformToNode(nodes.CurrentItem);
+            if (isFamilyInstance) AddCurrentTransformToNode(nodes.CurrentItem);
 
             if (instanceIndex != -1)
             {
@@ -884,6 +888,8 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             var pts = polymeshTopology.GetPoints();
+            if (!isFamilyInstance) for (int i = 0; i < pts.Count; i++) pts[i] = transformStack.Peek().OfPoint(pts[i]);
+
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
                 foreach (var vertIndex in facet.GetVertices())
