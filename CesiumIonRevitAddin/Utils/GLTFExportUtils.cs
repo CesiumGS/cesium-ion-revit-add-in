@@ -23,7 +23,7 @@ namespace CesiumIonRevitAddin.Utils
 
             return m ?? GltfExportUtils.CreateGltfMaterial(DEF_MATERIAL_NAME, 0, new Color(DEF_COLOR, DEF_COLOR, DEF_COLOR), doubleSided);
         }
-        public static GltfBinaryData AddGeometryMeta(
+        public static GltfBinaryData AddGeometryBinaryData(
             List<GltfBuffer> buffers,
             List<GltfAccessor> accessors,
             List<GltfBufferView> bufferViews,

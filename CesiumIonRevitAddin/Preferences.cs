@@ -15,7 +15,7 @@ namespace CesiumIonRevitAddin
         public bool Properties { get; set; }
         public bool RelocateTo0 { get; set; }
         public bool FlipAxis { get; set; } = true;
-        public bool Instancing { get; set; } = false;
+        public bool SymbolicInstancing { get; set; } = true;
         public bool TrueNorth { get; set; } = true;
         public bool SharedCoordinates { get; set; } = true;
         public string EpsgCode { get; set; } = "";
