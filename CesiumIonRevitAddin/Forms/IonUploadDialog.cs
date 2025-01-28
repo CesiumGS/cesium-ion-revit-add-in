@@ -14,14 +14,16 @@ namespace CesiumIonRevitAddin.Forms
         readonly string assetName;
         readonly string assetDesc;
         readonly string inputCrs;
+        readonly bool instancing;
 
-        public IonUploadDialog(string zipPath, string assetName, string assetDesc, string inputCrs)
+        public IonUploadDialog(string zipPath, string assetName, string assetDesc, string inputCrs, bool instancing)
         {
             InitializeComponent();
             this.zipPath = zipPath; 
             this.assetName = assetName;
             this.assetDesc = assetDesc;
             this.inputCrs = inputCrs;
+            this.instancing = instancing;
 
             // Disable buttons until the upload is complete or fails
             openAssetBtn.Enabled = false;
@@ -50,6 +52,7 @@ namespace CesiumIonRevitAddin.Forms
                     "3DTILES",
                     "BIM_CAD",
                     this.inputCrs,
+                    this.instancing,
                     progressHandler);
 
                 // Invoke UI updates on the main thread

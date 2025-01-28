@@ -311,7 +311,7 @@ namespace CesiumIonRevitAddin
             string inputCrs = preferences.EpsgCode != "" && preferences.SharedCoordinates ? $"EPSG:{preferences.EpsgCode}" : "";
 
             // The upload dialog handles the upload process
-            using (var ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs))
+            using (var ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs, preferences.IonInstancing))
             {
                 ionUploadDialog.ShowDialog();
             }

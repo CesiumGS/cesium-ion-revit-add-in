@@ -261,7 +261,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         }
 
-        public static async Task<ConnectionResult> Upload(string filePath, string name, string description, string attribution, string type, string sourceType, string inputCrs, IProgress<double> progress = null)
+        public static async Task<ConnectionResult> Upload(string filePath, string name, string description, string attribution, string type, string sourceType, string inputCrs, bool instancing, IProgress<double> progress = null)
         {
             description = description.Replace("__\\n__", "\n");
             attribution = attribution.Replace("__\\n__", "\n");
@@ -279,7 +279,8 @@ namespace CesiumIonRevitAddin.CesiumIonClient
                 {
                     "options", new JObject
                     {
-                        { "sourceType", sourceType }
+                        { "sourceType", sourceType },
+                        { "instancing", instancing }
                     }
                 }
             };

@@ -24,6 +24,13 @@ namespace CesiumIonRevitAddin.Forms
             crsInput.Enabled = sharedCoordinates.Checked;
             crsInput.Text = this.preferences.EpsgCode;
 
+#if REVIT2019 || REVIT2020 || REVIT2021 || REVIT2022
+            instancing.Checked = false;
+            instancing.Enabled = false;
+#else
+            instancing.Checked = this.preferences.IonInstancing;
+#endif
+
             materials.Checked = this.preferences.Materials;
             normals.Checked = this.preferences.Normals;
             textures.Checked = this.preferences.Textures;
@@ -48,6 +55,7 @@ namespace CesiumIonRevitAddin.Forms
 
             this.preferences.SharedCoordinates = sharedCoordinates.Checked;
             this.preferences.TrueNorth = sharedCoordinates.Checked; // For now, true north only be used with shared coordinates
+            this.preferences.IonInstancing = instancing.Checked;
             this.preferences.EpsgCode = crsInput.Text;
             this.preferences.Materials = materials.Checked;
             this.preferences.Normals = normals.Checked;

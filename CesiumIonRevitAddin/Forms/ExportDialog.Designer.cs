@@ -42,6 +42,7 @@
             this.links = new System.Windows.Forms.CheckBox();
             this.materials = new System.Windows.Forms.CheckBox();
             this.textures = new System.Windows.Forms.CheckBox();
+            this.instancing = new System.Windows.Forms.CheckBox();
             this.cancelButton = new System.Windows.Forms.Button();
             this.exportButton = new System.Windows.Forms.Button();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
@@ -124,6 +125,7 @@
             this.groupBox1.Controls.Add(this.links);
             this.groupBox1.Controls.Add(this.materials);
             this.groupBox1.Controls.Add(this.textures);
+            this.groupBox1.Controls.Add(this.instancing);
             this.groupBox1.Location = new System.Drawing.Point(12, 98);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(310, 170);
@@ -202,6 +204,18 @@
             this.textures.UseVisualStyleBackColor = true;
             this.textures.CheckedChanged += new System.EventHandler(this.Textures_CheckedChanged);
             // 
+            // instancing
+            // 
+            this.instancing.AutoSize = true;
+            this.instancing.Location = new System.Drawing.Point(6, 111);
+            this.instancing.Name = "instancing";
+            this.instancing.Size = new System.Drawing.Size(101, 17);
+            this.instancing.TabIndex = 0;
+            this.instancing.Text = "GPU Instancing";
+            this.toolTip.SetToolTip(this.instancing, "Uses GPU instancing for eligible geometry. This can optimize re" +
+        "ndering performance and reduce memory usage.");
+            this.instancing.UseVisualStyleBackColor = true;
+            // 
             // cancelButton
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -265,6 +279,7 @@
         private System.Windows.Forms.RadioButton internalOrigin;
         private System.Windows.Forms.RadioButton sharedCoordinates;
         private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.CheckBox instancing;
         private System.Windows.Forms.Button cancelButton;
         private System.Windows.Forms.Button exportButton;
         private System.Windows.Forms.Label label1;
