@@ -212,7 +212,7 @@
             this.instancing.Size = new System.Drawing.Size(101, 17);
             this.instancing.TabIndex = 0;
             this.instancing.Text = "GPU Instancing";
-            this.toolTip.SetToolTip(this.instancing, "Detects and uses instancing for eligible geometry on export. This can optimize re" +
+            this.toolTip.SetToolTip(this.instancing, "Uses GPU instancing for eligible geometry. This can optimize re" +
         "ndering performance and reduce memory usage.");
             this.instancing.UseVisualStyleBackColor = true;
             // 

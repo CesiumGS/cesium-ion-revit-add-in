@@ -17,6 +17,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Export\BufferConfig.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Export\FileExport.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Export\GltfJson.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export\ParameterValue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Export\RevitMaterials.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ExternalApplication.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Forms\ExportDialog.cs" />

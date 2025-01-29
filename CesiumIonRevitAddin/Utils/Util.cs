@@ -18,13 +18,10 @@ namespace CesiumIonRevitAddin.Utils
             for (int i = 0; i < input.Length; ++i)
             {
                 Char c = input[i];
-                if (Char.IsLetterOrDigit(c))
+                // Verify the character is ASCII and alphanumeric
+                if (c <= 127 && Char.IsLetterOrDigit(c))
                 {
-                    if (i == 0)
-                    {
-                        c = Char.ToLower(c);
-                    }
-
+                    if (i == 0) c = Char.ToLower(c);
                     sb.Append(c);
                 }
             }
@@ -106,18 +103,25 @@ namespace CesiumIonRevitAddin.Utils
 #endif
         }
 
-        static HashSet<string> _metaDataFilterValues = new HashSet<string> { "", "-1" };
-        public static bool ShouldFilterMetadata(object value)
+        static readonly HashSet<string> metadataFilterValues = new HashSet<string> { "", "-1" };
+        public static bool ShouldFilterMetadata(ParameterValue parameterValue)
         {
-            return value == null || ShouldFilterMetadata(value.ToString());
+            if (parameterValue.IntegerValue.HasValue || parameterValue.DoubleValue.HasValue || parameterValue.LongValue.HasValue)
+            {
+                return false;
+            }
+            if (parameterValue.StringValue != null)
+            {
+                return ShouldFilterMetadata(parameterValue.StringValue);
+            }
+            return true;
         }
-
         public static bool ShouldFilterMetadata(string value)
         {
-            return _metaDataFilterValues.Contains(value);
+            return metadataFilterValues.Contains(value);
         }
 
-        public static object GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
+        public static ParameterValue GetParameterValue(Autodesk.Revit.DB.Parameter parameter)
         {
             switch (parameter.StorageType)
             {
@@ -128,9 +132,9 @@ namespace CesiumIonRevitAddin.Utils
                 case StorageType.String:
                     return parameter.AsString();
                 case StorageType.ElementId:
-                    return Util.GetElementIdAsLong(parameter.AsElementId()).ToString();
+                    return Util.GetElementIdAsLong(parameter.AsElementId());
                 default:
-                    return null;
+                    return new ParameterValue();
             }
         }
     }

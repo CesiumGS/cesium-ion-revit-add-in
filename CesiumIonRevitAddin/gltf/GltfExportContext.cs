@@ -2,14 +2,11 @@
 using CesiumIonRevitAddin.Export;
 using CesiumIonRevitAddin.Model;
 using CesiumIonRevitAddin.Utils;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 using System.Windows.Media.Media3D;
 
 namespace CesiumIonRevitAddin.Gltf
@@ -24,12 +21,7 @@ namespace CesiumIonRevitAddin.Gltf
         private Autodesk.Revit.DB.Element element;
         private readonly List<Document> documents = new List<Document>();
         private bool cancelation;
-        // We record instanceStackDepth separately from getting it via transformStack.Count because there are
-        // cases where OnInstanceBegin is immediately followed by OnInstanceEnd, then OnPolymesh is triggered.
-        // We detect and handle this case.
-        private int instanceStackDepth = 0;
         private readonly Stack<Autodesk.Revit.DB.Transform> transformStack = new Stack<Autodesk.Revit.DB.Transform>();
-        private readonly Stack<Autodesk.Revit.DB.Transform> rawTransformStack = new Stack<Autodesk.Revit.DB.Transform>();
         private GltfNode xFormNode;
         private readonly List<GltfAccessor> accessors = new List<GltfAccessor>();
         private readonly List<GltfBufferView> bufferViews = new List<GltfBufferView>();
@@ -45,15 +37,16 @@ namespace CesiumIonRevitAddin.Gltf
         private List<string> extensionsUsed = null;
         private List<string> extensionsRequired = null;
         private readonly Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
-        private readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataSchema = new GltfExtStructuralMetadataExtensionSchema();
-        private Autodesk.Revit.DB.Transform cachedTransform;
+        private readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataExtensionSchema = new GltfExtStructuralMetadataExtensionSchema();
         private bool khrTextureTransformAdded;
-        private bool skipElementFlag;
+        private bool shouldSkipElement;
         private Autodesk.Revit.DB.Transform linkTransformation;
         private IndexedDictionary<GeometryDataObject> currentGeometry;
         private IndexedDictionary<VertexLookupIntObject> currentVertices;
-        private readonly Dictionary<string, int> geometryDataObjectIndices = new Dictionary<string, int>();
         private bool materialHasTexture;
+#if !REVIT2019 && !REVIT2020 && !REVIT2021 && !REVIT2022
+        private readonly Dictionary<string, int> symbolGeometryIdToGltfNode = new Dictionary<string, int>();
+#endif
 
         public GltfExportContext(Document doc, Preferences preferences)
         {
@@ -93,9 +86,19 @@ namespace CesiumIonRevitAddin.Gltf
             return specTypeIds.Contains(forgeTypeId);
         }
 #endif
+        readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
         public bool Start()
         {
+            stopwatch.Start();
+
+            // Always set to true until Revit 2022 is phased out.
+            preferences.SymbolicInstancing = true;
+#if REVIT2019 || REVIT2020 || REVIT2021 || REVIT2022
+            // Disable instancing for Revit 2022 and earlier, since it does not support GeometrySymbolId.
+            preferences.SymbolicInstancing = false;
+#endif
+
             Logger.Enabled = verboseLog;
             cancelation = false;
 
@@ -103,7 +106,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             Reset();
 
-            // Create the glTF temp export directory
+            // Create the glTF temp export directory.
             if (!Directory.Exists(preferences.TempDirectory))
             {
                 Directory.CreateDirectory(preferences.TempDirectory);
@@ -113,7 +116,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             transformStack.Push(Autodesk.Revit.DB.Transform.Identity);
 
-            // Holds metadata along with georeference transforms
+            // Holds metadata along with georeference transforms.
             var rootNode = new GltfNode
             {
                 Name = "rootNode"
@@ -164,11 +167,11 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 extensionsUsed = extensionsUsed ?? new List<string>();
                 extensionsUsed.Add("EXT_structural_metadata");
-                extensions.Add("EXT_structural_metadata", extStructuralMetadataSchema);
+                extensions.Add("EXT_structural_metadata", extStructuralMetadataExtensionSchema);
 
                 ProjectInfo projectInfo = Doc.ProjectInformation;
 
-                var rootSchema = extStructuralMetadataSchema.GetClass("project") ?? extStructuralMetadataSchema.AddClass("Project");
+                var rootSchema = extStructuralMetadataExtensionSchema.GetClass("project") ?? extStructuralMetadataExtensionSchema.AddClass("Project");
                 var rootSchemaProperties = new Dictionary<string, object>();
                 rootSchema.Add("properties", rootSchemaProperties);
 
@@ -237,9 +240,9 @@ namespace CesiumIonRevitAddin.Gltf
 #else
                             string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
 #endif
-                            extStructuralMetadataSchema.AddCategory(categoryGltfName);
-                            var gltfClass = extStructuralMetadataSchema.GetClass(categoryGltfName);
-                            var schemaProperties = extStructuralMetadataSchema.GetProperties(gltfClass);
+                            extStructuralMetadataExtensionSchema.AddCategory(categoryGltfName);
+                            var gltfClass = extStructuralMetadataExtensionSchema.GetClass(categoryGltfName);
+                            var schemaProperties = extStructuralMetadataExtensionSchema.GetProperties(gltfClass);
                             string gltfDefinitionName = Util.GetGltfName(definition.Name);
                             if (schemaProperties.ContainsKey(gltfDefinitionName))
                             {
@@ -270,14 +273,14 @@ namespace CesiumIonRevitAddin.Gltf
         // Add information about the physical Revit building/property (via the project's PropertyInfo) to glTF "properties"
         private static void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
         {
-            if (propertyValue == "")
+            if (Util.ShouldFilterMetadata(propertyValue))
             {
                 return;
             }
 
             // add to node
             var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
-            rootNode.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, propertyValue);
+            rootNode.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, propertyValue);
 
             // add to schema
             var propertySchema = new Dictionary<string, object>();
@@ -297,6 +300,10 @@ namespace CesiumIonRevitAddin.Gltf
             FileExport.Run(preferences, bufferViews, buffers, binaryFileData,
                 scenes, nodes, meshes, materials, accessors, extensionsUsed, extensionsRequired, extensions, new GltfVersion(), images, textures, samplers);
             Logger.Instance.Log("Completed model export.");
+            stopwatch.Stop();
+            TimeSpan timeSpan = stopwatch.Elapsed;
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds, timeSpan.Milliseconds / 10);
+            Logger.Instance.Log("Elapsed time: " + elapsedTime);
 
             // Write out the json for the tiler
             TilerExportUtils.WriteTilerJson(preferences);
@@ -307,116 +314,48 @@ namespace CesiumIonRevitAddin.Gltf
             return cancelation;
         }
 
-        // Most instanced elements have this event stack order: OnElementBegin->OnInstanceBegin->(geometry/material events)->OnInstanceEnd->OnElementEnd
-        // But some do this: OnElementBegin->OnInstanceBegin->->OnInstanceEnd->(geometry/material events)->OnElementEnd
-        // This records if the latter has happened
-        private bool onInstanceEndCompleted = false;
-        private bool useCurrentInstanceTransform = false;
         private bool shouldLogOnElementEnd = false;
+
+        private string symbolGeometryUniqueId = "";
+        private int instanceIndex = -1;
+        private bool isChild = false;
+        private Autodesk.Revit.DB.Transform currentElementTransform = null;
+        private bool isFamilyInstance = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
-            onInstanceEndCompleted = false;
-            useCurrentInstanceTransform = false;
             parentTransformInverse = null;
             shouldLogOnElementEnd = false;
+            symbolGeometryUniqueId = "";
+            instanceIndex = -1;
+            isFamilyInstance = false;
 
             element = Doc.GetElement(elementId);
 
-            if (!Util.CanBeLockOrHidden(element, view) ||
-                (element is Level))
+            if (!Util.CanBeLockOrHidden(element, view) || (element is Level))
             {
-                skipElementFlag = true;
+                shouldSkipElement = true;
                 return RenderNodeAction.Skip;
             }
 
             if (nodes.Contains(element.UniqueId))
             {
                 // Duplicate element, skip adding.
-                skipElementFlag = true;
+                shouldSkipElement = true;
                 return RenderNodeAction.Skip;
             }
 
-            if (element is RevitLinkInstance linkInstance)
-            {
-                linkTransformation = linkInstance.GetTransform();
-            }
+            if (element is FamilyInstance) isFamilyInstance = true;
+
+            linkTransformation = (element as RevitLinkInstance)?.GetTransform();
 
             Logger.Instance.Log("Processing element " + element.Name + ", ID: " + element.Id.ToString());
             shouldLogOnElementEnd = true;
 
             var newNode = new GltfNode();
-
-            var classMetadata = new Dictionary<string, object>();
-            if (preferences.ExportMetadata)
-            {
-                newNode.Extensions = newNode.Extensions ?? new GltfExtensions();
-                newNode.Extensions.EXT_structural_metadata = newNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
-
-                string categoryName = element.Category != null ? element.Category.Name : "Undefined";
-                string familyName = GetFamilyName(element);
-
-                newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
-
-                newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
-
-                ParameterSet parameterSet = element.Parameters;
-                var parametersToSkip = new HashSet<Parameter>();
-                foreach (Parameter parameter in parameterSet)
-                {
-                    string propertyName = Util.GetGltfName(parameter.Definition.Name);
-                    object paramValue = Util.GetParameterValue(parameter);
-
-                    if (parameter.HasValue && 
-                        !Util.ShouldFilterMetadata(paramValue) && 
-                        !newNode.Extensions.EXT_structural_metadata.Properties.ContainsKey(propertyName))
-                    {
-                        newNode.Extensions.EXT_structural_metadata.Properties.Add(propertyName, paramValue);
-                    }
-                    else
-                    {
-                        parametersToSkip.Add(parameter);
-                    }
-                }
-
-                extStructuralMetadataSchema.AddCategory(categoryName);
-                classMetadata = extStructuralMetadataSchema.AddFamily(categoryName, familyName);
-                extStructuralMetadataSchema.AddProperties(categoryName, familyName, parameterSet, parametersToSkip);
-            }
-
             nodes.AddOrUpdateCurrent(element.UniqueId, newNode);
-
-            // set parent to Supercomponent if it exists.
-            if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
-            {
-                Element superComponent = familyInstance.SuperComponent;
-                // It can be possible for an Element's Supercomponent to not be in a View.
-                // For example, if you isolate only the "Planting" category in Snowdon,
-                // some Elements have a Supercomponent from the "Site" class that will be missing.
-                if (!nodes.Contains(superComponent.UniqueId))
-                {
-                    xFormNode.Children.Add(nodes.CurrentIndex);
-                }
-                else
-                {
-                    if (preferences.ExportMetadata)
-                    {
-                        string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
-                        classMetadata["parent"] = superComponentClass;
-                    }
-
-                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
-                    parentNode.Children = parentNode.Children ?? new List<int>();
-                    parentNode.Children.Add(nodes.CurrentIndex);
-                    useCurrentInstanceTransform = true;
-
-                    var parentInstance = (Instance)superComponent;
-                    parentTransformInverse = parentInstance.GetTransform().Inverse;
-                }
-            }
-            else
-            {
-                xFormNode.Children.Add(nodes.CurrentIndex);
-            }
+            string categoryName = element.Category != null ? element.Category.Name : "Undefined";
+            string familyName = GetFamilyName(element);
+            newNode.Name = Util.CreateClassName(categoryName, familyName) + ": " + GetTypeNameIfApplicable(elementId);
 
             // Reset currentGeometry for new element
             if (currentGeometry == null)
@@ -437,20 +376,181 @@ namespace CesiumIonRevitAddin.Gltf
                 currentVertices.Reset();
             }
 
+#if !REVIT2019 &&!REVIT2020 && !REVIT2021 && !REVIT2022
+            if (preferences.SymbolicInstancing)
+            {
+                // Some FamilyInstances can share the same SymbolGeometryId, but have different vertices.
+                // This happens in some translated columns in Snowdon (see elements 1158107, 1161167).
+                // Skip these.
+                bool hasModifiedGeometry = false;
+                if (element is FamilyInstance dummy && dummy.HasModifiedGeometry())
+                {
+                    hasModifiedGeometry = true;
+                }
+
+                if (!hasModifiedGeometry)
+                {
+                    Options options = new Options();
+                    GeometryElement geometryElement = element.get_Geometry(options);
+                    if (geometryElement != null)
+                    {
+                        foreach (GeometryObject geometryObject in geometryElement)
+                        {
+                            if (geometryObject is GeometryInstance geometryInstance)
+                            {
+                                SymbolGeometryId symbolGeometryId = geometryInstance.GetSymbolGeometryId();
+                                symbolGeometryUniqueId = symbolGeometryId.AsUniqueIdentifier();
+                                if (symbolGeometryIdToGltfNode.TryGetValue(symbolGeometryUniqueId, out int index))
+                                {
+                                    nodes.CurrentItem.Mesh = index;
+                                    instanceIndex = index;
+                                    break; // Currently only handling the first GeometryInstance
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+#endif
+
+            var classMetadata = new Dictionary<string, object>();
+            if (preferences.ExportMetadata)
+            {
+                newNode.Extensions = newNode.Extensions ?? new GltfExtensions();
+                newNode.Extensions.EXT_structural_metadata = newNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
+
+                newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
+
+                ParameterSet parameterSet = element.Parameters;
+                var parametersToSkip = new HashSet<Parameter>();
+                var elementIdProperties = new HashSet<Parameter>(); // save to resolve with additional properties such as a human-readable name
+                foreach (Parameter parameter in parameterSet)
+                {
+                    string propertyName = Util.GetGltfName(parameter.Definition.Name);
+                    ParameterValue paramValue = Util.GetParameterValue(parameter);
+
+                    if (parameter.HasValue &&
+                        !Util.ShouldFilterMetadata(paramValue) &&
+                        !newNode.Extensions.EXT_structural_metadata.HasProperty(propertyName))
+                    {
+                        newNode.Extensions.EXT_structural_metadata.AddProperty(propertyName, paramValue);
+
+                        if (parameter.StorageType == StorageType.ElementId)
+                        {
+                            elementIdProperties.Add(parameter);
+                        }
+                    }
+                    else
+                    {
+                        parametersToSkip.Add(parameter);
+                    }
+                }
+
+                extStructuralMetadataExtensionSchema.AddCategory(categoryName);
+                classMetadata = extStructuralMetadataExtensionSchema.AddFamily(categoryName, familyName);
+                extStructuralMetadataExtensionSchema.AddProperties(categoryName, familyName, parameterSet, parametersToSkip);
+
+                // Add human-readable category and family names to schema as default properties.
+                extStructuralMetadataExtensionSchema.AddDefaultSchemaProperty(categoryName, familyName, "categoryName", categoryName, "Category Name");
+                extStructuralMetadataExtensionSchema.AddDefaultSchemaProperty(categoryName, familyName, "familyName", familyName, "Family Name");
+
+                // Add additional properties (e.g. 'name') to properties that are ElementIds
+                foreach (Parameter parameter in elementIdProperties)
+                {
+                    ElementId parameterElementId = parameter.AsElementId();
+#if REVIT2022 || REVIT2023
+                    if (parameterElementId.IntegerValue != -1)
+#else               
+                    if (parameterElementId.Value != -1)
+#endif
+                    {
+                        Element parameterElement = Doc.GetElement(parameterElementId);
+                        if (parameterElement != null)
+                        {
+                            // Resolve properties by getting the element's Element.Name value for human readability.
+                            // The name of the "Name" property. E.g., "type" -> "typeName"
+                            string resolvedPropertyName = Util.GetGltfName(parameter.Definition.Name) + "Name";
+
+                            // skip adding the human-readible name for the "family" parameter.
+                            // It resolves to the type name. We added "familyName" above as a default schema property.
+                            if (resolvedPropertyName == "familyName")
+                            {
+                                continue;
+                            }
+
+                            string propertyValue = parameterElement.Name;
+                            newNode.Extensions.EXT_structural_metadata.AddProperty(resolvedPropertyName, propertyValue);
+                            extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, resolvedPropertyName, propertyValue.GetType());
+                        }
+                    }
+                }
+
+                // All nodes should have its ElementId in the metadata
+#if REVIT2022 || REVIT2023
+                int elementIdValue = elementId.IntegerValue;
+#else
+                int elementIdValue = (int)elementId.Value;
+#endif
+                newNode.Extensions.EXT_structural_metadata.AddProperty("elementId", elementIdValue);
+                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "elementId", elementIdValue.GetType());
+            }
+
+            // Set parent to Supercomponent if it exists.
+            if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
+            {
+                isChild = true;
+                currentElementTransform = familyInstance.GetTransform();
+                Element superComponent = familyInstance.SuperComponent;
+                var parentInstance = (Instance)superComponent;
+                // It can be possible for an Element's Supercomponent to not be in a View.
+                // For example, if you isolate only the "Planting" category in Snowdon,
+                // some Elements have a Supercomponent from the "Site" class that will be missing.
+                if (!nodes.Contains(superComponent.UniqueId))
+                {
+                    xFormNode.Children.Add(nodes.CurrentIndex);
+                    parentTransformInverse = Autodesk.Revit.DB.Transform.Identity;
+                }
+                else
+                {
+                    if (preferences.ExportMetadata)
+                    {
+                        string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
+                        classMetadata["parent"] = superComponentClass;
+                    }
+
+                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
+                    parentNode.Children = parentNode.Children ?? new List<int>();
+                    parentNode.Children.Add(nodes.CurrentIndex);
+                    parentTransformInverse = parentInstance.GetTransform().Inverse;
+                }
+            }
+            else
+            {
+                isChild = false;
+                xFormNode.Children.Add(nodes.CurrentIndex);
+            }
+
             return RenderNodeAction.Proceed;
         }
 
         public void OnElementEnd(ElementId elementId)
         {
-            if (skipElementFlag ||
-                currentVertices == null ||
-                currentVertices.List.Count == 0 ||
-                !Util.CanBeLockOrHidden(element, view))
+
+            // Skip writing out nodes for links.
+            if (linkElementIsEnding)
             {
-                skipElementFlag = false;
+                linkElementIsEnding = false;
+                return;
+            }
+
+            bool verticesAreBad = currentVertices == null || currentVertices.List.Count == 0;
+            if (instanceIndex != -1) verticesAreBad = false; // Vertices check is invalid if this is a GPU instance.
+            if (shouldSkipElement || verticesAreBad || !Util.CanBeLockOrHidden(element, view))
+            {
+                shouldSkipElement = false;
                 if (shouldLogOnElementEnd)
                 {
-                    Logger.Instance.Log("...Finished Processing element " + element.Name);
+                    Logger.Instance.Log($"...Finished Processing element {element.Name}, {element.Id}");
                 }
                 return;
             }
@@ -461,47 +561,26 @@ namespace CesiumIonRevitAddin.Gltf
                 Primitives = new List<GltfMeshPrimitive>()
             };
 
-            int instanceIndex = -1;
-            string geometryDataObjectHash = "";
-            var collectionToHash = new Dictionary<string, GeometryDataObject>(); // contains data that will be common across instances
-
-            foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
-            {
-                GeometryDataObject geometryDataObject = currentGeometry.GetElement(kvp.Key);
-                var vertices = geometryDataObject.Vertices;
-                foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
-                {
-                    vertices.Add(p.Key.X);
-                    vertices.Add(p.Key.Y);
-                    vertices.Add(p.Key.Z);
-                }
-
-                // also add materials to the hash to test for instancing since in glTF mesh primitives are tied to a material
-                if (preferences.Instancing)
-                {
-                    var materialKey = kvp.Key.Split('_')[1];
-                    collectionToHash.Add(materialKey, geometryDataObject);
-                }
-            }
-
-            if (preferences.Instancing)
-            {
-                geometryDataObjectHash = ComputeHash(collectionToHash);
-                if (geometryDataObjectIndices.TryGetValue(geometryDataObjectHash, out var index))
-                {
-                    nodes.CurrentItem.Mesh = index;
-                    instanceIndex = index;
-                }
-            }
-
             if (instanceIndex == -1)
             {
+                foreach (KeyValuePair<string, VertexLookupIntObject> kvp in currentVertices.Dict)
+                {
+                    GeometryDataObject geometryDataObject = currentGeometry.GetElement(kvp.Key);
+                    List<double> vertices = geometryDataObject.Vertices;
+                    foreach (KeyValuePair<PointIntObject, int> p in kvp.Value)
+                    {
+                        vertices.Add(p.Key.X);
+                        vertices.Add(p.Key.Y);
+                        vertices.Add(p.Key.Z);
+                    }
+                }
+
                 // add all mesh primitives
                 foreach (KeyValuePair<string, GeometryDataObject> kvp in currentGeometry.Dict)
                 {
-                    var name = kvp.Key;
-                    var geometryDataObject = kvp.Value;
-                    GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryMeta(
+                    string name = kvp.Key;
+                    GeometryDataObject geometryDataObject = kvp.Value;
+                    GltfBinaryData elementBinaryData = GltfExportUtils.AddGeometryBinaryData(
                          buffers,
                          accessors,
                          bufferViews,
@@ -525,10 +604,10 @@ namespace CesiumIonRevitAddin.Gltf
                     meshPrimitive.Indices = elementBinaryData.IndexAccessorIndex;
                     if (preferences.Materials)
                     {
-                        var materialKey = kvp.Key.Split(UNDERSCORE)[1];
+                        string materialKey = kvp.Key.Split(UNDERSCORE)[1];
                         if (materials.Contains(materialKey))
                         {
-                            var material = materials.Dict[materialKey];
+                            GltfMaterial material = materials.Dict[materialKey];
                             if (material.Name != RevitMaterials.INVALID_MATERIAL)
                             {
                                 meshPrimitive.Material = materials.GetIndexFromUuid(materialKey);
@@ -542,23 +621,35 @@ namespace CesiumIonRevitAddin.Gltf
                 meshes.AddOrUpdateCurrent(element.UniqueId, newMesh);
                 nodes.CurrentItem.Mesh = meshes.CurrentIndex;
                 meshes.CurrentItem.Name = newMesh.Name;
-                if (preferences.Instancing)
+
+#if !REVIT2019 &&!REVIT2020 && !REVIT2021 && !REVIT2022
+                if (IsFirstInstanceableElement)
                 {
-                    geometryDataObjectIndices.Add(geometryDataObjectHash, meshes.CurrentIndex);
+                    if (symbolGeometryIdToGltfNode.TryGetValue(symbolGeometryUniqueId, out _))
+                    {
+#if DEBUG
+                        System.Diagnostics.Debug.Assert(false, "The key already exists in the dictionary.");
+#endif
+                    }
+                    else
+                    {
+                        symbolGeometryIdToGltfNode.Add(symbolGeometryUniqueId, meshes.CurrentIndex);
+                    }
                 }
+#endif
+            }
+            else
+            {
+                nodes.CurrentItem.Mesh = instanceIndex;
             }
 
             element = Doc.GetElement(elementId);
-            Logger.Instance.Log("...Finished Processing element " + element.Name);
+            Logger.Instance.Log($"...Finished Processing element {element.Name}, {element.Id}");
         }
 
         public RenderNodeAction OnInstanceBegin(InstanceNode node)
         {
-            this.instanceStackDepth++;
-
-            var transformationMultiply = CurrentFullTransform.Multiply(node.GetTransform());
-            transformStack.Push(transformationMultiply);
-            rawTransformStack.Push(node.GetTransform());
+            transformStack.Push(transformStack.Peek().Multiply(node.GetTransform()));
 
             return RenderNodeAction.Proceed;
         }
@@ -570,6 +661,8 @@ namespace CesiumIonRevitAddin.Gltf
 #pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore S1144 // Unused private types or members should be removed
         {
+            if (transform == null) return "";
+
             var x = transform.BasisX;
             var y = transform.BasisY;
             var z = transform.BasisZ;
@@ -578,90 +671,62 @@ namespace CesiumIonRevitAddin.Gltf
             string transformDetails = $"BasisX: ({x.X}, {x.Y}, {x.Z})\n" +
                                       $"BasisY: ({y.X}, {y.Y}, {y.Z})\n" +
                                       $"BasisZ: ({z.X}, {z.Y}, {z.Z})\n" +
-                                      $"Origin: ({origin.X}, {origin.Y}, {origin.Z})\n";
+                                      $"Origin: ({origin.X}, {origin.Y}, {origin.Z})";
 
             return transformDetails;
         }
 
         public void OnInstanceEnd(InstanceNode node)
         {
-            instanceStackDepth--;
-
             // Note: This method is invoked even for instances that were skipped.
 
-            Autodesk.Revit.DB.Transform transform = transformStack.Pop();
-            rawTransformStack.Pop();
-
-            if (!preferences.Instancing)
-            {
-                return;
-            }
-
-            // Do not write to the node if there is an instance stack.
-            // This happens with railings because the balusters are sub-instances of the railing instance.
-            if (instanceStackDepth > 0)
-            {
-                return;
-            }
-
-            if (!transform.IsIdentity)
-            {
-                GltfNode currentNode = nodes.CurrentItem;
-
-                var currentNodeTransform = node.GetTransform();
-                if (useCurrentInstanceTransform) // for nodes with a non-root parent
-                {
-                    if (!currentNodeTransform.IsIdentity)
-                    {
-                        Autodesk.Revit.DB.Transform outgoingMatrix = parentTransformInverse * currentNodeTransform;
-                        currentNode.Matrix = TransformToList(outgoingMatrix);
-                    }
-                }
-                else
-                {
-                    currentNode.Matrix = TransformToList(transform);
-                }
-            }
-
-            cachedTransform = transform;
-            onInstanceEndCompleted = true;
+            transformStack.Pop();
         }
 
         private static List<double> TransformToList(Autodesk.Revit.DB.Transform transform)
         {
             return new List<double>
-                        {
-                            transform.BasisX.X, transform.BasisX.Y, transform.BasisX.Z, 0.0,
-                            transform.BasisY.X, transform.BasisY.Y, transform.BasisY.Z, 0.0,
-                            transform.BasisZ.X, transform.BasisZ.Y, transform.BasisZ.Z, 0.0,
-                            transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
-                        };
+            {
+                transform.BasisX.X, transform.BasisX.Y, transform.BasisX.Z, 0.0,
+                transform.BasisY.X, transform.BasisY.Y, transform.BasisY.Z, 0.0,
+                transform.BasisZ.X, transform.BasisZ.Y, transform.BasisZ.Z, 0.0,
+                transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
+            };
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
         {
+            if (preferences.VerboseLogging) Logger.Instance.Log("Beginning OnLinkBegin...");
             if (!preferences.Links)
             {
                 return RenderNodeAction.Skip;
             }
 
             documents.Add(node.GetDocument());
-            transformStack.Push(CurrentFullTransform.Multiply(linkTransformation));
+            transformStack.Push(transformStack.Peek().Multiply(linkTransformation));
 
+            if (preferences.VerboseLogging) Logger.Instance.Log("...OnLinkBegin");
             return RenderNodeAction.Proceed;
         }
 
+        bool linkElementIsEnding = false;
         public void OnLinkEnd(LinkNode node)
         {
+            // Note: This method is invoked even for instances that were skipped.
+
+            if (preferences.VerboseLogging) Logger.Instance.Log("Beginning OnLinkEnd...");
             if (!preferences.Links)
             {
                 return;
             }
 
-            // Note: This method is invoked even for instances that were skipped.
             transformStack.Pop();
 
             documents.RemoveAt(1); // remove the item added in OnLinkBegin
+
+            if (preferences.VerboseLogging) Logger.Instance.Log("...OnLinkEnd");
+
+            linkElementIsEnding = true;
         }
 
         public RenderNodeAction OnFaceBegin(FaceNode node)
@@ -672,7 +737,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public void OnFaceEnd(FaceNode node)
         {
-            // no-op: This custom exporter is not set to export faces.
+            // no-op: This exporter is not set to export faces.
         }
 
         public void OnRPC(RPCNode node)
@@ -683,6 +748,8 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 return;
             }
+
+            AddCurrentTransformToNode(nodes.CurrentItem);
 
             foreach (Mesh mesh in rpcMeshes)
             {
@@ -726,12 +793,14 @@ namespace CesiumIonRevitAddin.Gltf
             // this custom exporter is currently not exporting lights
         }
 
-        public void OnMaterial(MaterialNode node)
+        public void OnMaterial(MaterialNode materialNode)
         {
+            if (preferences.VerboseLogging) Logger.Instance.Log($"Beginning OnMaterial, id {materialNode.MaterialId}...");
+
             materialHasTexture = false;
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(node, Doc, materials, extStructuralMetadataSchema, samplers, images, textures, ref materialHasTexture, preferences);
+                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataExtensionSchema, samplers, images, textures, ref materialHasTexture, preferences);
 
                 if (!preferences.Textures)
                 {
@@ -746,6 +815,7 @@ namespace CesiumIonRevitAddin.Gltf
                     khrTextureTransformAdded = true;
                 }
             }
+            if (preferences.VerboseLogging) Logger.Instance.Log("...ending OnMaterial");
         }
 
         public class SerializableTransform
@@ -793,44 +863,40 @@ namespace CesiumIonRevitAddin.Gltf
             }
         }
 
-        public void OnPolymesh(PolymeshTopology node)
+        // Return if the currently parsed element is potentially GPU-instancable, but has not been recorded as such yet.
+        private bool IsFirstInstanceableElement
+        {
+            get { return instanceIndex == -1 && symbolGeometryUniqueId != ""; }
+        }
+
+        void AddCurrentTransformToNode(GltfNode gltfNode)
+        {
+            Autodesk.Revit.DB.Transform currentMatrix = isChild ? parentTransformInverse * currentElementTransform : transformStack.Peek();
+            gltfNode.Matrix = currentMatrix.IsIdentity ? null : TransformToList(currentMatrix);
+        }
+
+        public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
             GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
-            var pts = node.GetPoints();
-            if (!preferences.Instancing)
+            if (isFamilyInstance) AddCurrentTransformToNode(nodes.CurrentItem);
+
+            if (instanceIndex != -1)
             {
-                pts = pts.Select(p => CurrentFullTransform.OfPoint(p)).ToList();
-            }
-            else
-            {
-                // handle the case of where OnInstanceBegin and OnInstanceEnd occur with no events in between
-                // i.e.: OnElementBegin->OnInstanceBegin->OnInstanceEnd->OnPolymesh
-                if (onInstanceEndCompleted && instanceStackDepth == 0)
-                {
-                    Autodesk.Revit.DB.Transform inverse = cachedTransform.Inverse;
-                    pts = pts.Select(p => inverse.OfPoint(p)).ToList();
-                }
-                // Transform stacks above 1 indicate a nested instance.
-                // This could be either from a nested instance in a single document. This has happened with part of a chair being an instance inside a chair instance.
-                // It would also be via a linked Revit document with its own transform stack.
-                // We need to multiply by everything except the transform deepest on the stack.
-                else if (rawTransformStack.Count == 2)
-                {
-                    pts = pts.Select(p => rawTransformStack.Peek().OfPoint(p)).ToList();
-                }
-                // Convert to a List so we can non-destructively multiply by everything except the base stack item.
-                else if (rawTransformStack.Count > 2)
-                {
-                    var rawTransformArray = rawTransformStack.ToArray();
-                    for (int i = 1; i < rawTransformArray.Length; i++)
-                    {
-                        pts = pts.Select(p => rawTransformArray[i].OfPoint(p)).ToList();
-                    }
-                }
+                if (preferences.VerboseLogging) Logger.Instance.Log("...GPU instance found, skipping OnPolymesh)");
+                return;
             }
 
-            foreach (PolymeshFacet facet in node.GetFacets())
+            Autodesk.Revit.DB.Transform normalsTransform = Autodesk.Revit.DB.Transform.Identity;
+
+            var pts = polymeshTopology.GetPoints();
+            if (!isFamilyInstance)
+            {
+                for (int i = 0; i < pts.Count; i++) pts[i] = transformStack.Peek().OfPoint(pts[i]);
+                normalsTransform = transformStack.Peek();
+            }
+
+            foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
                 foreach (var vertIndex in facet.GetVertices())
                 {
@@ -842,12 +908,12 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(preferences, CurrentFullTransform, node, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(normalsTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
             {
-                GltfExportUtils.AddTexCoords(preferences, node, currentGeometry.CurrentItem.TexCoords);
+                GltfExportUtils.AddTexCoords(polymeshTopology, currentGeometry.CurrentItem.TexCoords);
             }
         }
 
@@ -902,38 +968,6 @@ namespace CesiumIonRevitAddin.Gltf
             else
             {
                 return "Type not applicable or not found";
-            }
-        }
-
-        private Autodesk.Revit.DB.Transform CurrentFullTransform
-        {
-            get
-            {
-                return transformStack.Peek();
-            }
-        }
-
-        public static string ComputeHash(Dictionary<string, GeometryDataObject> collectionToHash)
-        {
-            var settings = new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                Formatting = Formatting.None,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            string json = JsonConvert.SerializeObject(collectionToHash, settings);
-
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                byte[] data = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(json));
-
-                // Convert the byte array to a hexadecimal string
-                StringBuilder sBuilder = new StringBuilder();
-                for (int i = 0; i < data.Length; i++)
-                {
-                    sBuilder.Append(data[i].ToString("x2"));
-                }
-                return sBuilder.ToString();
             }
         }
     }

@@ -29,6 +29,7 @@ namespace CesiumIonRevitAddin.Export
         // Temporary number to make texture scaling close to real-world values until permanent fix is in
         private const double magicTextureScalingNumber = 11.11;
         public const string INVALID_MATERIAL = "INVALID_MATERIAL";
+        public const string NULL_MATERIAL = "NULL_MATERIAL";
 
 
         /// <summary>
@@ -109,6 +110,14 @@ namespace CesiumIonRevitAddin.Export
                 return;
             }
 
+            if (doc.GetElement(materialNode.MaterialId) == null)
+            {
+                materials.AddOrUpdateCurrentMaterial(NULL_MATERIAL, new GltfMaterial { Name = "Revit Null Material" }, false);
+                return;
+            }
+
+            if (preferences.VerboseLogging) Logger.Instance.Log("Exporting MaterialId " + id.ToString());
+
             string uniqueId;
             if (materialIdDictionary.TryGetValue(id, out GltfMaterial gltfMaterial))
             {
@@ -143,14 +152,16 @@ namespace CesiumIonRevitAddin.Export
                         if (parameter.HasValue)
                         {
                             string paramName = parameter.Definition.Name;
-                            object paramValue = Util.GetParameterValue(parameter);
+
+                            ParameterValue paramValue = Util.GetParameterValue(parameter);
+
                             if (Util.ShouldFilterMetadata(paramValue)) continue;
 
                             string paramGltfName = Utils.Util.GetGltfName(paramName);
 
-                            if (parameter.HasValue && !gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(paramGltfName))
+                            if (!gltfMaterial.Extensions.EXT_structural_metadata.HasProperty(paramGltfName))
                             {
-                                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(paramGltfName, paramValue);
+                                gltfMaterial.Extensions.EXT_structural_metadata.AddProperty(paramGltfName, paramValue);
                                 AddParameterToClassSchema(parameter, classSchema);
                             }
                         }
@@ -282,10 +293,13 @@ namespace CesiumIonRevitAddin.Export
                 {
                     case "PrismOpaqueSchema":
                     case "AdvancedOpaque":
-                        attachedBitmapInfo = ParseSchemaPrismOpaqueSchema(renderingAsset);
+                        attachedBitmapInfo = ParsePrismOpaqueSchema(renderingAsset);
                         break;
                     case "HardwoodSchema":
-                        attachedBitmapInfo = ParseSchemaHardwoodSchema(renderingAsset);
+                        attachedBitmapInfo = ParseHardwoodSchema(renderingAsset);
+                        break;
+                    case "GenericSchema":
+                        attachedBitmapInfo = ParseGenericSchema(renderingAsset);
                         break;
                     default:
                         Logger.Instance.Log("skipping material processing of unknown material schema type: " + schema);
@@ -297,18 +311,28 @@ namespace CesiumIonRevitAddin.Export
         }
 
         // https://help.autodesk.com/view/RVT/2022/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Prism_Schema_Opaque_html
-        private static List<BitmapInfo> ParseSchemaPrismOpaqueSchema(Asset renderingAsset)
+        private static List<BitmapInfo> ParsePrismOpaqueSchema(Asset renderingAsset)
+        {
+            AssetProperty baseColorProperty = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
+            List<BitmapInfo> bitmapInfoCollection = GetBitmapInfoCollection(baseColorProperty);
+            return bitmapInfoCollection;
+        }
+
+        private static List<BitmapInfo> GetBitmapInfoCollection(AssetProperty baseColorProperty)
         {
             var bitmapInfoCollection = new List<BitmapInfo>();
 
-            AssetProperty baseColorProperty = renderingAsset.FindByName(AdvancedOpaque.OpaqueAlbedo);
             if (baseColorProperty.NumberOfConnectedProperties < 1)
             {
                 return bitmapInfoCollection;
             }
 
             var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
+
             AssetPropertyString path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
+            // Procedurally generated textures (e.g., NoiseSchema) will not have bitmaps.
+            if (path == null) return bitmapInfoCollection;
+
             var absolutePath = GetAbsoluteMaterialPath(path.Value);
             // It's possible for a bitmap object propery to have a path to a texture file, but that
             // file is not on the disk. The can happen if the texture patch and the model is being exported
@@ -327,38 +351,22 @@ namespace CesiumIonRevitAddin.Export
             return bitmapInfoCollection;
         }
 
-        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Protein_Hardwood_Schema_html
-        private static List<BitmapInfo> ParseSchemaHardwoodSchema(Asset renderingAsset)
+        private static List<BitmapInfo> ParseGenericSchema(Asset renderingAsset)
         {
-            var bitmapInfoCollection = new List<BitmapInfo>();
-
-            AssetProperty baseColorProperty = renderingAsset.FindByName(Hardwood.HardwoodColor);
-            if (baseColorProperty.NumberOfConnectedProperties < 1)
-            {
-                return bitmapInfoCollection;
-            }
-
-            var connectedProperty = baseColorProperty.GetConnectedProperty(0) as Asset;
-            var path = connectedProperty.FindByName(UnifiedBitmap.UnifiedbitmapBitmap) as AssetPropertyString;
-            string absolutePath = GetAbsoluteMaterialPath(path.Value);
-            // It's possible for a bitmap object propery to have a path to a texture file, but that
-            // file is not on the disk. The can happen if the texture patch and the model is being exported
-            // on another machine that doesn't have the materials installed in that location. Test for this case.
-            if (absolutePath == null)
-            {
-                Logger.Instance.Log("Could not find the following texture: " + path.Value);
-                return bitmapInfoCollection;
-            }
-            var baseColor = new BitmapInfo(absolutePath, GltfBitmapType.baseColorTexture);
-
-            AddTextureTransformInfo(ref baseColor, connectedProperty);
-
-            bitmapInfoCollection.Add(baseColor);
-
+            AssetProperty baseColorProperty = renderingAsset.FindByName("generic_diffuse");
+            List<BitmapInfo> bitmapInfoCollection = GetBitmapInfoCollection(baseColorProperty);
             return bitmapInfoCollection;
         }
 
-        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
+        // https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Protein_Hardwood_Schema_html
+        private static List<BitmapInfo> ParseHardwoodSchema(Asset renderingAsset)
+        {
+            AssetProperty baseColorProperty = renderingAsset.FindByName(Hardwood.HardwoodColor);
+            List<BitmapInfo> bitmapInfoCollection = GetBitmapInfoCollection(baseColorProperty);
+            return bitmapInfoCollection;
+        }
+
+        // See https://help.autodesk.com/view/RVT/2025/ENU/?guid=Revit_API_Revit_API_Developers_Guide_Revit_Geometric_Elements_Material_Material_Schema_Other_Schema_UnifiedBitmap_html
         private static void AddTextureTransformInfo(ref BitmapInfo bitmapInfo, Asset connectedProperty)
         {
             bitmapInfo.Offset = new double[]
@@ -381,9 +389,18 @@ namespace CesiumIonRevitAddin.Export
             };
         }
 
+        private static readonly string baseCommonPath = Path.Combine("Common Files", "Autodesk Shared", "Materials", "Textures");
+        private static readonly string[] possiblePathExtensions = new string[] {
+            baseCommonPath,
+            Path.Combine(baseCommonPath, "1", "Mats"),
+            Path.Combine(baseCommonPath, "2", "Mats"),
+            Path.Combine(baseCommonPath, "3", "Mats")
+        };
+
         private static string GetAbsoluteMaterialPath(string relativeOrAbsolutePath)
         {
             string[] allPaths = relativeOrAbsolutePath.Split('|');
+            allPaths = allPaths.Distinct().ToArray();
             relativeOrAbsolutePath = allPaths[allPaths.Length - 1];
 
             if (Path.IsPathRooted(relativeOrAbsolutePath) && File.Exists(relativeOrAbsolutePath))
@@ -393,13 +410,12 @@ namespace CesiumIonRevitAddin.Export
 
             string programFilesPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string programFilesX86Path = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-
-            List<string> possibleBasePaths = new List<string>
+            List<string> possibleBasePaths = new List<string>();
+            foreach (string possiblePathExtension in possiblePathExtensions)
             {
-                System.IO.Path.Combine(programFilesX86Path, "Common Files", "Autodesk Shared", "Materials", "Textures"),
-                System.IO.Path.Combine(programFilesPath, "Common Files", "Autodesk Shared", "Materials", "Textures")
-            };
-
+                possibleBasePaths.Add(System.IO.Path.Combine(programFilesX86Path, possiblePathExtension));
+                possibleBasePaths.Add(System.IO.Path.Combine(programFilesPath, possiblePathExtension));
+            }
             possibleBasePaths.AddRange(GetAdditionalRenderAppearancePaths());
 
             foreach (string basePath in possibleBasePaths)
@@ -449,14 +465,14 @@ namespace CesiumIonRevitAddin.Export
         {
             if (!(doc.GetElement(material.AppearanceAssetId) is AppearanceAssetElement assetElement))
             {
-                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add("AppearanceAsset", "None");
+                gltfMaterial.Extensions.EXT_structural_metadata.AddProperty("AppearanceAsset", "None");
                 return;
             }
 
             Asset renderingAsset = assetElement.GetRenderingAsset();
             if (renderingAsset == null)
             {
-                gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add("RenderingAsset", "None");
+                gltfMaterial.Extensions.EXT_structural_metadata.AddProperty("RenderingAsset", "None");
                 return;
             }
 
@@ -474,7 +490,6 @@ namespace CesiumIonRevitAddin.Export
             {
                 classSchema = extStructuralMetadataSchema.AddClass(material.Name);
                 classPropertiesSchema = new Dictionary<string, object>();
-                classSchema["properties"] = classPropertiesSchema;
             }
 
             for (int i = 0; i < renderingAsset.Size; i++)
@@ -486,18 +501,18 @@ namespace CesiumIonRevitAddin.Export
 
                     string gltfPropertyName = Util.GetGltfName(assetPropertyString.Name);
 
-                    if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
+                    if (!gltfMaterial.Extensions.EXT_structural_metadata.HasProperty(gltfPropertyName))
                     {
-                        gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
+                        gltfMaterial.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, assetPropertyString.Value);
                     }
                     else
                     {
                         // A property from the Appearance can have the same name as one from the physical Material.
                         // For example, "category".
                         gltfPropertyName = string.Concat("render", char.ToUpper(gltfPropertyName[0]), gltfPropertyName.Substring(1));
-                        if (!gltfMaterial.Extensions.EXT_structural_metadata.Properties.ContainsKey(gltfPropertyName))
+                        if (!gltfMaterial.Extensions.EXT_structural_metadata.HasProperty(gltfPropertyName))
                         {
-                            gltfMaterial.Extensions.EXT_structural_metadata.Properties.Add(gltfPropertyName, assetPropertyString.Value);
+                            gltfMaterial.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, assetPropertyString.Value);
                         }
                     }
 
@@ -536,6 +551,8 @@ namespace CesiumIonRevitAddin.Export
                     }
                 }
             }
+
+            if (classPropertiesSchema.Count > 0) classSchema["properties"] = classPropertiesSchema;
         }
 
         private static void AddParameterToClassSchema(Parameter parameter, Dictionary<string, object> classSchema)
@@ -549,36 +566,32 @@ namespace CesiumIonRevitAddin.Export
             }
             var classSchemaProperties = (Dictionary<string, object>)classSchemaOut;
 
-            if (!classSchemaProperties.TryGetValue(gltfPropertyName, out var value))
+            if (!classSchemaProperties.ContainsKey(gltfPropertyName))
             {
-                value = new Dictionary<string, object>();
-                classSchemaProperties.Add(gltfPropertyName, value);
+                var propertySchema = new Dictionary<string, object>();
+                classSchemaProperties.Add(gltfPropertyName, propertySchema);
+                propertySchema.Add("name", parameter.Definition.Name);
+
+                switch (parameter.StorageType)
+                {
+                    case StorageType.Double:
+                        propertySchema.Add("type", "SCALAR");
+                        propertySchema.Add("componentType", "FLOAT32");
+                        break;
+                    case StorageType.Integer:
+                    case StorageType.ElementId:
+                        propertySchema.Add("type", "SCALAR");
+                        propertySchema.Add("componentType", "INT32");
+                        break;
+                    case StorageType.String:
+                        propertySchema.Add("type", "STRING");
+                        break;
+                    default:
+                        break;
+                }
+
+                propertySchema.Add("required", false);
             }
-
-            var propertySchema = (Dictionary<string, object>)value;
-            propertySchema.Add("name", parameter.Definition.Name);
-
-            switch (parameter.StorageType)
-            {
-                case StorageType.Double:
-                    propertySchema.Add("type", "SCALAR");
-                    propertySchema.Add("componentType", "FLOAT32");
-                    break;
-                case StorageType.Integer:
-                    propertySchema.Add("type", "SCALAR");
-                    propertySchema.Add("componentType", "INT32");
-                    break;
-                case StorageType.String:
-                    propertySchema.Add("type", "STRING");
-                    break;
-                case StorageType.ElementId:
-                    propertySchema.Add("type", "STRING");
-                    break;
-                default:
-                    break;
-            }
-
-            propertySchema.Add("required", false);
         }
 
         private static void SetGltfMaterialsProperties(MaterialNode materialNode, float opacity, ref GltfPbr gltfPbr, ref GltfMaterial gltfMaterial)

@@ -210,6 +210,13 @@ namespace CesiumIonRevitAddin
                 return exportResult;
             }
 
+            if (TilerExportUtils.GetTilerLocation() == string.Empty)
+            {
+                TaskDialog.Show("Export Complete", "View exported to glTF. Tiler application not found, skipping tiling.");
+
+                return Result.Succeeded;
+            }
+
             // If we don't export to ion, we execute the tiler locally
             TilerExportUtils.RunTiler(preferences.JsonPath);
 
@@ -243,6 +250,8 @@ namespace CesiumIonRevitAddin
             }
 
             Document doc = commandData.Application.ActiveUIDocument.Document;
+
+            IonExportUtils.ConfigureClient(commandData.Application);
 
             // Get the export view
             View3D exportView = IonExportUtils.GetExportView(doc.ActiveView);
@@ -295,14 +304,14 @@ namespace CesiumIonRevitAddin
             // Clean up the export contents
             IonExportUtils.Cleanup(preferences);
 
-            string assetName = Path.GetFileName(doc.PathName);
+            string assetName = Path.GetFileName(doc.Title);
             string assetDesc = IonExportUtils.GetProjectInformationAsString(doc);
 
             // Only supply an EPSG code if the user has shared coordinates enabled
             string inputCrs = preferences.EpsgCode != "" && preferences.SharedCoordinates ? $"EPSG:{preferences.EpsgCode}" : "";
 
             // The upload dialog handles the upload process
-            using (var ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs))
+            using (var ionUploadDialog = new IonUploadDialog(zipPath, assetName, assetDesc, inputCrs, preferences.IonInstancing))
             {
                 ionUploadDialog.ShowDialog();
             }
@@ -321,6 +330,8 @@ namespace CesiumIonRevitAddin
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
+            IonExportUtils.ConfigureClient(commandData.Application);
+
             using (var ionConnectDialog = new IonConnectDialog())
             {
                 ionConnectDialog.ShowDialog();

@@ -62,6 +62,13 @@ If you make a change and produce a new build, the Revit AddinManager will utilis
 - Use Add-In Manager (Manual Mode, Faceless) to re-run the previous command without needing to navigate the UI
 - Click Show/Hide Panel (Debug Trace Events) to display a debug console that prints `Debug.Writeline()` output.
 
+### Testing with local files
+
+Debug builds feature an **Export 3D Tiles to Disk** option in the ribbon.  This can export glTF to disk, which can then be used to produce 3D Tiles without uploading to Cesium ion.
+
+By default, a glTF and tileset.json will be exported through this process.  If you have a local tiler, the add-in can be configured to automatically call tilers.exe and convert the glTF into 3D Tiles.  The glTF remains on the system after conversion for debugging purposes.
+
+To configure a tiler, add a `CESIUM_TILER_PATH` environment variable to your system, with a value that represents an absolute path to your `tilers.exe`.
 
 ### Debugging
 

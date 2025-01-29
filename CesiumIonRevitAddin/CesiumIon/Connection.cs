@@ -17,6 +17,7 @@ using CesiumIonRevitAddin.Utils;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 
 namespace CesiumIonRevitAddin.CesiumIonClient
 {
@@ -97,6 +98,11 @@ namespace CesiumIonRevitAddin.CesiumIonClient
         private static string redirectUri;
         private static readonly string localUrl = Path.Combine(Util.GetAddinUserDataFolder(), "ion_token.json");
         private static string codeVerifier;
+        private static readonly string osInfo = Environment.OSVersion.VersionString;
+        private static string clientName;
+        private static string clientVersion;
+        private static string engine;
+        private static string project;
 
         public static void Disconnect()
         {
@@ -255,22 +261,26 @@ namespace CesiumIonRevitAddin.CesiumIonClient
 
         }
 
-        public static async Task<ConnectionResult> Upload(string filePath, string name, string description, string attribution, string type, string sourceType, string inputCrs, IProgress<double> progress = null)
+        public static async Task<ConnectionResult> Upload(string filePath, string name, string description, string attribution, string type, string sourceType, string inputCrs, bool instancing, IProgress<double> progress = null)
         {
             description = description.Replace("__\\n__", "\n");
             attribution = attribution.Replace("__\\n__", "\n");
 
+            // The API will error if the name is empty
+            string sanitizedName = string.IsNullOrWhiteSpace(name) ? "UnknownProject" : name;
+
             // Prepare the content to send to the API
             var content = new JObject
             {
-                { "name", name },
+                { "name", sanitizedName },
                 { "description", description },
                 { "attribution", attribution },
                 { "type", type },
                 {
                     "options", new JObject
                     {
-                        { "sourceType", sourceType }
+                        { "sourceType", sourceType },
+                        { "instancing", instancing }
                     }
                 }
             };
@@ -288,7 +298,7 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             }
 
             // Clear the headers each time
-            client.DefaultRequestHeaders.Clear();
+            ResetHeaders();
             client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
             client.DefaultRequestHeaders.Add("json", "true");
 
@@ -519,6 +529,8 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             };
             var POSTContent = new FormUrlEncodedContent(parameters);
 
+            ResetHeaders();
+
             using (HttpResponseMessage responseMessageToken = await client.PostAsync(uriBuilder.Uri, POSTContent).ConfigureAwait(false))
             {
                 string contentToken = await responseMessageToken.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -582,6 +594,41 @@ namespace CesiumIonRevitAddin.CesiumIonClient
             }
 
             return new JObject();
+        }
+        public static void ConfigureClient(string clientName, string clientVersion, string engine, string project)
+        {
+            Connection.clientName = clientName;
+            Connection.clientVersion = clientVersion;
+            Connection.engine = engine;
+            Connection.project = project;
+        }
+
+        private static void ResetHeaders()
+        {
+            client.DefaultRequestHeaders.Clear();
+
+            string sanitizedClientName = string.IsNullOrWhiteSpace(clientName) ? "UnknownClient" : clientName;
+            string sanitizedClientVersion = string.IsNullOrWhiteSpace(clientVersion) ? "UnknownVersion" : clientVersion;
+            string sanitizedOsInfo = string.IsNullOrWhiteSpace(osInfo) ? "UnknownOS" : osInfo;
+            string sanitizedEngine = string.IsNullOrWhiteSpace(engine) ? "UnknownEngine" : engine;
+            string sanitizedProject = string.IsNullOrWhiteSpace(project) ? "UnknownProject" : project;
+
+            string userAgent = $"Mozilla/5.0 ({sanitizedOsInfo}) {sanitizedClientName}/{sanitizedClientVersion} (Project {sanitizedProject} Engine {sanitizedEngine})";
+
+            client.DefaultRequestHeaders.Add("User-Agent", SanitizeHeader(userAgent));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client", SanitizeHeader(sanitizedClientName));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-Version", SanitizeHeader(sanitizedClientVersion));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-OS", SanitizeHeader(sanitizedOsInfo));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-Engine", SanitizeHeader(sanitizedEngine));
+            client.DefaultRequestHeaders.Add("X-Cesium-Client-Project", SanitizeHeader(sanitizedProject));
+        }
+
+        private static string SanitizeHeader(string header)
+        {   
+            if (header == null) return string.Empty;
+
+            // Printable ASCII chars only
+            return Regex.Replace(header, @"[^\u0020-\u007E]", string.Empty);
         }
 
     }

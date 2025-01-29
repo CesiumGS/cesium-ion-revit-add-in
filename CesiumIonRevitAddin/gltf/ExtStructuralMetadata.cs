@@ -11,6 +11,18 @@ namespace CesiumIonRevitAddin.Gltf
         public String Class;
 
         [JsonProperty("properties")]
-        public Dictionary<String, Object> Properties = new Dictionary<String, Object>();
+        Dictionary<String, Object> properties;
+
+        public void AddProperty(String key, Object value)
+        {
+            properties = properties ?? new Dictionary<String, Object>();
+            properties.Add(key, value);
+        }
+
+        public bool HasProperty(String key) {
+            if (properties == null) return false;
+
+            return properties.ContainsKey(key);
+        }
     }
 }

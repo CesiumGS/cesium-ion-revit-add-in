@@ -36,37 +36,29 @@
   
   <!-- Register folders for copying post build -->
   <PropertyGroup>
-    <TilersBinSourceDir>$(SolutionDir)..\tilers\build\bin\$(Configuration)\</TilersBinSourceDir>
-    <TilersConfigSourceDir>$(SolutionDir)..\tilers\</TilersConfigSourceDir>
+    <ImagesSourceDir>$(SolutionDir)CesiumIonRevitAddin\Images\</ImagesSourceDir>
     <AddinFileSource>$(SolutionDir)CesiumIonRevitAddin\CesiumIonRevit.addin</AddinFileSource>
     <ThirdPartySource>$(SolutionDir)ThirdParty.json</ThirdPartySource>
   </PropertyGroup>
 
   <!-- Register files for copying post build -->
   <ItemGroup>
-    <TilerBinFiles Include="$(TilersBinSourceDir)**\*.*" />
-    <TilerConfigFiles Include="$(TilersConfigSourceDir)ThirdParty.json" />
+    <ImageFiles Include="$(ImagesSourceDir)**\*.*" />
     <AddinFile Include="$(AddinFileSource)" />
     <ThirdPartyFile Include="$(ThirdPartySource)" />
   </ItemGroup>
 
   <!-- Copy files post build -->
   <Target Name="CustomPostBuild" AfterTargets="Build">
+    <Copy SourceFiles="@(ImageFiles)"
+          DestinationFolder="$(TargetDir)Images\%(RecursiveDir)"
+          SkipUnchangedFiles="true" />
+
     <Copy SourceFiles="@(AddinFile)" 
           DestinationFolder="$(TargetDir)..\" />
 
     <Copy SourceFiles="@(ThirdPartyFile)" 
           DestinationFolder="$(TargetDir)\" />
-  </Target>
-
-  <!-- Copy tiler files post build - debug only-->
-  <Target Name="CustomPostBuildTiler" AfterTargets="Build" Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <Copy SourceFiles="@(TilerBinFiles)"
-          DestinationFolder="$(TargetDir)tiler\%(RecursiveDir)"
-          SkipUnchangedFiles="true" />
-
-    <Copy SourceFiles="@(TilerConfigFiles)" 
-          DestinationFolder="$(TargetDir)tiler\" />
   </Target>
 
   <!-- Make sure third party PDB's and XML aren't included in release  -->
