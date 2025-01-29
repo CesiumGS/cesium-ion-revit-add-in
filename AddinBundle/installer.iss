@@ -15,6 +15,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
+VersionInfoVersion={#MyAppVersion}
 DefaultDirName={userappdata}\Autodesk\ApplicationPlugins\CesiumIonRevitAddin.bundle
 DisableDirPage=yes
 DisableProgramGroupPage=yes
