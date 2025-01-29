@@ -4,6 +4,7 @@
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Cesium GS, Inc."
 #define MyAppURL "https://www.cesium.com/"
+#define AutodeskGUID "{588139E0-5F8C-4817-B5D8-B4DAFB8954E7}"
 
 [Setup]
 AppId={{7549ECAF-53CD-428E-9576-A827C16D43A7}
@@ -23,7 +24,7 @@ Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 SetupIconFile=.\Resources\cesium.ico
-UninstallDisplayIcon=.\Resources\cesium.ico
+UninstallDisplayIcon={app}\unins000.exe
 WizardImageFile=.\Resources\sidelogo.bmp
 WizardSmallImageFile=.\Resources\logo.bmp
 WizardImageAlphaFormat=premultiplied
@@ -38,3 +39,45 @@ Source: ".\CesiumIonRevitAddin.bundle\*"; DestDir: "{app}"; Flags: ignoreversion
 [InstallDelete]
 ; Remove the previous add-in
 Type: filesandordirs; Name: "{app}"
+
+[Code]
+function OriginalAddinInstalled: boolean;
+var
+  Path1Exists: Boolean;
+  Path2Exists: Boolean;
+begin
+  // Check both 64-bit and 32-bit uninstall locations for the original Autodesk installer
+  Path1Exists := RegKeyExists(HKEY_LOCAL_MACHINE, 'SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#AutodeskGUID}');
+  Path2Exists := RegKeyExists(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#AutodeskGUID}');
+  Result := Path1Exists or Path2Exists;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  addinExists: Boolean;
+  ResultCode: Integer;
+begin
+  // This checks for an existing installation of the Autodesk installer from version 1.0.0, and if found prompts the user to uninstall first.
+  // This is to avoid having both Autodesk and Cesium installers simultaneously present on the users system
+  addinExists := OriginalAddinInstalled;
+  if addinExists then
+  begin
+    if MsgBox('An existing installation of Cesium ion for Autodesk Revit 1.0.0 must be uninstalled first.  Do you want to uninstall it now?', mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      ShellExec('', 'msiexec.exe', '/X {#AutodeskGUID} /passive', '', SW_SHOWNORMAL, ewWaitUntilTerminated, ResultCode);
+      Log(SysErrorMessage(ResultCode));
+      if ResultCode = 0 then
+      begin
+        MsgBox('Setup successfully uninstalled Cesium ion for Autodesk Revit 1.0.0.  Click OK to continue with installation.', mbError, MB_OK);
+      end
+      else
+      begin
+        Result := 'Setup could not uninstall the existing installation of Cesium ion for Autodesk Revit 1.0.0.  Please try uninstalling it manually.';
+      end;
+    end
+    else
+    begin
+      Result := 'The existing installation of Cesium ion for Autodesk Revit 1.0.0 must be uninstalled first.';
+    end;
+  end
+end;
