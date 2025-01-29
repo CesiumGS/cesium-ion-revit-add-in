@@ -24,10 +24,10 @@ OutputBaseFilename={#MyAppName} {#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-SetupIconFile=.\Resources\cesium.ico
+SetupIconFile=.\Installer\cesium.ico
 UninstallDisplayIcon={app}\unins000.exe
-WizardImageFile=.\Resources\sidelogo.bmp
-WizardSmallImageFile=.\Resources\logo.bmp
+WizardImageFile=.\Installer\sidelogo.bmp
+WizardSmallImageFile=.\Installer\logo.bmp
 WizardImageAlphaFormat=premultiplied
 
 [Languages]
