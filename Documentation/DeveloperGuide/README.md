@@ -78,9 +78,12 @@ When using Revit AddinManager and a Debug build of the add-in, you can attach th
 
 The following steps can be used to create a bundle that supports multiple versions of Revit.  This is also the content that gets uploaded to the Autodesk App Store for new releases.
 
-1. Switch the Solution **Configuration** to **Release** in Visual Studio.
-2. Right click on the Solution and choose **Rebuild**.
-3. Execute the batch file [BundleDebug.bat](/AddinBundle/BundleDebug.bat) or [BundleRelease.bat](/AddinBundle/BundleRelease.bat) depending on which configuration you want to bundle
-4. All builds from individual projects will be copied into the [/AddinBundle/CesiumIonRevitAddin.bundle](/AddinBundle/CesiumIonRevitAddin.bundle) folder
-5. To test the bundle with Revit, execute the batch file [CopyBundleToRevit.bat](/AddinBundle/CopyBundleToRevit.bat).  This will copy the bundle to `C:\ProgramData\Autodesk\ApplicationPlugins\CesiumIonRevitAddin.bundle`, which will make the add-in available to all currently installed and supported versions of Revit.  NOTE: This will override any existing bundle in the same location
-6. The final bundle can be uploaded to the Autodesk App Store for new releases
+1. Ensure there are no modified or untracked files in [/AddinBundle/CesiumIonRevitAddin.bundle](/AddinBundle/CesiumIonRevitAddin.bundle).
+2. Switch the Solution **Configuration** to **Release** in Visual Studio.
+3. Right click on the Solution and choose **Rebuild**.
+4. Execute the batch file [BundleDebug.bat](/AddinBundle/BundleDebug.bat) or [BundleRelease.bat](/AddinBundle/BundleRelease.bat) depending on which configuration you want to bundle
+5. All builds from individual projects will be copied into the [/AddinBundle/CesiumIonRevitAddin.bundle](/AddinBundle/CesiumIonRevitAddin.bundle) folder
+6. To test the bundle with Revit, execute the batch file [CopyBundleToRevit.bat](/AddinBundle/CopyBundleToRevit.bat).  This will copy the bundle to `C:\ProgramData\Autodesk\ApplicationPlugins\CesiumIonRevitAddin.bundle`, which will make the add-in available to all currently installed and supported versions of Revit.  NOTE: This will override any existing bundle in the same location
+7. The bundle can be removed from Revit using [RemoveBundleFromRevit.bat](/AddinBundle/RemoveBundleFromRevit.bat).
+8. The final bundle can be packaged into an installer and uploaded to the Autodesk App Store for new releases (see the [Release Guide](/Documentation/ReleaseGuide/README.md))
+

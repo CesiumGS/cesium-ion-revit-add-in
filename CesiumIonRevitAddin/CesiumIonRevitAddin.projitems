@@ -83,14 +83,32 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)Images\cesium.ico" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\attribution.txt" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\book-open-reader-solid.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\cloud-arrow-up-solid.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\file-export-solid.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\circle-question.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\right-from-bracket-solid.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\right-to-bracket-solid.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Images\logo.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Images\cesium.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\attribution.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\book-open-reader-solid.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\cloud-arrow-up-solid.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\file-export-solid.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\circle-question.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\right-from-bracket-solid.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\FontAwesome\right-to-bracket-solid.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(MSBuildThisFileDirectory)Images\logo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
