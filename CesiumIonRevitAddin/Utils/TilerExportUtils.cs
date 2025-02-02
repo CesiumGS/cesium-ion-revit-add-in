@@ -49,16 +49,14 @@ namespace CesiumIonRevitAddin.Utils
                 ["overwrite"] = true,
                 ["pipeline"] = new JObject
                 {
-                    ["type"] = "DESIGN_TILER",
-                    ["designTiler"] = new JObject
-                    {
-                        ["flattenClassHierarchy"] = true,
-                        ["flattenObjectHierarchy"] = true,
-                        ["separatePropertyTables"] = true,
-                        ["mergeClasses"] = true,
-                    }
+                    ["type"] = "DESIGN_TILER"
                 },
-                ["gzip"] = true
+                ["gzip"] = true,
+                ["gltf"] = new JObject
+                {
+                    ["geometricCompression"] = "MESHOPT",
+                    ["colorTextureCompression"] = "KTX2"
+                }
             };
 
             // Only add the CRS information if it exists
