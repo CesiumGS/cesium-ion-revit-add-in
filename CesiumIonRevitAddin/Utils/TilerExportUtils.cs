@@ -52,7 +52,7 @@ namespace CesiumIonRevitAddin.Utils
                     ["type"] = "DESIGN_TILER",
                     ["designTiler"] = new JObject
                     {
-                        ["enableInstancing"] = preferences.IonInstancing,
+                        ["enableInstancing"] = preferences.IonInstancing
                     }
                 },
                 ["gzip"] = true,
