@@ -49,7 +49,11 @@ namespace CesiumIonRevitAddin.Utils
                 ["overwrite"] = true,
                 ["pipeline"] = new JObject
                 {
-                    ["type"] = "DESIGN_TILER"
+                    ["type"] = "DESIGN_TILER",
+                    ["designTiler"] = new JObject
+                    {
+                        ["enableInstancing"] = preferences.IonInstancing,
+                    }
                 },
                 ["gzip"] = true,
                 ["gltf"] = new JObject
