@@ -809,6 +809,7 @@ namespace CesiumIonRevitAddin.Gltf
 
                 if (!khrTextureTransformAdded && materialHasTexture)
                 {
+                    extensionsUsed = extensionsUsed ?? new List<string>();
                     extensionsUsed.Add("KHR_texture_transform");
                     extensionsRequired = extensionsRequired ?? new List<string>();
                     extensionsRequired.Add("KHR_texture_transform");
