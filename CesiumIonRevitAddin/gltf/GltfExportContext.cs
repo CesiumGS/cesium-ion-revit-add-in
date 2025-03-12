@@ -169,25 +169,12 @@ namespace CesiumIonRevitAddin.Gltf
                 extensionsUsed.Add("EXT_structural_metadata");
                 extensions.Add("EXT_structural_metadata", extStructuralMetadataExtensionSchema);
 
-                ProjectInfo projectInfo = Doc.ProjectInformation;
-
                 var rootSchema = extStructuralMetadataExtensionSchema.GetClass("project") ?? extStructuralMetadataExtensionSchema.AddClass("Project");
                 var rootSchemaProperties = new Dictionary<string, object>();
                 rootSchema.Add("properties", rootSchemaProperties);
 
                 rootNode.Extensions = rootNode.Extensions ?? new GltfExtensions();
                 rootNode.Extensions.EXT_structural_metadata = rootNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
-                rootNode.Extensions.EXT_structural_metadata.Class = "project";
-                AddPropertyInfoProperty("Project Name", projectInfo.Name, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Project Number", projectInfo.Number, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Client Name", projectInfo.ClientName, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Project Address", projectInfo.Address, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Building Name", projectInfo.BuildingName, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Author", projectInfo.Author, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Organization Name", projectInfo.OrganizationName, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Organization Description", projectInfo.OrganizationDescription, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
 
                 // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
                 // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
@@ -268,26 +255,6 @@ namespace CesiumIonRevitAddin.Gltf
             scenes.Add(defaultScene);
 
             return true;
-        }
-
-        // Add information about the physical Revit building/property (via the project's PropertyInfo) to glTF "properties"
-        private static void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
-        {
-            if (Util.ShouldFilterMetadata(propertyValue))
-            {
-                return;
-            }
-
-            // add to node
-            var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
-            rootNode.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, propertyValue);
-
-            // add to schema
-            var propertySchema = new Dictionary<string, object>();
-            rootSchemaProperties.Add(gltfPropertyName, propertySchema);
-            propertySchema.Add("name", propertyName);
-            propertySchema.Add("type", "STRING");
-            propertySchema.Add("required", false);
         }
 
         public void Finish()
