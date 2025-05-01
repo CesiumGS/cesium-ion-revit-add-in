@@ -466,9 +466,14 @@ namespace CesiumIonRevitAddin.Gltf
                 newNode.Extensions.EXT_structural_metadata.AddProperty("levelId", levelIdValue);
                 extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelId", levelIdValue.GetType());
                 // add "Name" property for levelId for human readability
-                string levelIdName = Doc.GetElement(levelId).Name;
-                newNode.Extensions.EXT_structural_metadata.AddProperty("levelIdName", levelIdName);
-                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelIdName", levelIdName.GetType());
+                Element level = Doc.GetElement(levelId);
+                if (level != null)
+                {
+                    string levelIdName = level.Name;
+                    newNode.Extensions.EXT_structural_metadata.AddProperty("levelIdName", levelIdName);
+                    extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelIdName", levelIdName.GetType());
+                }
+
 
                 // add Room if the element is a FamilyInstance
                 if (element is FamilyInstance)
