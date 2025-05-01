@@ -137,5 +137,14 @@ namespace CesiumIonRevitAddin.Utils
                     return new ParameterValue();
             }
         }
+
+        public static int GetElementIdValue(ElementId elementId)
+        {
+#if REVIT2022 || REVIT2023
+            return elementId.IntegerValue;
+#else
+            return (int)elementId.Value;
+#endif
+        }
     }
 }

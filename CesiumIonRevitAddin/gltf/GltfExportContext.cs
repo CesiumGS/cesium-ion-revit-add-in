@@ -452,14 +452,44 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
 
-                // All nodes should have its ElementId in the metadata
-#if REVIT2022 || REVIT2023
-                int elementIdValue = elementId.IntegerValue;
-#else
-                int elementIdValue = (int)elementId.Value;
-#endif
+                // All nodes should have its ElementId, LevelId, and UniqueId in the metadata
+                int elementIdValue = Util.GetElementIdValue(elementId);
                 newNode.Extensions.EXT_structural_metadata.AddProperty("elementId", elementIdValue);
                 extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "elementId", elementIdValue.GetType());
+
+                string uniqueId = element.UniqueId;
+                newNode.Extensions.EXT_structural_metadata.AddProperty("uniqueId", uniqueId);
+                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "uniqueId", uniqueId.GetType());
+
+                ElementId levelId = element.LevelId;
+                int levelIdValue = Util.GetElementIdValue(levelId);
+                newNode.Extensions.EXT_structural_metadata.AddProperty("levelId", levelIdValue);
+                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelId", levelIdValue.GetType());
+                // add "Name" property for levelId for human readability
+                Element level = Doc.GetElement(levelId);
+                if (level != null)
+                {
+                    string levelIdName = level.Name;
+                    newNode.Extensions.EXT_structural_metadata.AddProperty("levelIdName", levelIdName);
+                    extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelIdName", levelIdName.GetType());
+                }
+
+
+                // add Room if the element is a FamilyInstance
+                if (element is FamilyInstance)
+                {
+                    Autodesk.Revit.DB.Architecture.Room room = ((FamilyInstance)element).Room;
+                    if (room != null)
+                    {
+                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomName", room.Name);
+                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomName", room.Name.GetType());
+                        int roomIdValue = Util.GetElementIdValue(room.Id);
+                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomElementId", roomIdValue);
+                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomElementId", roomIdValue.GetType());
+                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomUniqueId", room.UniqueId);
+                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomUniqueId", room.UniqueId.GetType());
+                    }
+                }
             }
 
             // Set parent to Supercomponent if it exists.
