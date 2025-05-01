@@ -169,25 +169,12 @@ namespace CesiumIonRevitAddin.Gltf
                 extensionsUsed.Add("EXT_structural_metadata");
                 extensions.Add("EXT_structural_metadata", extStructuralMetadataExtensionSchema);
 
-                ProjectInfo projectInfo = Doc.ProjectInformation;
-
                 var rootSchema = extStructuralMetadataExtensionSchema.GetClass("project") ?? extStructuralMetadataExtensionSchema.AddClass("Project");
                 var rootSchemaProperties = new Dictionary<string, object>();
                 rootSchema.Add("properties", rootSchemaProperties);
 
                 rootNode.Extensions = rootNode.Extensions ?? new GltfExtensions();
                 rootNode.Extensions.EXT_structural_metadata = rootNode.Extensions.EXT_structural_metadata ?? new ExtStructuralMetadata();
-                rootNode.Extensions.EXT_structural_metadata.Class = "project";
-                AddPropertyInfoProperty("Project Name", projectInfo.Name, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Project Number", projectInfo.Number, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Client Name", projectInfo.ClientName, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Project Address", projectInfo.Address, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Building Name", projectInfo.BuildingName, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Author", projectInfo.Author, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Organization Name", projectInfo.OrganizationName, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Organization Description", projectInfo.OrganizationDescription, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Issue Date", projectInfo.IssueDate, rootSchemaProperties, rootNode);
-                AddPropertyInfoProperty("Project Status", projectInfo.Status, rootSchemaProperties, rootNode);
 
                 // Loop over all the parameters in the document. Get the parameter's info via the InternalDefinition.
                 // Each parameter/InternalDefinition will bind to one or more Categories via a CategorySet.
@@ -268,26 +255,6 @@ namespace CesiumIonRevitAddin.Gltf
             scenes.Add(defaultScene);
 
             return true;
-        }
-
-        // Add information about the physical Revit building/property (via the project's PropertyInfo) to glTF "properties"
-        private static void AddPropertyInfoProperty(string propertyName, string propertyValue, Dictionary<string, object> rootSchemaProperties, GltfNode rootNode)
-        {
-            if (Util.ShouldFilterMetadata(propertyValue))
-            {
-                return;
-            }
-
-            // add to node
-            var gltfPropertyName = Utils.Util.GetGltfName(propertyName);
-            rootNode.Extensions.EXT_structural_metadata.AddProperty(gltfPropertyName, propertyValue);
-
-            // add to schema
-            var propertySchema = new Dictionary<string, object>();
-            rootSchemaProperties.Add(gltfPropertyName, propertySchema);
-            propertySchema.Add("name", propertyName);
-            propertySchema.Add("type", "STRING");
-            propertySchema.Add("required", false);
         }
 
         public void Finish()
@@ -485,14 +452,44 @@ namespace CesiumIonRevitAddin.Gltf
                     }
                 }
 
-                // All nodes should have its ElementId in the metadata
-#if REVIT2022 || REVIT2023
-                int elementIdValue = elementId.IntegerValue;
-#else
-                int elementIdValue = (int)elementId.Value;
-#endif
+                // All nodes should have its ElementId, LevelId, and UniqueId in the metadata
+                int elementIdValue = Util.GetElementIdValue(elementId);
                 newNode.Extensions.EXT_structural_metadata.AddProperty("elementId", elementIdValue);
                 extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "elementId", elementIdValue.GetType());
+
+                string uniqueId = element.UniqueId;
+                newNode.Extensions.EXT_structural_metadata.AddProperty("uniqueId", uniqueId);
+                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "uniqueId", uniqueId.GetType());
+
+                ElementId levelId = element.LevelId;
+                int levelIdValue = Util.GetElementIdValue(levelId);
+                newNode.Extensions.EXT_structural_metadata.AddProperty("levelId", levelIdValue);
+                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelId", levelIdValue.GetType());
+                // add "Name" property for levelId for human readability
+                Element level = Doc.GetElement(levelId);
+                if (level != null)
+                {
+                    string levelIdName = level.Name;
+                    newNode.Extensions.EXT_structural_metadata.AddProperty("levelIdName", levelIdName);
+                    extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelIdName", levelIdName.GetType());
+                }
+
+
+                // add Room if the element is a FamilyInstance
+                if (element is FamilyInstance)
+                {
+                    Autodesk.Revit.DB.Architecture.Room room = ((FamilyInstance)element).Room;
+                    if (room != null)
+                    {
+                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomName", room.Name);
+                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomName", room.Name.GetType());
+                        int roomIdValue = Util.GetElementIdValue(room.Id);
+                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomElementId", roomIdValue);
+                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomElementId", roomIdValue.GetType());
+                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomUniqueId", room.UniqueId);
+                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomUniqueId", room.UniqueId.GetType());
+                    }
+                }
             }
 
             // Set parent to Supercomponent if it exists.
