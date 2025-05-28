@@ -76,18 +76,18 @@ namespace CesiumIonRevitAddin.Gltf
 
         public ClassType AddClass(string className)
         {
-            ClassesType classes = GetClasses();
+            ClassesType schemaClasses = GetClasses();
             var gltfClass = new Dictionary<string, object>();
 
             var gltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(className);
-            if (!classes.ContainsKey(gltfName))
+            if (!schemaClasses.ContainsKey(gltfName))
             {
                 gltfClass = new Dictionary<string, object>
                 {
                     { "name", className }
                 };
 
-                classes.Add(gltfName, gltfClass);
+                schemaClasses.Add(gltfName, gltfClass);
             }
 
             return gltfClass;
@@ -216,7 +216,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         public bool ClassHasProperty(ClassType class_, string propertyGltfName)
         {
-            // Some classes may have no properties, such as classes for Revit Categories
+            // Some schemaClasses may have no properties, such as schemaClasses for Revit Categories
             if (!class_.ContainsKey("properties"))
             {
                 return false;

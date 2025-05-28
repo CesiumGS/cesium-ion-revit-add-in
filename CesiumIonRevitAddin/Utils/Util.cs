@@ -138,12 +138,12 @@ namespace CesiumIonRevitAddin.Utils
             }
         }
 
-        public static int GetElementIdValue(ElementId elementId)
+        public static Int64 GetElementIdValue(ElementId elementId)
         {
 #if REVIT2022 || REVIT2023
-            return elementId.IntegerValue;
+            return (System.Int64) elementId.IntegerValue;
 #else
-            return (int)elementId.Value;
+            return elementId.Value;
 #endif
         }
     }
