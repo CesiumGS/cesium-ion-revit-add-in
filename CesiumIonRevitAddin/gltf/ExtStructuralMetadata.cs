@@ -29,7 +29,7 @@ namespace CesiumIonRevitAddin.Gltf
                 addedKey = key + i;
             }
             properties.Add(addedKey, parameterValue);
-            Logger.Instance.Log("Parameter " + key + " had a name collision, is now " + addedKey);
+            if (addedKey != key) Logger.Instance.Log("Parameter " + key + " had a name collision, is now " + addedKey);
             return addedKey;
         }
 

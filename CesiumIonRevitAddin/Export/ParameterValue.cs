@@ -1,6 +1,5 @@
 using Newtonsoft.Json;
 using System;
-using Autodesk.Revit.DB;
 
 [JsonConverter(typeof(ParameterValueConverter))]
 public struct ParameterValue
