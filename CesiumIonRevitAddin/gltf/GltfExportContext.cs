@@ -37,7 +37,7 @@ namespace CesiumIonRevitAddin.Gltf
         private List<string> extensionsUsed = null;
         private List<string> extensionsRequired = null;
         private readonly Dictionary<string, GltfExtensionSchema> extensions = new Dictionary<string, GltfExtensionSchema>();
-        private readonly GltfExtStructuralMetadataExtensionSchema extStructuralMetadataExtensionSchema = new GltfExtStructuralMetadataExtensionSchema();
+        private readonly GltfExtStructuralMetadataExtensionSchema modelExtStructuralMetadataExtensionSchema = new GltfExtStructuralMetadataExtensionSchema();
         private bool khrTextureTransformAdded;
         private bool shouldSkipElement;
         private Autodesk.Revit.DB.Transform linkTransformation;
@@ -167,9 +167,9 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 extensionsUsed = extensionsUsed ?? new List<string>();
                 extensionsUsed.Add("EXT_structural_metadata");
-                extensions.Add("EXT_structural_metadata", extStructuralMetadataExtensionSchema);
+                extensions.Add("EXT_structural_metadata", modelExtStructuralMetadataExtensionSchema);
 
-                var rootSchema = extStructuralMetadataExtensionSchema.GetClass("project") ?? extStructuralMetadataExtensionSchema.AddClass("Project");
+                var rootSchema = modelExtStructuralMetadataExtensionSchema.GetClass("project") ?? modelExtStructuralMetadataExtensionSchema.AddClass("Project");
                 var rootSchemaProperties = new Dictionary<string, object>();
                 rootSchema.Add("properties", rootSchemaProperties);
 
@@ -227,9 +227,9 @@ namespace CesiumIonRevitAddin.Gltf
 #else
                             string categoryGltfName = CesiumIonRevitAddin.Utils.Util.GetGltfName(category.BuiltInCategory.ToString());
 #endif
-                            extStructuralMetadataExtensionSchema.AddCategory(categoryGltfName);
-                            var gltfClass = extStructuralMetadataExtensionSchema.GetClass(categoryGltfName);
-                            var schemaProperties = extStructuralMetadataExtensionSchema.GetProperties(gltfClass);
+                            modelExtStructuralMetadataExtensionSchema.AddCategory(categoryGltfName);
+                            var gltfClass = modelExtStructuralMetadataExtensionSchema.GetClass(categoryGltfName);
+                            var schemaProperties = modelExtStructuralMetadataExtensionSchema.GetProperties(gltfClass);
                             string gltfDefinitionName = Util.GetGltfName(definition.Name);
                             if (schemaProperties.ContainsKey(gltfDefinitionName))
                             {
@@ -388,107 +388,60 @@ namespace CesiumIonRevitAddin.Gltf
 
                 newNode.Extensions.EXT_structural_metadata.Class = Util.GetGltfName(Util.CreateClassName(categoryName, familyName));
 
-                ParameterSet parameterSet = element.Parameters;
-                var parametersToSkip = new HashSet<Parameter>();
-                var elementIdProperties = new HashSet<Parameter>(); // save to resolve with additional properties such as a human-readable name
-                foreach (Parameter parameter in parameterSet)
-                {
-                    string propertyName = Util.GetGltfName(parameter.Definition.Name);
-                    ParameterValue paramValue = Util.GetParameterValue(parameter);
+                modelExtStructuralMetadataExtensionSchema.AddCategory(categoryName);
+                classMetadata = modelExtStructuralMetadataExtensionSchema.AddFamily(categoryName, familyName);
 
-                    if (parameter.HasValue &&
-                        !Util.ShouldFilterMetadata(paramValue) &&
-                        !newNode.Extensions.EXT_structural_metadata.HasProperty(propertyName))
-                    {
-                        newNode.Extensions.EXT_structural_metadata.AddProperty(propertyName, paramValue);
+                // 1) Add a curated list of class properties from the Element class.
+                // See https://www.revitapidocs.com/2024/671c33f6-169b-17ca-583b-42f9df50ace5.htm?section=propertyTableToggle
 
-                        if (parameter.StorageType == StorageType.ElementId)
-                        {
-                            elementIdProperties.Add(parameter);
-                        }
-                    }
-                    else
-                    {
-                        parametersToSkip.Add(parameter);
-                    }
-                }
-
-                extStructuralMetadataExtensionSchema.AddCategory(categoryName);
-                classMetadata = extStructuralMetadataExtensionSchema.AddFamily(categoryName, familyName);
-                extStructuralMetadataExtensionSchema.AddProperties(categoryName, familyName, parameterSet, parametersToSkip);
-
-                // Add human-readable category and family names to schema as default properties.
-                extStructuralMetadataExtensionSchema.AddDefaultSchemaProperty(categoryName, familyName, "categoryName", categoryName, "Category Name");
-                extStructuralMetadataExtensionSchema.AddDefaultSchemaProperty(categoryName, familyName, "familyName", familyName, "Family Name");
-
-                // Add additional properties (e.g. 'name') to properties that are ElementIds
-                foreach (Parameter parameter in elementIdProperties)
-                {
-                    ElementId parameterElementId = parameter.AsElementId();
-#if REVIT2022 || REVIT2023
-                    if (parameterElementId.IntegerValue != -1)
-#else               
-                    if (parameterElementId.Value != -1)
-#endif
-                    {
-                        Element parameterElement = Doc.GetElement(parameterElementId);
-                        if (parameterElement != null)
-                        {
-                            // Resolve properties by getting the element's Element.Name value for human readability.
-                            // The name of the "Name" property. E.g., "type" -> "typeName"
-                            string resolvedPropertyName = Util.GetGltfName(parameter.Definition.Name) + "Name";
-
-                            // skip adding the human-readible name for the "family" parameter.
-                            // It resolves to the type name. We added "familyName" above as a default schema property.
-                            if (resolvedPropertyName == "familyName")
-                            {
-                                continue;
-                            }
-
-                            string propertyValue = parameterElement.Name;
-                            newNode.Extensions.EXT_structural_metadata.AddProperty(resolvedPropertyName, propertyValue);
-                            extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, resolvedPropertyName, propertyValue.GetType());
-                        }
-                    }
-                }
-
-                // All nodes should have its ElementId, LevelId, and UniqueId in the metadata
-                int elementIdValue = Util.GetElementIdValue(elementId);
-                newNode.Extensions.EXT_structural_metadata.AddProperty("elementId", elementIdValue);
-                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "elementId", elementIdValue.GetType());
+                newNode.Extensions.EXT_structural_metadata.AddProperty("elementId", elementId);
+                modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "elementId", elementId.GetType());
 
                 string uniqueId = element.UniqueId;
                 newNode.Extensions.EXT_structural_metadata.AddProperty("uniqueId", uniqueId);
-                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "uniqueId", uniqueId.GetType());
+                modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "uniqueId", uniqueId.GetType());
 
                 ElementId levelId = element.LevelId;
-                int levelIdValue = Util.GetElementIdValue(levelId);
-                newNode.Extensions.EXT_structural_metadata.AddProperty("levelId", levelIdValue);
-                extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelId", levelIdValue.GetType());
-                // add "Name" property for levelId for human readability
-                Element level = Doc.GetElement(levelId);
-                if (level != null)
-                {
-                    string levelIdName = level.Name;
-                    newNode.Extensions.EXT_structural_metadata.AddProperty("levelIdName", levelIdName);
-                    extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelIdName", levelIdName.GetType());
-                }
+                newNode.Extensions.EXT_structural_metadata.AddProperty("levelId", levelId);
+                modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "levelId", levelId.GetType());
 
+                var categoryValue = element.Category.Id;
+                newNode.Extensions.EXT_structural_metadata.AddProperty("category", categoryValue);
+                modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "category", categoryValue.GetType());
 
-                // add Room if the element is a FamilyInstance
+                // 2) Add user-defined parameters
+                AddParameterSet(element, newNode, categoryName, familyName, true);
+
+                // 3) Add built-in parameters
+                AddParameterSet(element, newNode, categoryName, familyName);
+
+                // 4) Add specialty class data, e.g. if the Element is a Room object
                 if (element is FamilyInstance)
                 {
                     Autodesk.Revit.DB.Architecture.Room room = ((FamilyInstance)element).Room;
                     if (room != null)
                     {
-                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomName", room.Name);
-                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomName", room.Name.GetType());
-                        int roomIdValue = Util.GetElementIdValue(room.Id);
-                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomElementId", roomIdValue);
-                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomElementId", roomIdValue.GetType());
-                        newNode.Extensions.EXT_structural_metadata.AddProperty("roomUniqueId", room.UniqueId);
-                        extStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, "roomUniqueId", room.UniqueId.GetType());
+                        string addedPropertyName = newNode.Extensions.EXT_structural_metadata.AddProperty("roomName", room.Name);
+                        modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyName, room.Name.GetType());
+                        addedPropertyName = newNode.Extensions.EXT_structural_metadata.AddProperty("roomElementId", room.Id);
+                        modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyName, room.Id.GetType());
+                        addedPropertyName = newNode.Extensions.EXT_structural_metadata.AddProperty("roomUniqueId", room.UniqueId);
+                        modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyName, room.UniqueId.GetType());
                     }
+                }
+
+                // 5) Add human-readable category and family names to schema as default properties.
+                modelExtStructuralMetadataExtensionSchema.AddDefaultSchemaProperty(categoryName, familyName, "categoryName", categoryName, "Category Name");
+                modelExtStructuralMetadataExtensionSchema.AddDefaultSchemaProperty(categoryName, familyName, "familyName", familyName, "Family Name");
+
+                // 6) Resolve manually added properties that are elements with a {parameterName}Name property.
+                // E.g., add levelIdName for human readability as opposed to just levelId
+                Element level = Doc.GetElement(levelId);
+                if (level != null)
+                {
+                    string levelIdName = level.Name;
+                    string addedPropertyName = newNode.Extensions.EXT_structural_metadata.AddProperty("levelIdName", levelIdName);
+                    modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyName, levelIdName.GetType());
                 }
             }
 
@@ -528,6 +481,76 @@ namespace CesiumIonRevitAddin.Gltf
             }
 
             return RenderNodeAction.Proceed;
+        }
+
+        static bool IsKeyValueParameterDupe(string propertyName, ParameterValue parameterValue, ExtStructuralMetadata extStructuralMetadata)
+        {
+            ParameterValue? savedParameterValue = extStructuralMetadata.GetPropertyValue(propertyName);
+            if (savedParameterValue == null) return false;
+            return (savedParameterValue == parameterValue);
+        }
+
+        void AddParameterSet(Element element, GltfNode newNode, string categoryName, string familyName, bool addOnlyUserDefined = false)
+        {
+            ParameterSet parameterSet = element.Parameters;
+            var elementIdProperties = new HashSet<(Parameter parameter, string propertyId)>(); // save to resolve with additional properties such as a human-readable name
+            foreach (Parameter parameter in parameterSet)
+            {
+                string propertyName = Util.GetGltfName(parameter.Definition.Name);
+                ParameterValue parameterValue = Util.GetParameterValue(parameter);
+
+                bool isUserDefined = false;
+                if (parameter.Definition is InternalDefinition internalDefinition)
+                {
+                    isUserDefined = internalDefinition.BuiltInParameter == BuiltInParameter.INVALID;
+                }
+                bool skipParameter = addOnlyUserDefined != isUserDefined;
+                skipParameter |= Util.ShouldFilterMetadata(parameterValue);
+                skipParameter |= !parameter.HasValue;
+                skipParameter |= IsKeyValueParameterDupe(propertyName, parameterValue, newNode.Extensions.EXT_structural_metadata);
+
+                if (!skipParameter)
+                {
+                    string addedPropertyId = newNode.Extensions.EXT_structural_metadata.AddProperty(propertyName, parameterValue);
+                    modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyId, parameterValue.GetType());
+
+                    if (parameter.StorageType == StorageType.ElementId)
+                    {
+                        elementIdProperties.Add((parameter, addedPropertyId));
+                    }
+                }
+            }
+
+            // Add additional properties (e.g. 'name') to properties that are ElementIds
+            foreach (var (parameter, addedPropertyName) in elementIdProperties)
+            {
+                ElementId parameterElementId = parameter.AsElementId();
+#if REVIT2022 || REVIT2023
+                    if (parameterElementId.IntegerValue != -1)
+#else
+                if (parameterElementId.Value != -1)
+#endif
+                {
+                    Element parameterElement = Doc.GetElement(parameterElementId);
+                    if (parameterElement != null)
+                    {
+                        // Resolve properties by getting the element's Element.Name value for human readability.
+                        // The name of the "Name" property. E.g., "type" -> "typeName"
+                        string resolvedPropertyName = addedPropertyName + "Name";
+
+                        // skip adding the human-readible name for the "family" parameter.
+                        // It resolves to the type name. We add "familyName" as a default schema property.
+                        if (resolvedPropertyName == "familyName")
+                        {
+                            continue;
+                        }
+
+                        string propertyValue = parameterElement.Name;
+                        newNode.Extensions.EXT_structural_metadata.AddProperty(resolvedPropertyName, propertyValue);
+                        modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, resolvedPropertyName, propertyValue.GetType());
+                    }
+                }
+            }
         }
 
         public void OnElementEnd(ElementId elementId)
@@ -797,7 +820,7 @@ namespace CesiumIonRevitAddin.Gltf
             materialHasTexture = false;
             if (preferences.Materials)
             {
-                Export.RevitMaterials.Export(materialNode, Doc, materials, extStructuralMetadataExtensionSchema, samplers, images, textures, ref materialHasTexture, preferences);
+                Export.RevitMaterials.Export(materialNode, Doc, materials, modelExtStructuralMetadataExtensionSchema, samplers, images, textures, ref materialHasTexture, preferences);
 
                 if (!preferences.Textures)
                 {
