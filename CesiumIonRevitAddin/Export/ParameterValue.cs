@@ -19,6 +19,19 @@ public struct ParameterValue
     public static implicit operator ParameterValue(Autodesk.Revit.DB.ElementId value) => new ParameterValue { LongValue = value.Value };
 #endif
 
+    public Type GetStoredType()
+    {
+        if (IntegerValue.HasValue)
+            return typeof(int);
+        if (DoubleValue.HasValue)
+            return typeof(double);
+        if (LongValue.HasValue)
+            return typeof(long);
+        if (!string.IsNullOrEmpty(StringValue))
+            return typeof(string);
+        return null;
+    }
+
     public bool Equals(ParameterValue other)
     {
         return Nullable.Equals(IntegerValue, other.IntegerValue)

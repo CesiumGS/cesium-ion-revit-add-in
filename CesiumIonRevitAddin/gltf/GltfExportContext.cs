@@ -512,7 +512,7 @@ namespace CesiumIonRevitAddin.Gltf
                 if (!skipParameter)
                 {
                     string addedPropertyId = newNode.Extensions.EXT_structural_metadata.AddProperty(propertyName, parameterValue);
-                    modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyId, parameterValue.GetType());
+                    modelExtStructuralMetadataExtensionSchema.AddSchemaProperty(categoryName, familyName, addedPropertyId, parameterValue.GetStoredType());
 
                     if (parameter.StorageType == StorageType.ElementId)
                     {
