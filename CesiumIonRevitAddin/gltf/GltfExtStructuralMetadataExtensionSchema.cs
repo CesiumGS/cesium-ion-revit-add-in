@@ -190,12 +190,12 @@ namespace CesiumIonRevitAddin.Gltf
                 {
                     schemaProperty.Add("type", "STRING");
                 }
-                else if (propertyType == typeof(int) || propertyType == typeof(bool))
+                else if (propertyType == typeof(ElementId) || propertyType == typeof(System.Int64) || propertyType == typeof(System.Int32) || propertyType == typeof(bool))
                 {
                     schemaProperty.Add("type", "SCALAR");
                     schemaProperty.Add("componentType", "INT32");
                 }
-                else if (propertyType == typeof(double) || propertyType == typeof(float))
+                else if (propertyType == typeof(Single) || propertyType == typeof(Double) || propertyType == typeof(Decimal))
                 {
                     schemaProperty.Add("type", "SCALAR");
                     schemaProperty.Add("componentType", "FLOAT32");
