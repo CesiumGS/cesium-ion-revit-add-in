@@ -15,7 +15,6 @@ namespace CesiumIonRevitAddin.Gltf
     {
         private const char UNDERSCORE = '_';
         private readonly bool verboseLog = true;
-        private Autodesk.Revit.DB.Transform parentTransformInverse = null;
         private readonly Preferences preferences;
         private readonly View view;
         private Autodesk.Revit.DB.Element element;
@@ -285,12 +284,9 @@ namespace CesiumIonRevitAddin.Gltf
 
         private string symbolGeometryUniqueId = "";
         private int instanceIndex = -1;
-        private bool isChild = false;
-        private Autodesk.Revit.DB.Transform currentElementTransform = null;
         private bool isFamilyInstance = false;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
-            parentTransformInverse = null;
             shouldLogOnElementEnd = false;
             symbolGeometryUniqueId = "";
             instanceIndex = -1;
@@ -445,39 +441,20 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            // Set parent to Supercomponent if it exists.
-            if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
+            xFormNode.Children.Add(nodes.CurrentIndex);
+
+            // Set parent to Supercomponent in the metadata if it exists.
+            if (preferences.ExportMetadata && element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
             {
-                isChild = true;
-                currentElementTransform = familyInstance.GetTransform();
                 Element superComponent = familyInstance.SuperComponent;
-                var parentInstance = (Instance)superComponent;
                 // It can be possible for an Element's Supercomponent to not be in a View.
                 // For example, if you isolate only the "Planting" category in Snowdon,
                 // some Elements have a Supercomponent from the "Site" class that will be missing.
-                if (!nodes.Contains(superComponent.UniqueId))
+                if (nodes.Contains(superComponent.UniqueId))
                 {
-                    xFormNode.Children.Add(nodes.CurrentIndex);
-                    parentTransformInverse = Autodesk.Revit.DB.Transform.Identity;
+                    string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
+                    classMetadata["parent"] = superComponentClass;
                 }
-                else
-                {
-                    if (preferences.ExportMetadata)
-                    {
-                        string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
-                        classMetadata["parent"] = superComponentClass;
-                    }
-
-                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
-                    parentNode.Children = parentNode.Children ?? new List<int>();
-                    parentNode.Children.Add(nodes.CurrentIndex);
-                    parentTransformInverse = parentInstance.GetTransform().Inverse;
-                }
-            }
-            else
-            {
-                isChild = false;
-                xFormNode.Children.Add(nodes.CurrentIndex);
             }
 
             return RenderNodeAction.Proceed;
@@ -892,7 +869,7 @@ namespace CesiumIonRevitAddin.Gltf
 
         void AddCurrentTransformToNode(GltfNode gltfNode)
         {
-            Autodesk.Revit.DB.Transform currentMatrix = isChild ? parentTransformInverse * currentElementTransform : transformStack.Peek();
+            Autodesk.Revit.DB.Transform currentMatrix = transformStack.Peek();
             gltfNode.Matrix = currentMatrix.IsIdentity ? null : TransformToList(currentMatrix);
         }
 
