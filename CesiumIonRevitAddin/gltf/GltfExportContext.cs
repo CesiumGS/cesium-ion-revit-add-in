@@ -15,7 +15,6 @@ namespace CesiumIonRevitAddin.Gltf
     {
         private const char UNDERSCORE = '_';
         private readonly bool verboseLog = true;
-        private Autodesk.Revit.DB.Transform parentTransformInverse = null;
         private readonly Preferences preferences;
         private readonly View view;
         private Autodesk.Revit.DB.Element element;
@@ -44,6 +43,30 @@ namespace CesiumIonRevitAddin.Gltf
         private IndexedDictionary<GeometryDataObject> currentGeometry;
         private IndexedDictionary<VertexLookupIntObject> currentVertices;
         private bool materialHasTexture;
+        /*
+         * Usually, Revit elements export with this stack:
+         *  - OnElementBegin
+         *    - OnInstanceBegin
+         *      - OnPolymesh
+         *      - ...
+         *    - OnInstanceEnd
+         *    - OnInstanceBegin
+         *      - OnPolymesh
+         *    - OnInstanceEnd
+         *    - ...
+         *  - OnElementEnd
+         *
+         *  However, sometimes they export with nothing happening in between OnInstanceBeginAndOnInstanceEnd:
+         *  - OnElementBegin
+         *    - OnInstanceBegin
+         *    - OnInstanceEnd
+         *    - OnPolymesh
+         *  - OnElementEnd
+         *
+         *  Revit expects you multiple the transform stack with the verts during OnPolymesh.
+         *  So when we add the transform to the points, we need two methods of handling the transform stack.
+         */
+        private bool onPolymeshFired = false;
 #if !REVIT2019 && !REVIT2020 && !REVIT2021 && !REVIT2022
         private readonly Dictionary<string, int> symbolGeometryIdToGltfNode = new Dictionary<string, int>();
 #endif
@@ -286,15 +309,16 @@ namespace CesiumIonRevitAddin.Gltf
         private string symbolGeometryUniqueId = "";
         private int instanceIndex = -1;
         private bool isChild = false;
-        private Autodesk.Revit.DB.Transform currentElementTransform = null;
-        private bool isFamilyInstance = false;
+        Autodesk.Revit.DB.Transform parentTransformInverse = Autodesk.Revit.DB.Transform.Identity;
+        Autodesk.Revit.DB.Transform finalNodeTransform = Autodesk.Revit.DB.Transform.Identity;
         public RenderNodeAction OnElementBegin(ElementId elementId)
         {
-            parentTransformInverse = null;
             shouldLogOnElementEnd = false;
             symbolGeometryUniqueId = "";
             instanceIndex = -1;
-            isFamilyInstance = false;
+            onPolymeshFired = false;
+            isChild = false;
+            parentTransformInverse = finalNodeTransform = Autodesk.Revit.DB.Transform.Identity;
 
             element = Doc.GetElement(elementId);
 
@@ -310,8 +334,6 @@ namespace CesiumIonRevitAddin.Gltf
                 shouldSkipElement = true;
                 return RenderNodeAction.Skip;
             }
-
-            if (element is FamilyInstance) isFamilyInstance = true;
 
             linkTransformation = (element as RevitLinkInstance)?.GetTransform();
 
@@ -445,38 +467,38 @@ namespace CesiumIonRevitAddin.Gltf
                 }
             }
 
-            // Set parent to Supercomponent if it exists.
+            // Set parent to Supercomponent in the metadata if it exists.
             if (element is FamilyInstance familyInstance && familyInstance.SuperComponent != null)
             {
-                isChild = true;
-                currentElementTransform = familyInstance.GetTransform();
                 Element superComponent = familyInstance.SuperComponent;
-                var parentInstance = (Instance)superComponent;
+
                 // It can be possible for an Element's Supercomponent to not be in a View.
                 // For example, if you isolate only the "Planting" category in Snowdon,
                 // some Elements have a Supercomponent from the "Site" class that will be missing.
-                if (!nodes.Contains(superComponent.UniqueId))
+                if (nodes.Contains(superComponent.UniqueId))
                 {
-                    xFormNode.Children.Add(nodes.CurrentIndex);
-                    parentTransformInverse = Autodesk.Revit.DB.Transform.Identity;
-                }
-                else
-                {
+                    isChild = true;
+
+                    var parentNode = nodes.GetElement(superComponent.UniqueId);
+                    parentNode.Children = parentNode.Children ?? new List<int>();
+                    parentNode.Children.Add(nodes.CurrentIndex);
+
+                    // It may be possible that the parent instance's transform was not used.
+                    // This will happen when OnPolymesh occurs after the OnInstanceEnd event.
+                    if (parentNode.Matrix != null) parentTransformInverse = ListToTransform(parentNode.Matrix).Inverse;
+
                     if (preferences.ExportMetadata)
                     {
                         string superComponentClass = Util.GetGltfName(superComponent.Category.Name);
                         classMetadata["parent"] = superComponentClass;
                     }
-
-                    GltfNode parentNode = nodes.GetElement(superComponent.UniqueId);
-                    parentNode.Children = parentNode.Children ?? new List<int>();
-                    parentNode.Children.Add(nodes.CurrentIndex);
-                    parentTransformInverse = parentInstance.GetTransform().Inverse;
                 }
-            }
-            else
+                else
+                {
+                    xFormNode.Children.Add(nodes.CurrentIndex);
+                }
+            } else
             {
-                isChild = false;
                 xFormNode.Children.Add(nodes.CurrentIndex);
             }
 
@@ -663,6 +685,8 @@ namespace CesiumIonRevitAddin.Gltf
                 nodes.CurrentItem.Mesh = instanceIndex;
             }
 
+            AddCurrentTransformToNode(nodes.CurrentItem);
+
             element = Doc.GetElement(elementId);
             Logger.Instance.Log($"...Finished Processing element {element.Name}, {element.Id}");
         }
@@ -700,7 +724,9 @@ namespace CesiumIonRevitAddin.Gltf
         {
             // Note: This method is invoked even for instances that were skipped.
 
-            transformStack.Pop();
+            var top = transformStack.Pop();
+            // guard against OnInstanceEnd firing immediately after OnInstanceBegin without OnPolymesh in between
+            if (onPolymeshFired) finalNodeTransform = top;
         }
 
         private static List<double> TransformToList(Autodesk.Revit.DB.Transform transform)
@@ -712,6 +738,22 @@ namespace CesiumIonRevitAddin.Gltf
                 transform.BasisZ.X, transform.BasisZ.Y, transform.BasisZ.Z, 0.0,
                 transform.Origin.X, transform.Origin.Y, transform.Origin.Z, 1.0
             };
+        }
+
+        public static Autodesk.Revit.DB.Transform ListToTransform(List<double> matrix)
+        {
+            XYZ basisX = new XYZ(matrix[0], matrix[1], matrix[2]);
+            XYZ basisY = new XYZ(matrix[4], matrix[5], matrix[6]);
+            XYZ basisZ = new XYZ(matrix[8], matrix[9], matrix[10]);
+            XYZ origin = new XYZ(matrix[12], matrix[13], matrix[14]);
+
+            Autodesk.Revit.DB.Transform transform = Autodesk.Revit.DB.Transform.Identity;
+            transform.BasisX = basisX;
+            transform.BasisY = basisY;
+            transform.BasisZ = basisZ;
+            transform.Origin = origin;
+
+            return transform;
         }
 
         public RenderNodeAction OnLinkBegin(LinkNode node)
@@ -768,8 +810,6 @@ namespace CesiumIonRevitAddin.Gltf
             {
                 return;
             }
-
-            AddCurrentTransformToNode(nodes.CurrentItem);
 
             foreach (Mesh mesh in rpcMeshes)
             {
@@ -892,15 +932,21 @@ namespace CesiumIonRevitAddin.Gltf
 
         void AddCurrentTransformToNode(GltfNode gltfNode)
         {
-            Autodesk.Revit.DB.Transform currentMatrix = isChild ? parentTransformInverse * currentElementTransform : transformStack.Peek();
+            Autodesk.Revit.DB.Transform currentMatrix = finalNodeTransform;
+
+            if (isChild)
+            {
+                currentMatrix = parentTransformInverse.Multiply(currentMatrix);
+            }
+
             gltfNode.Matrix = currentMatrix.IsIdentity ? null : TransformToList(currentMatrix);
         }
 
         public void OnPolymesh(PolymeshTopology polymeshTopology)
         {
-            GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
+            onPolymeshFired = true;
 
-            if (isFamilyInstance) AddCurrentTransformToNode(nodes.CurrentItem);
+            GltfExportUtils.AddOrUpdateCurrentItem(nodes, currentGeometry, currentVertices, materials);
 
             if (instanceIndex != -1)
             {
@@ -908,14 +954,7 @@ namespace CesiumIonRevitAddin.Gltf
                 return;
             }
 
-            Autodesk.Revit.DB.Transform normalsTransform = Autodesk.Revit.DB.Transform.Identity;
-
             var pts = polymeshTopology.GetPoints();
-            if (!isFamilyInstance)
-            {
-                for (int i = 0; i < pts.Count; i++) pts[i] = transformStack.Peek().OfPoint(pts[i]);
-                normalsTransform = transformStack.Peek();
-            }
 
             foreach (PolymeshFacet facet in polymeshTopology.GetFacets())
             {
@@ -929,7 +968,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             if (preferences.Normals)
             {
-                GltfExportUtils.AddNormals(normalsTransform, polymeshTopology, currentGeometry.CurrentItem.Normals);
+                GltfExportUtils.AddNormals(Autodesk.Revit.DB.Transform.Identity, polymeshTopology, currentGeometry.CurrentItem.Normals);
             }
 
             if (materialHasTexture)
