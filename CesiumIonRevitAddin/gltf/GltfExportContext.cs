@@ -91,7 +91,6 @@ namespace CesiumIonRevitAddin.Gltf
         private static void Reset() => RevitMaterials.materialIdDictionary.Clear();
 
 
-#if REVIT2022 || REVIT2023 || REVIT2024 || REVIT2025
         // Classes like SpecTypeId.String contain Text, URI, and more.
         // Rather than test for each individually, we get all properties of the class and check against those.
         static bool IsSpecTypeMatch(ForgeTypeId forgeTypeId, Type specTypeClass)
@@ -108,7 +107,7 @@ namespace CesiumIonRevitAddin.Gltf
 
             return specTypeIds.Contains(forgeTypeId);
         }
-#endif
+
         readonly System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
         public bool Start()

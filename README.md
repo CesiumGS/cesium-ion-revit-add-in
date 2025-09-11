@@ -25,7 +25,7 @@ Cesium ion for Autodesk Revit enables you to effortlessly export your designs to
 
 By leveraging Cesium ion and the power of 3D Tiles, even multi-gigabyte models can be streamed to any device without having to download the entire tileset up front. By visualizing 3D Tiles with CesiumJS, you can fuse your models with other datasets, add geospatial context to place it at a real world location, or overlay additional details and analysis.
 
-Autodesk Revit versions 2022 to 2025 are supported.
+Autodesk Revit versions 2022 to 2026 are supported.
 
 For Cesium clients, we recommend using Cesium for Unreal v2.11.0 or later, Cesium for Unity v1.14.0 or later, and CesiumJS v1.124.0 or later
 
