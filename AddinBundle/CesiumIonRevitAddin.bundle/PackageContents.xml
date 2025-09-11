@@ -10,7 +10,7 @@
   FriendlyVersion="1.2.0"
   AppNameSpace="appstore.exchange.autodesk.com">
   <CompanyDetails Name="Cesium" />
-  <RuntimeRequirements OS="Win32|Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2025" />
+  <RuntimeRequirements OS="Win32|Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2026" />
   <Components Description="2022 Add-in">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2022" SeriesMax="R2022" />
     <ComponentEntry AppName="CesiumIonRevitAddin" Version="1.2.0" ModuleName="./Contents/2022/CesiumIonRevit.addin" AppDescription="Cesium ion Revit Add-in" />
@@ -26,5 +26,9 @@
   <Components Description="2025 Add-in">
     <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2025" SeriesMax="R2025" />
     <ComponentEntry AppName="CesiumIonRevitAddin" Version="1.2.0" ModuleName="./Contents/2025/CesiumIonRevit.addin" AppDescription="Cesium ion Revit Add-in" />
+  </Components>
+  <Components Description="2026 Add-in">
+    <RuntimeRequirements OS="Win64" Platform="Revit" SeriesMin="R2026" SeriesMax="R2026" />
+    <ComponentEntry AppName="CesiumIonRevitAddin" Version="1.2.0" ModuleName="./Contents/2026/CesiumIonRevit.addin" AppDescription="Cesium ion Revit Add-in" />
   </Components>
 </ApplicationPackage>
