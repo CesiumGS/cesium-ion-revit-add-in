@@ -5,7 +5,7 @@ rem Set the base directory to the location of this script
 set "baseDir=%~dp0"
 set "parentDir=%baseDir%.."
 set "contentsFolder=%baseDir%CesiumIonRevitAddin.bundle\Contents"
-set "versions=2022 2023 2024 2025"
+set "versions=2022 2023 2024 2025 2026"
 
 rem Loop through each version number
 for %%v in (%versions%) do (
