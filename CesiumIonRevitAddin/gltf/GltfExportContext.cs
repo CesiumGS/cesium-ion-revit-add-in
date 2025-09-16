@@ -502,13 +502,16 @@ namespace CesiumIonRevitAddin.Gltf
             return RenderNodeAction.Proceed;
         }
 
-        public static bool CanBeLockOrHidden(Element element, View view)
+        // detect if an element has geometry to export
+        // see https://github.com/EverseDevelopment/revit-glTF-exporter/issues/121#issuecomment-3298824037 for discussion about these tests
+        public static bool HasGeometry(Element element, View view)
         {
             if (element.CanBeHidden(view))
             {
                 return true;
             }
 
+            // heuristic to identify categories that typically contain elements with actual geometry
             if (element.Category.CanAddSubcategory || element.Category.AllowsBoundParameters)
             {
                 return true;
@@ -535,7 +538,7 @@ namespace CesiumIonRevitAddin.Gltf
                 return true;
             }
 
-            if (!CanBeLockOrHidden(currentElement, currentView))
+            if (!HasGeometry(currentElement, currentView))
             {
                 return true;
             }
