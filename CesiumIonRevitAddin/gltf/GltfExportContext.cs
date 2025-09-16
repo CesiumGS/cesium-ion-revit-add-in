@@ -321,16 +321,14 @@ namespace CesiumIonRevitAddin.Gltf
 
             element = Doc.GetElement(elementId);
 
-            if (!Util.CanBeLockOrHidden(element, view) || (element is Level))
+            if (Util.GetElementIdAsLong(elementId) == 1265228)
             {
-                shouldSkipElement = true;
-                return RenderNodeAction.Skip;
+                Logger.Instance.Log("at asphalt");
             }
 
-            if (nodes.Contains(element.UniqueId))
+            shouldSkipElement = ShouldSkipElement(element, view, Doc, nodes);
+            if (shouldSkipElement)
             {
-                // Duplicate element, skip adding.
-                shouldSkipElement = true;
                 return RenderNodeAction.Skip;
             }
 
@@ -504,6 +502,47 @@ namespace CesiumIonRevitAddin.Gltf
             return RenderNodeAction.Proceed;
         }
 
+        public static bool CanBeLockOrHidden(Element element, View view)
+        {
+            if (element.CanBeHidden(view))
+            {
+                return true;
+            }
+
+            if (element.Category.CanAddSubcategory || element.Category.AllowsBoundParameters)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool ShouldSkipElement(Element currentElement, Autodesk.Revit.DB.View currentView,
+            Document currentDocument, IndexedDictionary<GltfNode> nodes)
+        {
+            if (currentElement == null)
+            {
+                return true;
+            }
+
+            if (currentElement is Level)
+            {
+                return true;
+            }
+
+            if (nodes.Contains(currentElement.UniqueId))
+            {
+                return true;
+            }
+
+            if (!CanBeLockOrHidden(currentElement, currentView))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         static bool IsKeyValueParameterDupe(string propertyName, ParameterValue parameterValue, ExtStructuralMetadata extStructuralMetadata)
         {
             ParameterValue? savedParameterValue = extStructuralMetadata.GetPropertyValue(propertyName);
@@ -586,9 +625,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             bool verticesAreBad = currentVertices == null || currentVertices.List.Count == 0;
             if (instanceIndex != -1) verticesAreBad = false; // Vertices check is invalid if this is a GPU instance.
-            if (shouldSkipElement || verticesAreBad || !Util.CanBeLockOrHidden(element, view))
+            if (shouldSkipElement || verticesAreBad)
             {
-                shouldSkipElement = false;
                 if (shouldLogOnElementEnd)
                 {
                     Logger.Instance.Log($"...Finished Processing element {element.Name}, {element.Id}");
