@@ -321,11 +321,6 @@ namespace CesiumIonRevitAddin.Gltf
 
             element = Doc.GetElement(elementId);
 
-            if (Util.GetElementIdAsLong(elementId) == 1265228)
-            {
-                Logger.Instance.Log("at asphalt");
-            }
-
             shouldSkipElement = ShouldSkipElement(element, view, Doc, nodes);
             if (shouldSkipElement)
             {
