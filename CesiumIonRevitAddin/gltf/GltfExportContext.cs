@@ -321,16 +321,9 @@ namespace CesiumIonRevitAddin.Gltf
 
             element = Doc.GetElement(elementId);
 
-            if (!Util.CanBeLockOrHidden(element, view) || (element is Level))
+            shouldSkipElement = ShouldSkipElement(element, view, Doc, nodes);
+            if (shouldSkipElement)
             {
-                shouldSkipElement = true;
-                return RenderNodeAction.Skip;
-            }
-
-            if (nodes.Contains(element.UniqueId))
-            {
-                // Duplicate element, skip adding.
-                shouldSkipElement = true;
                 return RenderNodeAction.Skip;
             }
 
@@ -504,6 +497,50 @@ namespace CesiumIonRevitAddin.Gltf
             return RenderNodeAction.Proceed;
         }
 
+        // detect if an element has geometry to export
+        // see https://github.com/EverseDevelopment/revit-glTF-exporter/issues/121#issuecomment-3298824037 for discussion about these tests
+        public static bool HasGeometry(Element element, View view)
+        {
+            if (element.CanBeHidden(view))
+            {
+                return true;
+            }
+
+            // heuristic to identify categories that typically contain elements with actual geometry
+            if (element.Category.CanAddSubcategory || element.Category.AllowsBoundParameters)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool ShouldSkipElement(Element currentElement, Autodesk.Revit.DB.View currentView,
+            Document currentDocument, IndexedDictionary<GltfNode> nodes)
+        {
+            if (currentElement == null)
+            {
+                return true;
+            }
+
+            if (currentElement is Level)
+            {
+                return true;
+            }
+
+            if (nodes.Contains(currentElement.UniqueId))
+            {
+                return true;
+            }
+
+            if (!HasGeometry(currentElement, currentView))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         static bool IsKeyValueParameterDupe(string propertyName, ParameterValue parameterValue, ExtStructuralMetadata extStructuralMetadata)
         {
             ParameterValue? savedParameterValue = extStructuralMetadata.GetPropertyValue(propertyName);
@@ -586,9 +623,8 @@ namespace CesiumIonRevitAddin.Gltf
 
             bool verticesAreBad = currentVertices == null || currentVertices.List.Count == 0;
             if (instanceIndex != -1) verticesAreBad = false; // Vertices check is invalid if this is a GPU instance.
-            if (shouldSkipElement || verticesAreBad || !Util.CanBeLockOrHidden(element, view))
+            if (shouldSkipElement || verticesAreBad)
             {
-                shouldSkipElement = false;
                 if (shouldLogOnElementEnd)
                 {
                     Logger.Instance.Log($"...Finished Processing element {element.Name}, {element.Id}");
