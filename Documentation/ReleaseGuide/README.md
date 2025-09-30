@@ -12,6 +12,7 @@ Inno Setup is required for generating installers.  It can be downloaded [here](h
 - [/CesiumIonRevitAddin_2023/Properties/AssemblyInfo.cs](/CesiumIonRevitAddin_2023/Properties/AssemblyInfo.cs)
 - [/CesiumIonRevitAddin_2024/Properties/AssemblyInfo.cs](/CesiumIonRevitAddin_2024/Properties/AssemblyInfo.cs)
 - [/CesiumIonRevitAddin_2025/Properties/AssemblyInfo.cs](/CesiumIonRevitAddin_2025/Properties/AssemblyInfo.cs)
+- [/CesiumIonRevitAddin_2026/Properties/AssemblyInfo.cs](/CesiumIonRevitAddin_2026/Properties/AssemblyInfo.cs)
 
 4. Update `MyAppVersion` in [installer.iss](/AddinBundle/installer.iss
 )
