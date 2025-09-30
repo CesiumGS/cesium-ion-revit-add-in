@@ -5,7 +5,7 @@ This is the process we follow when releasing a new version of Cesium ion for Aut
 Inno Setup is required for generating installers.  It can be downloaded [here](https://jrsoftware.org/isdl.php).
 
 1. Cesium ion for Autodesk Revit does not currently use CI to produce a build, so releases are currently generated on developers' systems.  It is crucial you work with a clean copy of the main branch.  If in doubt, run `git reset --hard` and `git clean -x -d -f` prior to starting.
-2. Update `AppVersion` and `FriendlyVersion` in [PackageContext.xml](/AddinBundle/CesiumIonRevitAddin.bundle/PackageContents.xml), along with updating each `Version` entry for each add-in listed in the file.
+2. Update `AppVersion` and `FriendlyVersion` in [PackageContents.xml](/AddinBundle/CesiumIonRevitAddin.bundle/PackageContents.xml), along with updating each `Version` entry for each add-in listed in the file.
 3. Update `AssemblyVersion`, `AssemblyFileVersion` and `AssemblyInformationVersion` in the following files: 
 
 - [/CesiumIonRevitAddin_2022/Properties/AssemblyInfo.cs](/CesiumIonRevitAddin_2022/Properties/AssemblyInfo.cs)
