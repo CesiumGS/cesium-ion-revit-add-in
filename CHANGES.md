@@ -1,5 +1,11 @@
 # Change Log
 
+### v1.3.0 - 2025-10-01
+
+* Add support Revit 2026
+* Fix export issues for some elements in Revit 2026
+* Fix incorrect transforms for some exported subcomponent elements
+
 ### v1.2.0 - 2025-05-01
 
 * Add support for an elements unique ID, level and room metadata
